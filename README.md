@@ -44,4 +44,4 @@ The Cooker solution contains all the applications to transform the asset from so
 In order to compile, you will need to download a ThirdParty SDK located here.
 
 ## Road Map
-You can follow the roadmap on Trello: https://trello.com/b/hlFdhJCv/gorilla-engine
+You can follow the roadmap on [Trello](https://trello.com/b/hlFdhJCv/gorilla-engine)
