@@ -1,0 +1,259 @@
+/* Global Variables */
+:root 
+{
+	--default-color: white;
+	--content-color: rgb(37,37,38);
+	--border-color: rgb(45,45,48);
+}
+
+/* Gorilla */
+.gorilla_bar.glyphicon
+ {
+    padding-top: 4px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+/* Generic */
+body 
+{
+    font-family: Arial,sans-serif;
+    font-size: 12px;
+	color: var(--default-color);
+}
+
+[role="button"]
+{
+    cursor: default;
+}
+
+a
+{
+	color: var(--default-color);
+	cursor: default;
+}
+
+input 
+{
+    color: black;
+}
+
+.form-group > button 
+{
+    float: right;
+    width: 20%;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-group > input 
+{
+    width:80%;
+    border-top-right-radius:0;
+    border-bottom-right-radius:0;
+}
+
+/* Bootstrap override */
+.btn, .close
+{
+	cursor: default;
+}
+
+.close 
+{
+    color: var(--default-color);
+    text-shadow: 0 0px;
+}
+
+.navbar-default .navbar-nav>li>a, .navbar-default .navbar-nav>li>a:hover
+{
+    color: var(--default-color);
+}
+
+.navbar 
+{
+	border: 0px;
+    border-radius: 0px;
+	margin-bottom: 0px;
+	min-height: 0px;
+}
+
+.navbar-default
+{
+	background: var(--content-color);
+}
+
+.navbar-collapse 
+{
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+.navbar-nav>li>a 
+{
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.nav-tabs 
+{
+    border-bottom: 0px;
+}
+
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus 
+{
+	color: var(--default-color);
+    background: var(--content-color);
+    border: 0px;
+}
+
+.nav-tabs>li>a 
+{
+    border:0px;
+    border-radius: 0px;
+	background: var(--border-color);
+	color: var(--default-color);
+}
+
+.nav-tabs>li>a:hover 
+{
+   background: var(--content-color);
+}
+
+.nav>li>a 
+{
+	border:0px;
+	margin-right: 0px;
+    padding: 3px 10px 3px 10px;
+}
+	
+.container-fluid 
+{
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.dropdown-menu 
+{
+	background: var(--border-color);
+	font-size: 12px;
+}
+
+.dropdown-menu>li>a, .dropdown-menu>li>a:hover
+{
+    color: var(--default-color);
+}
+
+.dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus
+{
+	background: var(--content-color);
+}
+
+.dropdown-menu .divider
+{
+    margin: 0px;
+	background: var(--content-color);
+}
+
+.dropdown-menu>li>a 
+{
+	padding: 3px 0px 3px 25px;
+}
+
+.modal-header
+{
+	padding: 5px 10px 5px 10px;
+	background: var(--border-color);
+	border-bottom:0px;
+}
+
+.modal-content
+{
+	background: var(--content-color);
+	border-radius:0px;
+}
+
+.modal-footer
+{
+	padding: 5px 10px 5px 10px;
+	background: var(--border-color);
+	border-top:0px;
+}
+
+.panel>.panel-heading 
+{
+    color: var(--default-color);
+    background: var(--border-color);
+}
+
+.list-group>.list-group-item 
+{
+    color: var(--default-color);
+    background: var(--border-color);
+}
+
+.panel-footer 
+{
+    color: var(--default-color);
+    background: var(--border-color);
+}
+
+/* GoldenLayout override */
+.lm_goldenlayout
+{
+	/*background: var(--border-color);*/
+    background: transparent;
+}
+
+.lm_content
+{
+	background: var(--content-color);
+}
+
+.gorilla_viewport
+{
+	background: transparent;
+}
+
+.lm_header 
+{
+    background: var(--border-color);
+}
+
+.lm_header .lm_tab 
+{
+    cursor: default;
+}
+
+.lm_header .lm_tab.lm_active 
+{
+    box-shadow: 0 0px 0px #000000;
+}
+
+.lm_splitter 
+{
+    background: var(--border-color);
+    opacity: 1.0;
+}
+
+/* jstree  override */
+.jstree-default .jstree-anchor:hover
+{
+    background: var(--border-color);
+}
+
+.jstree-default .jstree-clicked 
+{
+    background: var(--border-color);
+}
+
+.jstree-default .jstree-node 
+{
+    min-height: 0px;
+    line-height: 0px;
+}
+
+.jstree-default .jstree-icon:empty 
+{
+    width: 20px;
+}

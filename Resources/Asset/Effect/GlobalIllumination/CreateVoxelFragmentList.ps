@@ -1,0 +1,68 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "CreateVoxelFragmentList.gs"
+#include "Helper.sl"
+
+/******************************************************************************
+**	Resources
+******************************************************************************/
+StructuredBuffer<float> aNumber : register(t0);
+Texture2D tAlbedo : register(t1);
+RWStructuredBuffer<VoxelFragment> aVoxelFragment : register(u1);
+// RWBuffer<uint> aVoxelGridState : register(u3);
+RWTexture3D<float4> tVoxelColor : register(u4); 
+RWTexture3D<float4> tVoxelNormal : register(u5); 
+
+/******************************************************************************
+**	Helper
+******************************************************************************/
+// uint GetNextIndexVoxelFragment()
+// {
+	// uint uiIndex = 0;
+	// InterlockedAdd(aVoxelGridState[VOXEL_GRID_STATE_FRAGMENT], 1, uiIndex);
+	
+	// return uiIndex;
+// }
+
+uint3 PackVoxelCoordinate5(in float3 _vPosition)
+{
+	float3 vCoordinate = (float3(_vPosition.x, -_vPosition.y, _vPosition.z) + 1.0f) * 0.5f;
+	vCoordinate *= (GRID_SIZE-1);
+	
+	return vCoordinate;
+}
+
+
+/******************************************************************************
+**	Pixel Shader
+******************************************************************************/
+void PixelDefault(GS_OUTPUT _input)
+{	
+	//uint uiIndex = GetNextIndexVoxelFragment();
+	//aVoxelFragment[uiIndex].Position = _input.PositionWS.xyz;
+	//aVoxelFragment[uiIndex].Color = float3(aNumber[0], aNumber[1], aNumber[2]);
+	//aVoxelFragment[uiIndex].Normal = _input.Normal.xyz;
+
+	uint3 vCoordinate = PackVoxelCoordinate5(_input.PositionWS.xyz);
+	tVoxelColor[vCoordinate] = float4(aNumber[0], aNumber[1], aNumber[2], 1.0f);
+	//tVoxelNormal[vCoordinate] = _input.Normal.xyz;
+	
+	
+	//InterlockedAdd(tColor[vCoordinate].r, aNumber[0]);
+	//
+	//tVoxelNormal[vCoordinate] = float4(_input.Normal.xyz, 1.0f);
+	
+	uint uiVoxelIndex = PackVoxelIndex(_input.PositionWS.xyz);
+	//InterlockedAdd(aVoxelFragment[uiVoxelIndex].Count, 1);
+	
+	// Color
+	InterlockedAdd(aVoxelFragment[uiVoxelIndex].Color.r, aNumber[0] * 255.0f);
+	InterlockedAdd(aVoxelFragment[uiVoxelIndex].Color.g, aNumber[1] * 255.0f);
+	InterlockedAdd(aVoxelFragment[uiVoxelIndex].Color.b, aNumber[2] * 255.0f);
+	
+	//Normal
+	InterlockedAdd(aVoxelFragment[uiVoxelIndex].Normal.x, _input.Normal.x * 255.0f);
+	InterlockedAdd(aVoxelFragment[uiVoxelIndex].Normal.y, _input.Normal.y * 255.0f);
+	InterlockedAdd(aVoxelFragment[uiVoxelIndex].Normal.z, _input.Normal.z * 255.0f);
+}

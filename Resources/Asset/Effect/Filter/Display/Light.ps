@@ -1,0 +1,558 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "../Filter.vs"
+#include "../../GBuffer.sl"
+#include "../../GlobalIllumination/Struct.sl"
+#include "../../GlobalIllumination/Helper.sl"
+#include "../../Shadow/PoissonDisc.sl"
+
+/******************************************************************************
+**	Resources
+******************************************************************************/
+Texture2D tAlbedo										: register(t0);
+Texture2D tNormal										: register(t1);
+Texture2D tDepth										: register(t2);
+Texture3D tVoxelColor									: register(t3);
+StructuredBuffer<DirectionalLight> aDirectionalLight 	: register(t4);
+Texture2D tDirectionalShadowMap							: register(t5);
+StructuredBuffer<PointLight> aPointLight 				: register(t6);
+TextureCubeArray tPointShadowMap						: register(t7);
+TextureCube tEnvironment								: register(t8);
+
+/******************************************************************************
+**	Structs
+******************************************************************************/
+struct Fragment
+{	
+	float3  Position;
+	float3	View;
+	float3	Fresnel;
+	float 	Depth;
+	float 	NdotL; 
+	float 	NdotV;
+	float 	NdotH;
+	float 	VdotH;
+};
+
+struct Material
+{
+	float3 	Normal;
+	float3 	F0;
+	float3 	Albedo;
+	float  	Metallic;
+	float  	Roughness;
+};
+
+/******************************************************************************
+**	Helpers
+******************************************************************************/
+static float aWeight[6] = 
+{
+	K_PI / 4.0f, 
+	3.0f * K_PI / 20.0f,
+	3.0f * K_PI / 20.0f,
+	3.0f * K_PI / 20.0f,
+	3.0f * K_PI / 20.0f,
+	3.0f * K_PI / 20.0f,
+};
+
+static float3 aConeDirection[6] =
+{
+	float3(+0.0f, 		+1.0f, 	+0.0f),
+	float3(+0.0f, 		+0.5f, 	+0.866025f),
+	float3(+0.823639f, 	+0.5f, 	+0.267617f),
+	float3(+0.509037f, 	+0.5f, 	-0.700629f),
+	float3(-0.509037f, 	+0.5f,	-0.700629f),
+	float3(-0.823639f, 	+0.5f, 	-0.267617f),
+};
+
+/******************************************************************************
+**	Pixel Shader Output
+******************************************************************************/
+struct PS_OUTPUT
+{
+	float3 DirectLighting		: SV_Target0;
+	float4 IndirectLighting		: SV_Target1;
+	float4 AmbientOcclusion		: SV_Target2;
+};
+
+/******************************************************************************
+**	ComputeFresnel
+******************************************************************************/
+#define FRESNEL_SCHLICK
+float3 ComputeFresnel(in Fragment _kFragment, in Material _kMaterial)
+{
+#ifdef FRESNEL_SCHLICK
+	return _kMaterial.F0 + (max((float3)1.0f - _kMaterial.Roughness, _kMaterial.F0) - _kMaterial.F0) * pow(1.0f - _kFragment.NdotV, 5.0f);
+
+#else	// Default
+	return _kMaterial.F0;
+#endif
+}
+
+/******************************************************************************
+**	ComputeGeometricAttenuation
+**	http://graphicrants.blogspot.fr/2013/08/specular-brdf-reference.html
+******************************************************************************/
+//#define GEOMETRIC_ATTENUATION_NEUMANN
+//#define GEOMETRIC_ATTENUATION_COOK-TORRANCE
+//#define GEOMETRIC_ATTENUATION_KELEMEN
+#define GEOMETRIC_ATTENUATION_GGX_SCHLICK
+//#define GEOMETRIC_ATTENUATION_SMITH_HEIGHT_CORRELATED
+float ComputeGeometricAttenuation(in Fragment _kFragment, in Material _kMaterial)
+{
+#if defined(GEOMETRIC_ATTENUATION_NEUMANN)
+	float fNumerator = _kFragment.NdotL * _kFragment.NdotV;
+	float fDenumerator = max(_kFragment.NdotL, _kFragment.NdotV);
+	return fNumerator / fDenumerator;
+	
+#elif defined(GEOMETRIC_ATTENUATION_COOK)
+	float fFactor1 = (2.0f * _kFragment.NdotH * _kFragment.NdotV) / _kFragment.VdotH;
+	float fFactor2 = (2.0f * _kFragment.NdotH * _kFragment.NdotL) / _kFragment.VdotH;
+	return min(1.0f, min(fFactor1, fFactor2));
+	
+#elif defined(GEOMETRIC_ATTENUATION_KELEMEN)
+	float fNumerator = _kFragment.NdotL * _kFragment.NdotV;
+	float fDenumerator = _kFragment.VdotH * _kFragment.VdotH;
+	return fNumerator / fDenumerator;
+	
+#elif defined(GEOMETRIC_ATTENUATION_GGX_SCHLICK)
+	float fK = pow(_kMaterial.Roughness + 1.0f, 2.0f) / 8.0f;
+    float fFactor1 = _kFragment.NdotV / (_kFragment.NdotV * (1.0f - fK) + fK);
+	float fFactor2 = _kFragment.NdotL / (_kFragment.NdotL * (1.0f - fK) + fK);
+	return fFactor1 * fFactor2;
+	
+#elif defined(GEOMETRIC_ATTENUATION_SMITH_HEIGHT_CORRELATED)
+	// http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr_v2.pdf
+	// Caution : the " _fNdotL *" and " _fNdotV *" are explicitely inversed , this is not a mistake .
+	float fRoughnessSquared = _kMaterial.Roughness * _kMaterial.Roughness;
+	float fLambdaV = _kFragment.NdotL * sqrt((-_kFragment.NdotV * fRoughnessSquared + _kFragment.NdotV) * _kFragment.NdotV + fRoughnessSquared);
+	float fLambdaL = _kFragment.NdotV * sqrt((-_kFragment.NdotL * fRoughnessSquared + _kFragment.NdotL) * _kFragment.NdotL + fRoughnessSquared); 
+	return 0.5f / (fLambdaV + fLambdaL);
+	
+#else	// Default
+	return _kFragment.NdotL * _kFragment.NdotV;
+#endif	
+}
+
+/******************************************************************************
+**	ComputeNormalDistribution
+**	http://graphicrants.blogspot.fr/2013/08/specular-brdf-reference.html
+******************************************************************************/
+//#define NORMAL_DISTRIBUTION_BECKMAN
+//#define NORMAL_DISTRIBUTION_GGX
+#define NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ
+float ComputeNormalDistribution(in Fragment _kFragment, in Material _kMaterial)
+{	
+	float fRoughnessFactor = pow(_kMaterial.Roughness, 4);
+	
+#if defined(NORMAL_DISTRIBUTION_BECKMAN)
+	float fNdotH_2 = _kFragment.NdotH * _kFragment.NdotH;
+	float fNdotH_4 = fNdotH_2 * fNdotH_2;
+	float fFactor1 = 1.0f / (K_PI * fRoughnessFactor * fNdotH_4);
+	float fFactor2 = (fNdotH_2 - 1.0f) / (fRoughnessFactor * fNdotH_2);
+    return fFactor1 * exp(fFactor2);
+	
+#elif defined(NORMAL_DISTRIBUTION_GGX)
+    float NdotH  = max(_kFragment.NdotH, 0.0f);
+    float NdotH2 = NdotH*NdotH;
+    float nom   = fRoughnessFactor;
+    float denom = (NdotH2 * (fRoughnessFactor - 1.0) + 1.0);
+    denom = K_PI * denom * denom;
+    return nom / denom;
+	
+#elif defined(NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ)
+	float fFactor = (_kFragment.NdotH * _kFragment.NdotH) * (fRoughnessFactor - 1.0f) + 1.0f;
+	return fRoughnessFactor / (fFactor * fFactor * K_PI);
+	
+#else // BLING-PHONG
+	float fFactor1 = 1.0f / (K_PI * fRoughnessFactor);
+	float fFactor2 = pow(_kFragment.NdotH, (2.0f / fRoughnessFactor) - 2.0f);
+	return fFactor1 * fFactor2;
+#endif	
+}
+
+/******************************************************************************
+**	Specular BRDF
+**	fs = F(v,h,f0)G(v,l,h)D(h,a)
+**			4(n.v)(n.l)
+******************************************************************************/
+float3 BRDF_Specular(in Fragment _kFragment, in Material _kMaterial)
+{		
+	float3 F = _kFragment.Fresnel;
+	float G = ComputeGeometricAttenuation(_kFragment, _kMaterial);
+	float D = ComputeNormalDistribution(_kFragment, _kMaterial);
+	
+	return (F * G * D) / (4.0f * _kFragment.NdotL * _kFragment.NdotV); 
+}
+
+float test(in float _fF90, in float costheta)
+{
+	return 1.0f + (_fF90 - 1.0f) * pow(1.0f - costheta, 5);
+	
+}
+
+/******************************************************************************
+**	Diffuse BRDF
+******************************************************************************/
+//#define DIFFUSE_DISNEY
+float3 BRDF_Diffuse(in Fragment _kFragment, in Material _kMaterial)
+{
+#if defined(DIFFUSE_DISNEY) 
+	float3 vDiffuse = _kMaterial.Albedo / K_PI;
+	float fF90 = 0.5f + 2.0 * _kFragment.VdotH * _kFragment.VdotH * _kMaterial.Roughness;
+	float lightScatter = test(fF90, _kFragment.NdotL);
+	float viewScatter = test(fF90, _kFragment.NdotV);
+	return vDiffuse * lightScatter * viewScatter ;
+	
+#else	// LAMBERT
+	return _kMaterial.Albedo;
+#endif
+}
+
+// Unpack Material from GBuffer
+Material UnpackMaterial(in float2 _vTexcoord)
+{
+	float4 vAlbedo = tAlbedo.Sample(sPointSampler, _vTexcoord);
+	float4 vNormalPacked = tNormal.Sample(sPointSampler, _vTexcoord);
+	
+	Material kMaterial;
+	kMaterial.Albedo = vAlbedo.xyz;
+	kMaterial.Metallic = vAlbedo.w;
+	kMaterial.Normal = normalize(UnpackNormal(vNormalPacked.xyz));
+	kMaterial.Roughness = max(0.025f, vNormalPacked.w);
+	kMaterial.F0 = lerp(MATERIAL_WATER, kMaterial.Albedo, kMaterial.Metallic);
+	
+	return kMaterial;
+}
+
+float TraceCone(in float3 _vOrigin, in float3 _vDirection, in float _fAperture)
+{
+	float fAmbientOcclusion = 0.0f;
+	
+	float fDistance = 3.0f * VOXEL_HALF_SIZE;
+	float fDistanceLimit = 3.5f * VOXEL_HALF_SIZE;
+	float fStartDistance = fDistance;
+	while (fDistance < fDistanceLimit && fAmbientOcclusion < 1.0f)
+	{
+		uint uiMipLevel = (fDistance / fStartDistance) - 1;
+		float fDiameter = 2.0f * fDistance * _fAperture;
+		float3 vPosition = _vOrigin + _vDirection * fDiameter;
+		float3 vTexcoord = PackVoxelTexcoord2(vPosition, ((uint)GRID_SIZE) >> uiMipLevel);
+		fAmbientOcclusion += tVoxelColor.SampleLevel(sPointSampler, vTexcoord, uiMipLevel).a * fDiameter;
+		
+		fDistance += fDiameter * 0.5f;
+	}
+	
+	return fAmbientOcclusion;
+}
+
+float3 PackVoxelTexcoord3(in float3 _vPosition, in float _fSize)
+{
+	float3 vTexcoord = (_vPosition + 1.0f) * 0.5f;
+	vTexcoord *= (_fSize-1) / _fSize;
+	
+	return vTexcoord;
+}
+
+float3 TraceCone2(in float3 _vOrigin, in float3 _vDirection)
+{
+	float fAlpha = K_PI / 4.0f;
+	float fDistance = 3.0f * VOXEL_HALF_SIZE;
+	float fDistanceLimit = 16.0f * VOXEL_HALF_SIZE;
+	float3 vValue = (float3)0.0f;
+	float fStartDistance = fDistance;
+	float fAperture = tan(fAlpha);
+	while (fDistance < fDistanceLimit && vValue.r < 1.0f)
+	{
+		uint uiMipLevel = (fDistance / fStartDistance) - 1;
+		float fDiameter = 2.0f * fDistance * fAperture;
+		float3 vPosition = _vOrigin + _vDirection * fDiameter;
+		//float3 vTexcoord = PackVoxelTexcoord2(_vOrigin, ((uint)GRID_SIZE) >> uiMipLevel);
+		float3 vTexcoord = PackVoxelTexcoord3(vPosition, ((uint)GRID_SIZE) >> uiMipLevel);
+		vValue += tVoxelColor.SampleLevel(sPointSampler, vTexcoord, uiMipLevel).rgb;
+		fDistance += fDiameter * 0.5f;
+	}
+	
+	return vValue;
+}
+
+float ComputePercentageCloserSoftShadow(in float3 _vPosition, in float4x4 _mView, in float4x4 _mProjection)
+{
+	static float fShadowMapSize = 1024.0f;
+	static float fBias = 0.005f;
+	static float fSamplePerAxisCount = 1.0f;
+	static float fSampleCount = pow(fSamplePerAxisCount * 2.0f + 1.0f, 2.0f);
+	
+	float fResult = 0.0f;
+	
+	// Compute Shadow Texcoord
+	float4 vReceiver = mul(float4(_vPosition, 1.0f), _mView);
+	vReceiver = mul(vReceiver, _mProjection);
+	vReceiver.xy = vReceiver.xy * 0.5 + 0.5; 
+	vReceiver.y *= -1.0f;
+
+	float fBlockerDepth = tDirectionalShadowMap.Gather(sPointSampler, vReceiver.xy).r;
+	if(fBlockerDepth < (vReceiver.z-fBias))
+	{
+		int iPenumbra = round((vReceiver.z - fBlockerDepth) / fBlockerDepth * 128.0f);
+		int iStep = 2;
+		for (float i = -iPenumbra; i <= iPenumbra; i+=iStep)
+		{
+			for (float j = -iPenumbra; j <= iPenumbra; j+=iStep)
+			{
+				float fShadow = tDirectionalShadowMap.Gather(sPointSampler, vReceiver.xy, float2(i, j)).r;
+				if(fShadow < (vReceiver.z-fBias))
+				{
+					fResult += fShadow;
+				}
+			}
+		}
+		
+		float hello = pow(iPenumbra * 2.0f / iStep + 1.0f, 2.0f);
+		return 1.0f - (fResult / hello);
+	}
+
+	return 1.0f - (fResult / fSampleCount);
+}
+
+//	@param	dir		direction vector
+int	DirectionToCubeMapFace(float3 dir)
+{
+	float3	absDir = abs(dir);
+	float	a = max(absDir.x, max(absDir.y, absDir.z));
+	int		cubeFace = 0;
+	
+	if(a == absDir.x)
+	{
+		cubeFace = absDir.x == dir.x ? 0 : 1;
+	}
+	else if(a == absDir.y)
+	{
+		cubeFace = absDir.y == dir.y ? 2 : 3;
+	}
+	else if(a == absDir.z)
+	{
+		cubeFace = absDir.z == dir.z ? 4 : 5;
+	}
+	
+	return cubeFace;
+}
+
+void PCSS_ComputeBlockerDepth(out float _fBlockerDepth, out uint _uiBlockerCount, in float3 _vRight, in float3 _vUp, in float3 _vForward, in float _fReceiverDepth, in float _fRegionSize)
+{	
+	_fBlockerDepth = 0.0f; _uiBlockerCount = 0;
+	//if(tPointShadowMap.SampleLevel(sPointSampler, float4(_vForward, 0), 0).r >= _fReceiverDepth)
+	{
+		//return;
+	}
+	
+	for (uint iSample = 0; iSample < SHADOW_SAMPLE_COUNT; ++iSample)
+	{
+		float2 vOffset = s_aPoisson[iSample];
+		float4 vSample = float4(_vForward + _vRight * vOffset.x * _fRegionSize + _vUp * vOffset.y * _fRegionSize, 0);
+		float fDepth = tPointShadowMap.SampleLevel(sPointSampler, vSample, 0).r;
+		if(fDepth < _fReceiverDepth)
+		{
+			_fBlockerDepth += fDepth;
+			++_uiBlockerCount;
+		}
+	}
+}
+
+float PCF_Shadow(in float3 _vRight, in float3 _vUp, in float3 _vForward, in float _fRegionSize, in float _fReceiverDepth)
+{
+	float fShadow = 0.0f;
+	for (uint iSample = 0; iSample < SHADOW_SAMPLE_COUNT; ++iSample)
+	{
+		float2 vOffset = s_aPoisson[iSample];
+		float4 vSample = float4(_vForward + _vRight * vOffset.x * _fRegionSize + _vUp * vOffset.y * _fRegionSize, 0);
+		fShadow += tPointShadowMap.SampleCmpLevelZero(sShadowSampler, vSample, _fReceiverDepth).r;
+	}
+	
+	return fShadow / SHADOW_SAMPLE_COUNT;
+}
+
+float PCSS_ShadowPoint(in float3 _vDirection, in float _fDistance)
+{
+	static float fBias = 0.05f;
+	static float fPenumbraMax = 0.125f;
+	
+	// Compute Receiver Depth with Bias
+	float fReceiverDepth = _fDistance - fBias;  
+	
+	// Compute axis
+	float3 vRight = normalize(cross(_vDirection, float3(0,1,0)));
+	float3 vUp = normalize(cross(vRight, _vDirection));
+
+	// Find Blocker Depth
+	float fBlockerDepth; uint uiBlockerCount;
+	PCSS_ComputeBlockerDepth(fBlockerDepth, uiBlockerCount, vRight, vUp, _vDirection, _fDistance, 0.1f);
+	//if(uiBlockerCount == 0)
+	{
+		return 1.0f;
+	}
+	/*else if (uiBlockerCount == SHADOW_SAMPLE_COUNT)
+	{
+		return 0.0f;
+	}*/
+	
+	fBlockerDepth /= uiBlockerCount;
+	float fPenumbra = (fReceiverDepth - fBlockerDepth) / fBlockerDepth;
+	return PCF_Shadow(vRight, vUp, _vDirection, 0.125f, fReceiverDepth);
+}
+
+float3 ComputeLightReflectance(in Fragment _kFragment, in Material _kMaterial, in float3 _vLight, in float3 _vColor)
+{	
+	_kFragment.NdotL = dot(_kMaterial.Normal, _vLight);
+	if(_kFragment.NdotL <= 0.0f)
+	{
+		return 0;
+	}	
+	
+	float3 vHalf = normalize(_kFragment.View + _vLight);
+	_kFragment.NdotH = dot(_kMaterial.Normal, vHalf);
+	_kFragment.VdotH = dot(_kFragment.View, vHalf);
+	
+	// Compute diffuse and Specular
+	float3 vDiffuse = BRDF_Diffuse(_kFragment, _kMaterial); 
+	float3 vSpecular = BRDF_Specular(_kFragment, _kMaterial); 
+	
+	// Apply to reflectance
+	return (vDiffuse + vSpecular) * ((float3)1.0f + _vColor) * _kFragment.NdotL;
+}
+
+float3 ComputeDirectionalLightReflectance(in Fragment _kFragment, in Material _kMaterial)
+{	
+	float3 vReflectance = (float3)0;
+	
+	uint uiSize, uiElementByte;
+	aDirectionalLight.GetDimensions(uiSize, uiElementByte);
+	
+	[loop]
+	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
+	{
+		DirectionalLight kLight = aDirectionalLight[uiLight]; 
+		float3 vLight = -float3(kLight.View._m02, kLight.View._m12, kLight.View._m22);
+		vReflectance += ComputeLightReflectance(_kFragment, _kMaterial, vLight, kLight.Color);
+		
+		float fShadow = ComputePercentageCloserSoftShadow(_kFragment.Position, kLight.View, kLight.Projection);
+		vReflectance *= fShadow;
+	}
+	
+	return vReflectance;
+}
+
+float3 ComputePointReflectance(in Fragment _kFragment, in Material _kMaterial)
+{	
+	float3 vReflectance = (float3)0;
+	
+	uint uiSize, uiElementByte;
+	aPointLight.GetDimensions(uiSize, uiElementByte);
+	
+	[loop]
+	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
+	{
+		PointLight kLight = aPointLight[uiLight]; 
+		
+		// Compute illuminance
+		float3 vLightToFragment = _kFragment.Position - kLight.Position;
+		float3 vLight = normalize(vLightToFragment);
+		float fDistance = length(vLightToFragment);
+		float fAttenuation = pow(max(fDistance, 0.01), 2.0f);
+		float fIlluminance = kLight.Lumen / fAttenuation;
+		
+		// Compute reflectance
+		float3 vColor = kLight.Color * fIlluminance;
+		vReflectance += ComputeLightReflectance(_kFragment, _kMaterial, -vLight, vColor);
+		
+		float fShadow = PCSS_ShadowPoint(vLight, length(vLightToFragment));
+		vReflectance *= fShadow;
+	}
+	
+	return vReflectance;
+}
+
+/******************************************************************************
+**	Pixel Shader Default
+******************************************************************************/
+PS_OUTPUT PixelDefault(VS_OUTPUT _input)
+{
+	PS_OUTPUT output = (PS_OUTPUT)0;
+
+	// Skip if rgere is no geometry
+	Fragment kFragment = (Fragment)0;
+	kFragment.Depth = tDepth.Sample(sPointSampler, _input.Texcoord).r;
+	if(kFragment.Depth >= 1.0f)
+	{
+		return output; 
+	}
+	
+	Material kMaterial = UnpackMaterial(_input.Texcoord);
+	
+	
+	
+	float fDepthLinear = ComputeLinearDepth(kFragment.Depth);
+	float3 vPosition = float3(((2.0f * _input.Texcoord.x) - 1.0f), -((2.0f * _input.Texcoord.y) - 1.0f), 1.0f);
+	vPosition.x /= PROJECTION._m00;
+	vPosition.y /= PROJECTION._m11;
+	//vPosition *= fDepthLinear;
+	
+	// Compute View
+	float3 vPositionVS = ComputeViewPosition(_input.Texcoord, kFragment.Depth);
+	//kFragment.Position = GetCameraPosition() + vPosition;
+	kFragment.Position = GetCameraPosition() + normalize(vPosition) * fDepthLinear;
+	kFragment.View = normalize(vPosition);
+	kFragment.NdotV = abs(dot(kMaterial.Normal, kFragment.View));
+	
+	// Compute Fresnel
+	kFragment.Fresnel = ComputeFresnel(kFragment, kMaterial);
+	
+	
+	// Compute Direct Light (Reflectance)
+	float3 vReflectance = (float3)0.0f;
+	//vReflectance += ComputeDirectionalLightReflectance(kFragment, kMaterial);
+	vReflectance += ComputePointReflectance(kFragment, kMaterial);
+	
+	// Compute reflection
+	float3 vReflection = reflect(kFragment.View, kMaterial.Normal);
+	float3 vTest = (float3)0.0f;//tEnvironment.Sample(sLinearSampler, vReflection).xyz;// * kFragment.NdotL;
+	
+	// Compute final color
+	float ao = 0.0f;
+    float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
+	output.DirectLighting = float4(1.0f,0.0f,0.0f,1.0f);//vAmbient + vReflectance;
+	
+	
+	
+
+	
+	// Compute Ambient Occlusion
+	// float3 vNormal = normalize(kMaterial.Normal);
+	// float3 vTangent = normalize(cross(vNormal, float3(0.99f, 0.0f, 0.0f)));
+	// float3 vBitangent = cross(vNormal, vTangent);
+	// float fAngle45 = K_PI / 4.0f;
+	// float fAperture = tan( K_PI / 4.0f);  
+	
+	// // Ambient Occlusion
+	// float fAmbientOcclusion = TraceCone(kFragment.Position, vNormal, fAperture);
+	// fAmbientOcclusion += fAngle45 * TraceCone(kFragment.Position, normalize(vNormal + vTangent), fAperture);
+	// fAmbientOcclusion += fAngle45 * TraceCone(kFragment.Position, normalize(vNormal - vTangent), fAperture);
+	// fAmbientOcclusion += fAngle45 * TraceCone(kFragment.Position, normalize(vNormal + vBitangent), fAperture);
+	// fAmbientOcclusion += fAngle45 * TraceCone(kFragment.Position, normalize(vNormal - vBitangent), fAperture);
+	// fAmbientOcclusion = 1.0f - fAmbientOcclusion;
+	// output.AmbientOcclusion = float4(fAmbientOcclusion.xxx, 1.0f);
+	// //float4 vAmbientOcclusion = float4(1.0f, 0.0f, 0.0f, 1.0f);
+	
+	// // Compute Indirect Light
+	// float fWeight = (K_PI / 20.0f);
+	// float4 vIndirect = float4(TraceCone2(kFragment.Position, vNormal), 1.0f);
+	// /*vIndirect.xyz += fWeight * TraceCone2(kFragment.Position, vNormal + vTangent);
+	// vIndirect.xyz += fWeight * TraceCone2(kFragment.Position, vNormal - vTangent);
+	// vIndirect.xyz += fWeight * TraceCone2(kFragment.Position, vNormal + vBitangent);
+	// vIndirect.xyz += fWeight * TraceCone2(kFragment.Position, vNormal - vBitangent);*/
+	// output.IndirectLighting = vIndirect;
+	
+	return output;
+}

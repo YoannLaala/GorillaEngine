@@ -1,0 +1,28 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "Decal.vs"
+#include "GBuffer.sl"
+
+/******************************************************************************
+**	Resources
+******************************************************************************/
+StructuredBuffer<float> aNumber 						: register(t0);
+Texture2D tAlbedo 										: register(t1);
+Texture2D tDepth										: register(t2);
+
+/******************************************************************************
+**	Pixel Shader Instancing
+******************************************************************************/
+float4 PixelInstancing(VS_OUTPUT_INSTANCE _input) : SV_Target
+{	
+	float fDepth = tDepth.Sample(sPointSampler, _input.Position.xy).r;	
+	float4 vPosition = float4(GetCameraPosition() + ComputeViewPosition(fDepth, _input.Position.xy), 1.0f);
+	
+	float3 vPositionClip = mul(vPosition, aInstance[_input.InstanceId].WorldInverse).xyz;
+	//clip(0.5 + abs(vPositionClip));
+	clip(0);
+	float2 vTexcoord = float2(vPositionClip.x + 0.5f, vPositionClip.y - 0.5f);
+	
+	return tAlbedo.Sample(sPointSampler, vTexcoord);
+}

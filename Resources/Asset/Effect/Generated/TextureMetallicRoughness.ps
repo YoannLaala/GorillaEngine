@@ -1,0 +1,25 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "../Geometry.vs"
+#include "../GBuffer.sl"
+
+/******************************************************************************
+**	Resources
+******************************************************************************/
+StructuredBuffer<float> aNumber : register(t0);
+Texture2D tAlbedo : register(t1);
+
+/******************************************************************************
+**	Pixel Shader Default
+******************************************************************************/
+PS_OUTPUT PixelDefault(VS_OUTPUT_INSTANCE _input)
+{	
+	float3 vColor = tAlbedo.Sample(sLinearSampler, _input.Texcoord).rgb;
+
+	PS_OUTPUT output = (PS_OUTPUT)0;
+	output.Color = float4(vColor, aNumber[0]);
+	output.Normal = float4(PackNormal(_input.Normal), aNumber[1]);
+	
+	return output;
+}

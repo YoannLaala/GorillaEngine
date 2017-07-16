@@ -1,0 +1,65 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "../Filter.vs"
+
+/******************************************************************************
+**	Resources
+******************************************************************************/
+Texture2D tLightDirect			: register(t0);
+Texture2D tLightIndirect		: register(t1);
+Texture2D tAmbientOcclusion		: register(t2);
+
+ // Reinhard tone mapping
+ float3 Reinhard(in float3 _vColor) 
+ {
+	return _vColor / (_vColor + (float3)1.0f);
+ }
+
+// ACES Filmic Tone Mapping Curve
+//
+// Adapted from code by Krzysztof Narkowicz
+// https://knarkowicz.wordpress.com/2016/01/06/
+// aces-filmic-tone-mapping-curve/
+float3 ACESFilm( float3 x )
+{
+    float a = 2.51f;
+    float b = 0.03f;
+    float c = 2.43f;
+    float d = 0.59f;
+    float e = 0.14f;
+    return saturate((x*(a*x+b))/(x*(c*x+d)+e));
+}
+
+// ACES Filmic Rec2020 Tone Mapping Curve
+//
+// Adapted from code by Krzysztof Narkowicz
+// https://knarkowicz.wordpress.com/2016/01/06/
+// aces-filmic-tone-mapping-curve/
+float3 ACESFilmRec2020( float3 x )
+{
+    float a = 15.8f;
+    float b = 2.12f;
+    float c = 1.2f;
+    float d = 5.92f;
+    float e = 1.9f;
+    return ( x * ( a * x + b ) ) / ( x * ( c * x + d ) + e );
+}
+
+static float fExposure = 0.0f;
+
+/******************************************************************************
+**	Pixel Shader Default
+******************************************************************************/
+float4 PixelDefault(VS_OUTPUT _input) : SV_Target
+{
+	float4 vLightDirect = tLightDirect.Sample(sPointSampler, _input.Texcoord);
+	float4 vLightIndirect = tLightIndirect.Sample(sPointSampler, _input.Texcoord);
+	float4 vAmnbientOcclusion = tAmbientOcclusion.Sample(sPointSampler, _input.Texcoord);
+	
+	vLightDirect.xyz = ACESFilm(exp2(fExposure) * vLightDirect.xyz);
+	return vLightDirect;
+	return vLightIndirect;
+	//return vAmnbientOcclusion;
+	return float4((vLightDirect.rgb + vLightIndirect.rgb) * vAmnbientOcclusion.rgb, 1.0f);
+}

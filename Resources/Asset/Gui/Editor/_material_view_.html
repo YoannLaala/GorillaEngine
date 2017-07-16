@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/dock-manager.css">
+    <link rel="stylesheet" href="demo.css">
+	<script src="jquery-2.2.3.min.js" type="text/javascript"></script>
+	<script src="jquery-ui.min.js" type="text/javascript"></script>
+	<script src="js/dockspawn.js" type="text/javascript"></script>
+	
+	<script src="lodash.min.js" type="text/javascript"></script>
+	<script src="backbone-min.js" type="text/javascript"></script>
+	<script src="joint.min.js" type="text/javascript"></script>
+	<script src="js/gorilla/material_editor.js" type="text/javascript" ></script>
+</head>
+
+<body>
+
+	<button onclick="Gorilla.openAsset('Gorilla::Engine::Material')">Open</button>
+
+	<div id="gorilla_menu_bar"></div> 
+
+	<!-- Content Dock -->
+	<div id="gorilla_content_dock"></div>
+	<div id="gorilla_viewport_panel" caption="Viewport" class="gorilla_viewport"></div>
+	<div id="gorilla_property_panel" caption="Properties"></div>
+    <div id="gorilla_workspace_panel" caption="Workspace">
+		<!-- <button type="button" onclick="generateshader()">Generate</button>
+		<textarea></textarea>
+		<br/>
+		<div id="paper"></div>
+		<br/> -->
+	</div>
+	<div id="gorilla_tool_panel" caption="Tools"></div>
+	
+    <script>
+        window.onload = function()
+        {	
+            // Convert a div to the dock manager.  Panels can then be docked on to it
+			var dockManageDom = $("#gorilla_content_dock")[0];
+            var dockManager = new dockspawn.DockManager(dockManageDom);
+            dockManager.initialize();
+			
+            // Let the dock manager element fill in the entire screen
+            var onResized = function(e)
+            {
+                dockManager.resize(window.innerWidth - (dockManageDom.clientLeft + dockManageDom.offsetLeft), window.innerHeight - (dockManageDom.clientTop + dockManageDom.offsetTop));
+            }
+            window.onresize = onResized;
+            onResized(null);
+
+			// Viewport Panel
+			var viewportPanelDom = $("#gorilla_viewport_panel")[0];
+			var viewportPanel = new dockspawn.PanelContainer(viewportPanelDom, dockManager);
+			
+			// Property Panel
+			var propertyPanelDom = $("#gorilla_property_panel")[0];
+			var propertyPanel = new dockspawn.PanelContainer(propertyPanelDom, dockManager);
+			
+			// Workspace Panel
+			var workspacePanelDom = $("#gorilla_workspace_panel")[0];
+			var workspacePanel = new dockspawn.PanelContainer(workspacePanelDom, dockManager);
+			
+			// Tool Panel
+			var toolPanelDom = $("#gorilla_tool_panel")[0];
+			var toolPanel = new dockspawn.PanelContainer(toolPanelDom, dockManager);
+			
+			 // Dock the panels on the dock manager
+            var dockManagerNode = dockManager.context.model.documentManagerNode;
+            var viewportNode = dockManager.dockLeft(dockManagerNode, viewportPanel, 0.75);
+			var propertyNode = dockManager.dockDown(viewportNode, propertyPanel, 0.50);
+			var toolNode = dockManager.dockRight(dockManagerNode, toolPanel, 0.15);
+            var workspaceNode = dockManager.dockFill(dockManagerNode, workspacePanel);
+			
+			// Debug function
+			if(navigator.userAgent != "Gorilla")
+			{
+				function GorillaEngine()
+				{				
+					this.createWindow = function(title, width, height)
+					{
+						window.console.log("Gorilla::create_window", title, width, height);
+					}
+					
+					this.createViewport = function(left, top, width, height)
+					{
+						window.console.log("Gorilla::create_viewport", left, top, width, height);
+					}
+					
+					this.openAsset = function(type)
+					{
+						window.console.log("Gorilla::openAsset", type);
+					}
+					
+					this.onOpenAsset = function(file)
+					{
+						alert("file", file);
+					}
+					
+					this.updateShader = function(buffer)
+					{
+						window.console.log("Gorilla::updateShader", buffer);
+					}
+					
+					this.updateMaterial = function(buffer)
+					{
+						window.console.log("Gorilla::updateMaterial", buffer);
+					}
+				}
+				
+				Gorilla = new GorillaEngine();
+			}
+			
+			// Create the editor
+			var editor = new GorillaMaterialEditor(workspacePanelDom, toolPanelDom, 
+			{
+				'onShaderChanged': function(shader, items)
+				{
+					Gorilla.updateShader(shader);
+					Gorilla.updateMaterial(items);
+				},
+				
+				'onSelectionChanged': function(selection)
+				{
+					var propertyElement = $(propertyPanelDom);
+					propertyElement.html("");
+					if(selection != undefined)
+					{
+						switch(selection.descriptor.name)
+						{
+							case "Number":
+							{							
+								var element = $("<input type='Number' step='0.1' min='0' max='1.0' value='" + selection.value + "' />");
+								element.change(function() 
+								{
+									selection.value = parseFloat(this.value);
+									//Gorilla.updateMaterial();
+								});
+								
+								propertyElement.html(element);
+								break;
+							}
+						}
+					}					
+				}
+			});
+			
+			//!	@brief		Create all viewport
+			//!	@date		2015-04-04
+			$("div.gorilla_viewport").each(function()
+			{
+				var position = $(this).position();
+				Gorilla.createViewport(position.left, position.top, $(this).width(), $(this).height());
+			});
+			
+			//!	@brief		Create a window when a float window is about to be created
+			//!	@date		2015-04-04
+			dockManager.onDialogDragStarted = function(sender, event) 
+			{
+				var panel = sender.panel;
+				Gorilla.createWindow(panel.title, panel.width, panel.height);
+				sender.destroy();
+			}
+        }
+    </script>
+
+</body>
+</html>

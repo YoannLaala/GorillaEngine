@@ -1,0 +1,14 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "DisplayVoxelFragmentList.vs"
+
+/******************************************************************************
+**	Pixel Shader
+******************************************************************************/
+float4 PixelDefault(VS_OUTPUT_INSTANCE _input) : SV_Target
+{	
+	VoxelFragment kVoxel = aVoxelFragment[_input.InstanceId];
+	//return float4((float3)kVoxel.Color / kVoxel.Count / 255.0f, 1.0f);
+	return float4(1.0, 0.0f, 0.0f, 1.0f);
+}

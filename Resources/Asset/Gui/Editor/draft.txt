@@ -1,0 +1,97 @@
+Component::Mesh
+{
+	Geometry - > define material number
+	
+	PushCommand(RenderContext* _pContext)
+	{
+		Material* pCpnMaterial = GetComponent<Material>();
+		AssetHandle<Effect>& hEffect = pCpnMaterial->GetEffect();
+		
+		_pContext->PushGeometry(m_hGeometry->GetData(), hEffect->GetData(), 
+	}
+	
+	AssetHanlde<Geometry> m_hGeometry;
+	Vector<AssetHanlde<Material>> m_hMaterial;
+}
+
+class Effect
+{
+	struct EParameter
+	{
+		enum Type : uint8
+		{
+			Number
+		};
+	};
+
+	class Parameter
+	{	
+		String m_sName;
+		EParameter::Type m_eType;
+	};
+	
+	Effect::Effect()
+	{
+		memset(m_aShader, 0, sizeof(Renderer::Shader*) * EShader::Count);
+	}
+	
+	bool deserialize(stream)
+	{
+		uint32 uiCount;
+		stream.Read(uiCount);
+		
+		uint32 uiBufferSize;
+		stream.Read(uiBufferSize);
+		uint8* pBuffer = new uint8[uiBufferSize];
+	
+		// Read all shader
+		for(uint32 uiShader = 0; uiShader < uiCount; ++uiShader)
+		{
+			uint8 uiType;
+			stream.Read(uiType);
+			
+			// Read the shader
+			uint32 uiSize;
+			stream.Read(uiSize);
+			stream.Read(pBuffer, uiSize);
+		
+			m_aShader[uiType] = GetRenderer()->CreateShader(pBuffer, uiSize);			
+		}
+		
+		stream.read(m_vParameter);
+	}
+
+private:
+	Renderer::Shader* m_aShader[EShader::Count];
+	Vector<Parameter> m_vParameter;
+};
+
+class Asset::Material
+{
+	struct Parameter
+	{
+		class Value
+		{
+			uint64 m_uiValue;
+			union
+			{
+				float32 m_fValue;
+				void* m_pValue;
+			};
+		};
+	
+		Value m_kValue;
+		EParameter::Type m_eType;
+	};
+
+	bool deserialize(stream)
+	{
+		stream.Read(m_hEffect);
+		stream.read(m_vParameter);
+		
+	}
+
+private:
+	AssetHanlde<Effect> m_hEffect;
+	Vector<Parameter> m_vParameter;	
+};

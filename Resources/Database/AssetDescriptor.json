@@ -1,0 +1,93 @@
+{
+	"Gorilla::Engine::CubeMap" :
+	{
+		"Inputs" : ["dds"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Texture/Texture.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
+		}
+	},
+	
+	"Gorilla::Engine::Effect":
+	{
+		"Inputs" : ["fx"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Effect/Effect.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER] -project_path $[PROJECT_PATH]"
+		}
+	},
+	
+	"Gorilla::Engine::Material" :
+	{
+		"Inputs" : ["mat"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Texture/nvdxt.exe",
+			"Parameters" : "-file $[INPUT] -outdir $[OUTPUT_DIRECTORY] -output $[OUTPUT_FILENAME] $[PARAMETER] -overwrite"
+		}
+	},
+	
+	"Gorilla::Engine::Mesh":
+	{
+		"Inputs" : ["fbx"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Mesh/Mesh.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
+		}
+	},
+	
+	"Gorilla::Engine::Module":
+	{
+		"Inputs" : ["module"],
+		"IsExternal" : true,
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Module/Module.exe",
+			"Parameters" : "-input \"$[INPUT]\" -output \"$[OUTPUT]\" $[PARAMETER]"
+		}
+	},
+
+	"Gorilla::Engine::Shader":
+	{
+		"Inputs" : ["hlsl"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Shader/Shader.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
+		}
+	},
+
+	"Gorilla::Engine::Texture" :
+	{
+		"Inputs" : ["tga", "bmp", "gif", "ppm", "jpg", "tif", "cel", "dds", "png", "psd", "rgb", "bw", "rgba"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Texture/Texture.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
+		}
+	},
+	
+	"Gorilla::Engine::WebDocument" :
+	{
+		"Inputs" : ["html"],
+		"IsExternal" : true,
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Web/Web.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
+		}
+	},
+	
+	"Gorilla::Engine::World":
+	{
+		"Inputs" : ["world"],
+		"Cooker" : 
+		{
+			"Path" : "Cooker/Json2Binary/Json2Binary.exe",
+			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
+		}
+	}
+}

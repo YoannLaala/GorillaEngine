@@ -1,0 +1,3 @@
+[submodule "Sources/Engine/Core"]
+	path = Sources/Engine/Core
+	url = https://github.com/YoannLaala/GorillaCore.git

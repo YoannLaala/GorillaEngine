@@ -1,0 +1,33 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "DisplayVoxel.vs"
+
+Texture2D tShadow : register(t0);
+
+struct DirectionalLight
+{
+	float3 	Direction;
+};
+StructuredBuffer<DirectionalLight> aDirectionalLight : register(t1);
+
+/*struct LightTest
+{
+	float4x4 View;
+	float4x4 Projection;
+};
+StructuredBuffer<LightTest> aTest : register(t0);*/
+
+/******************************************************************************
+**	Pixel Shader
+******************************************************************************/
+float4 PixelDefault(VS_OUTPUT_INSTANCE _input) : SV_Target
+{	
+	Voxel kVoxel = aVoxel[_input.InstanceId];
+	if(kVoxel.Occlusion == 0)
+	{
+		clip(-1);
+	}
+	
+	return float4(kVoxel.Color, 1.0f);
+}

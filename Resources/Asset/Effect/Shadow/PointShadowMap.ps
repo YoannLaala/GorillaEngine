@@ -1,0 +1,18 @@
+/******************************************************************************
+**	Includes
+******************************************************************************/
+#include "PointShadowMap.gs"
+#include "PoissonDisc.sl"
+
+/******************************************************************************
+**	Resources
+******************************************************************************/
+RWTexture2DArray<float> aShadowMap : register(u0);
+
+/******************************************************************************
+**	Pixel Shader Instancing
+******************************************************************************/
+void PixelDefault(GS_OUTPUT _input)
+{
+	aShadowMap[int3(_input.Position.xy ,_input.ViewIndex)] = length(_input.PositionWorld - aPointLight[_input.LightIndex].Position);
+}
