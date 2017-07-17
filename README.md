@@ -24,10 +24,10 @@ premake5 --file=Premake/Solution/Cooker.lua vs2013
 ```
 Alternatively you can use directly the batch located in Premake/Windows/
 ```
-Cooker.VS2013.UnityBuild.bat
 Engine.VS2013.UnityBuild.bat
+Cooker.VS2013.UnityBuild.bat
 ```
-The unity build is based on [UnityMake][https://github.com/YoannLaala/UnityMake] to reduce compilation time.
+The unity build is based on [UnityMake](https://github.com/YoannLaala/UnityMake) to reduce compilation time.
 
 ## Engine Solution
 The Engine solution is composed of severals projects:
