@@ -32,6 +32,6 @@
 *.app
 
 # Gorilla Engine
-Solution/
-Binaries/
-ThirdParty/
+/Solution/
+/Binaries/
+/ThirdParty/
