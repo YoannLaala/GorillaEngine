@@ -51,24 +51,6 @@ function get_binaries_path()
 	return _ENGINE_PATH_ .. "Binaries/%{cfg.buildcfg}/"
 end
 
--- The path for the scripts
-function get_scripts_path()
-	script_path = _ENGINE_PATH_ .. "Scripts/"
-	if os.is("windows") then script_path = script_path .. "Pc/" end
-	if os.is("macosx") then script_path = script_path .. "Mac/" end
-	return script_path
-end
-
--- The path for the Cookers
-function get_cooker_path()
-	return "../" .. get_binaries_path() .. "Cooker/"
-end
-
--- The path for the AssetCooker
-function get_asset_cooker_path()
-	return "../" .. get_scripts_path() .. "AssetCooker.exe"
-end
-
 -- The path for the resources
 function get_resources_path()
 	return _ENGINE_PATH_ .. "Resources/"
@@ -79,9 +61,24 @@ function get_libraries_path()
 	return _ENGINE_PATH_ .. "Libraries/"
 end
 
--- The path for the libraries
+-- The path for the third party libraries
 function get_third_party_libraries_path()
 	return _ENGINE_PATH_ .. "ThirdParty/Libraries/"
+end
+
+-- The path for the third party binaries
+function get_third_party_binaries_path()
+	return _ENGINE_PATH_ .. "ThirdParty/Binaries/"
+end
+
+-- The path for the Cookers
+function get_cooker_path()
+	return "../" .. get_binaries_path() .. "Cooker/"
+end
+
+-- The AssetCooker Executable filepath
+function get_asset_cooker()
+	return "../" .. get_third_party_binaries_path() .. "premake/AssetCooker.exe"
 end
 
 -- Get a Static lib path from the solution
@@ -124,7 +121,7 @@ end
 
 -- cook an asset
 function cook_asset(asset_type, asset_path)
-	postbuildcommands {"call \"" .. get_asset_cooker_path() .. "\" -type \"" .. asset_type .. "\" -input \"" .. asset_path .."\" -configuration \"%{cfg.buildcfg}\""}
+	postbuildcommands {"call \"" .. get_asset_cooker() .. "\" -type \"" .. asset_type .. "\" -input \"" .. asset_path .."\" -configuration \"%{cfg.buildcfg}\""}
 end
 
 -- cook a module

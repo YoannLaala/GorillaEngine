@@ -83,15 +83,17 @@ project("_SolutionPostBuild")
 	}
 	
 	filter { "files:**.fx" }
-		buildcommands { "call \"" .. get_asset_cooker_path() .. "\" -type \"Effect\" -input \"%{file.relpath}\" -configuration \"%{cfg.buildcfg}\"" }
+		buildcommands { "call \"" .. get_asset_cooker() .. "\" -type \"Effect\" -input \"%{file.relpath}\" -configuration \"%{cfg.buildcfg}\"" }
+		buildoutputs { "%{cfg.objdir}/%{file.basename}.asset" }
 		
 	filter { "files:**.vs or **.gs or **.ps or **.cs" }
-		buildcommands { "call \"" .. get_asset_cooker_path() .. "\" -type \"Shader\" -input \"%{file.relpath}\" -configuration \"%{cfg.buildcfg}\"" }
-		buildcommands { "call \"" .. get_asset_cooker_path() .. "\" -type \"Shader\" -input \"%{file.relpath} -technique Instancing\" -configuration \"%{cfg.buildcfg}\"" }
+		buildcommands { "call \"" .. get_asset_cooker() .. "\" -type \"Shader\" -input \"%{file.relpath}\" -configuration \"%{cfg.buildcfg}\"" }
+		buildcommands { "call \"" .. get_asset_cooker() .. "\" -type \"Shader\" -input \"%{file.relpath} -technique Instancing\" -configuration \"%{cfg.buildcfg}\"" }
+		buildoutputs { "%{cfg.objdir}/%{file.basename}.asset" }
 	
 	filter { "files:**_**_.html" }
-		buildcommands { "call \"" .. get_asset_cooker_path() .. "\" -type \"WebDocument\" -input \"%{file.relpath}\" -configuration \"%{cfg.buildcfg}\"" }
-	
+		buildcommands { "call \"" .. get_asset_cooker() .. "\" -type \"WebDocument\" -input \"%{file.relpath}\" -configuration \"%{cfg.buildcfg}\"" }
+		
 	buildoutputs { "%{cfg.objdir}/%{file.basename}.asset" }
 	
 	-- Chromium Embedded Framework

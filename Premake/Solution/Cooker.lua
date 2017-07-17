@@ -31,7 +31,7 @@ project "AssetCooker"
 	declare_link({ "Helper" })
 	links({ "d3d11.lib" , "Shlwapi.lib" })
 
-	declare_output(get_scripts_path())
+	declare_output( get_third_party_binaries_path() .. "premake/")
 
 -- CubeMap
 project "CubeMap"

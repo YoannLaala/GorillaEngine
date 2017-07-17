@@ -41,7 +41,8 @@ int main(int argc, const char** argv)
 	// Executable path
 	String sDirectory;
 	FileManager::GetDirectory(FileManager::Directory::Executable, sDirectory);
-	sDirectory.Append("..\\..\\"); // Gorilla Engine Directory
+	sDirectory.Append("..\\..\\..\\"); // Gorilla Engine Directory
+	Path::Format(sDirectory);
 
 	// Output Path
 	String sProjectPath(sDirectory);
