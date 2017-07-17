@@ -114,20 +114,20 @@ function exclude(relative_path)
 	end
 end
 
--- Copy file during postbuld command
+-- Copy file during prebuild command
 function copy_file(input, output)
-    postbuildcommands { "{COPY} ../../../" .. input .. " ../" .. get_binaries_path() .. output }
+    prebuildcommands { "{COPY} ../../../" .. input .. " ../" .. get_binaries_path() .. output }
 end
 
 -- cook an asset
 function cook_asset(asset_type, asset_path)
-	postbuildcommands {"call \"" .. get_asset_cooker() .. "\" -type \"" .. asset_type .. "\" -input \"" .. asset_path .."\" -configuration \"%{cfg.buildcfg}\""}
+	prebuildcommands {"call \"" .. get_asset_cooker() .. "\" -type \"" .. asset_type .. "\" -input \"" .. asset_path .."\" -configuration \"%{cfg.buildcfg}\""}
 end
 
 -- cook a module
 function cook_reflection(input_path, output_path)
 	local absolute_path  = path.getabsolute(".")
-	postbuildcommands {"call \"" .. get_cooker_path() .. "Reflection/Reflection.exe\" -input \"" .. absolute_path .. "/" .. input_path .."\" -output \"" .. absolute_path .. "/" .. output_path .. "\""}
+	prebuildcommands {"call \"" .. get_cooker_path() .. "Reflection/Reflection.exe\" -input \"" .. absolute_path .. "/" .. input_path .."\" -output \"" .. absolute_path .. "/" .. output_path .. "\""}
 end
 
 -- Declare a project
@@ -196,8 +196,6 @@ solution(solution_name)
 		defines { "MASTER" }
 		optimize "Full"
 
-	os.execute("C:/Users/KOJIMAH/Documents/GorillaEngine/ThirdParty/Binaries/premake/UnityMake.bat C:/Users/KOJIMAH/Documents/GorillaEngine/Sources/Engine/Core/ C:/Users/KOJIMAH/Documents/GorillaEngine/Solution/Engine/Core/")
-		
 	-- Declare all Project to the solution
 	for project_name, project_kind in pairs(project_list) do
 		declare_project(project_name, project_kind)
@@ -217,8 +215,7 @@ function declare_files(directory)
 		local input_path = path.getabsolute(directory) .. "/"
 		local output_path = path.getabsolute(project_path) .. "/"
 		local unity_make = path.getabsolute(_ENGINE_PATH_ .. "ThirdParty/Binaries/premake/UnityMake.exe")
-		-- print (unity_make .. " --input " .. input_path .. " --output " .. output_path)
-		-- os.execute(unity_make .. " --input " .. input_path .. " --output " .. output_path)
+		os.execute(unity_make .. " --input " .. input_path .. " --output " .. output_path)
 		files
 		{ 
 			project_path .. "_unity_files_/**.cpp",

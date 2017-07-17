@@ -17,12 +17,17 @@ Gorilla is a 3D Game Engine designed to be performant, easy to use & extend. It 
   * Engine/       -> All cpp source files for the engine
 
 ## Solution Generation
-Gorilla is using premake5 to generate the differents solutions.
+Gorilla is using premake5 to generate the differents solutions. You can use directly the solution files provided in Premake/Solution/
 ```
-premake5 --file=Solution/Engine.lua vs2013
-premake5 --file=Solution/Cooker.lua vs2013
+premake5 --file=Premake/Solution/Engine.lua vs2013
+premake5 --file=Premake/Solution/Cooker.lua vs2013
 ```
-You can use the option --unity-build for a faster build. Alternatively you can use directly the batch located in Premake/Windows/
+Alternatively you can use directly the batch located in Premake/Windows/
+```
+Cooker.VS2013.UnityBuild.bat
+Engine.VS2013.UnityBuild.bat
+```
+The unity build is based on [UnityMake][https://github.com/YoannLaala/UnityMake] to reduce compilation time.
 
 ## Engine Solution
 The Engine solution is composed of severals projects:
@@ -32,8 +37,6 @@ The Engine solution is composed of severals projects:
 * Editor (App)                  -> Editor to create games & applications
 * Game (App)                    -> Executable when build a project from the Editor
 * Renderer (Static)             -> Renderer with DX11 implementation
-* Shader (Custom)               -> Intrinsic Shaders
-* Style (Custom)                -> Intrinsic User Interface
 * Viewer (App)                  -> Sandbox for the Engine without the Editor
 * Web (Static)                  -> Handle Web views logic and rendering
 
