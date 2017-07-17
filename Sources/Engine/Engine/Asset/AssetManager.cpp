@@ -123,6 +123,15 @@ namespace Gorilla { namespace Engine
 
 		// Watch the asset directory to reload them on the fly
 		GetFileManager()->AddFileWatcher(this, m_aPath[EPath::Asset].GetBuffer(), true);
+
+	#if defined(GORILLA_EDITOR) && !defined(MASTER)
+		// Watch Intrinsic Assets directory in production
+		String sDirectory;
+		FileManager::GetDirectory(FileManager::Directory::Executable, sDirectory);
+		sDirectory.Append("..\\..\\Resources\\Asset\\");
+		Path::Format(sDirectory);
+		GetFileManager()->AddFileWatcher(this, sDirectory.GetBuffer(), true);
+	#endif
 	}
 #endif
 
