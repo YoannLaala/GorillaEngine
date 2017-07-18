@@ -62,6 +62,7 @@ namespace Gorilla { namespace Engine
 			{
 				Intrinsic	= 1 << 0,
 				External	= 1 << 1,
+				Changed		= 1 << 2,
 			};
 		};
 

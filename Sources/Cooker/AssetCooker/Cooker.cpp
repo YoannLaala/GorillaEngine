@@ -101,7 +101,9 @@ int main(int argc, const char** argv)
 	}
 
 	// Compute AssetId
-	uint32 uiAssetId = Hash::Generate(sInput);
+	String sAssetIntrinsic("@"); // Intrinsic Asset;
+	sAssetIntrinsic.Append(sInput);
+	uint32 uiAssetId = Hash::Generate(sAssetIntrinsic);
 
 	// Build path for the asset
 	Path kRelativeInputPath = sInput;
