@@ -43,7 +43,8 @@ namespace Gorilla { namespace Engine
 		// Create all DataBase
 		String sDirectory, sFilePath;
 		FileManager::GetDirectory(FileManager::Directory::Executable, sDirectory);
-		m_aPath[EPath::Intrinsic].Set(sDirectory).Append("Resources\\Asset\\"); 
+		m_aPath[EPath::AssetIntrinsic].Set(sDirectory).Append("..\\..\\Resources\\Asset\\"); 
+		m_aPath[EPath::CookedIntrinsic].Set(sDirectory).Append("Resources\\Asset\\"); 
 		m_aDatabase[EDatabase::File] = new Database<Table>();
 		m_aDatabase[EDatabase::Time] = new Database<Table>();
 
@@ -93,8 +94,15 @@ namespace Gorilla { namespace Engine
 	{	
 		m_bIsRunning = false;
 
-		// Remove Watcher
-		GetFileManager()->RemoveFileWatcher(this, m_aPath[EPath::Asset].GetBuffer());
+		// Remove Watchers
+		if(m_aPath[EPath::Asset].IsEmpty())
+		{
+			GetFileManager()->RemoveFileWatcher(this, m_aPath[EPath::Asset].GetBuffer());
+		
+	#if !defined(MASTER)
+			GetFileManager()->RemoveFileWatcher(this, m_aPath[EPath::AssetIntrinsic].GetBuffer());
+	#endif
+		}
 
 		// Serialize all DataBase
 		/*String sDirectory, sFilePath;
@@ -108,14 +116,24 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-21
 	void AssetManager::SetPath(const char* _szPath)
 	{
-		static const char* aPath[AssetManager::EPath::Intrinsic] = 
+		static const char* aPath[AssetManager::EPath::AssetIntrinsic] = 
 		{
 			"Asset",
 			"Cooked"
 		};
 
+		// Remove Watchers
+		if(m_aPath[EPath::Asset].IsEmpty())
+		{
+			GetFileManager()->RemoveFileWatcher(this, m_aPath[EPath::Asset].GetBuffer());
+		
+	#if !defined(MASTER)
+			GetFileManager()->RemoveFileWatcher(this, m_aPath[EPath::AssetIntrinsic].GetBuffer());
+	#endif
+		}
+
 		// Build mandatory path
-		for(uint32 ePath = 0; ePath < EPath::Intrinsic; ++ePath)
+		for(uint32 ePath = 0; ePath < EPath::AssetIntrinsic; ++ePath)
 		{
 			m_aPath[ePath].Set(_szPath).Append(aPath[ePath]).Append(REPERTORY_SEPARATOR);
 		}
@@ -124,13 +142,8 @@ namespace Gorilla { namespace Engine
 		// Watch the asset directory to reload them on the fly
 		GetFileManager()->AddFileWatcher(this, m_aPath[EPath::Asset].GetBuffer(), true);
 
-	#if defined(GORILLA_EDITOR) && !defined(MASTER)
-		// Watch Intrinsic Assets directory in production
-		String sDirectory;
-		FileManager::GetDirectory(FileManager::Directory::Executable, sDirectory);
-		sDirectory.Append("..\\..\\Resources\\Asset\\");
-		Path::Format(sDirectory);
-		GetFileManager()->AddFileWatcher(this, sDirectory.GetBuffer(), true);
+	#if !defined(MASTER)
+		GetFileManager()->AddFileWatcher(this, m_aPath[EPath::AssetIntrinsic].GetBuffer(), true);
 	#endif
 	}
 #endif
@@ -215,7 +228,7 @@ namespace Gorilla { namespace Engine
 
 			// Build path for the asset
 			String sAssetPath;
-			sAssetPath.Set(m_aPath[bIntrinsic ? EPath::Intrinsic : EPath::Cooked]).Append(kRelativeInputPath.GetDirectory()).Append(kRelativeInputPath.GetFileName()).Append('_').Append(uiId).Append(".asset");
+			sAssetPath.Set(m_aPath[bIntrinsic ? EPath::CookedIntrinsic : EPath::Cooked]).Append(kRelativeInputPath.GetDirectory()).Append(kRelativeInputPath.GetFileName()).Append('_').Append(uiId).Append(".asset");
 			pAsset->SetFilePath(sAssetPath.GetBuffer());
 			pAsset->SetName(_szRelativeFilePath);
 
@@ -736,14 +749,14 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		OnFileChanged
 	//!	@date		2015-11-21
-	void AssetManager::OnFileChanged(FileWatcher::Notification::Type _eType, const char* _szFilePath)
+	void AssetManager::OnFileChanged(FileWatcher::Notification::Type _eType, const char* /*_szDirectoryPath*/, const char* _szRelativePath)
 	{
 	#if defined(GORILLA_EDITOR)
 		switch(_eType)
 		{
 			case FileWatcher::Notification::Modified:
 			{
-				uint32 uiFileId = Hash::Generate(_szFilePath);
+				uint32 uiFileId = Hash::Generate(_szRelativePath);
 				Table* pTable = GetTable<Table>(EDatabase::File, uiFileId);
 				if(pTable)
 				{

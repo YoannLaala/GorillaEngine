@@ -44,7 +44,8 @@ namespace Gorilla { namespace Engine
 			{
 				Asset = 0,
 				Cooked,
-				Intrinsic,
+				AssetIntrinsic,
+				CookedIntrinsic,
 
 				Count,
 			};
@@ -137,7 +138,7 @@ namespace Gorilla { namespace Engine
 		inline TYPE*			GetOrCreateTable(EDatabase::Type _eDatabase, uint32 _uiTableId) { return static_cast<Database<TYPE>*>(m_aDatabase[_eDatabase])->GetOrCreateTable(_uiTableId); }
 
 		// IFileWatcher
-		virtual void			OnFileChanged(FileWatcher::Notification::Type _eType, const char* _szFilePath) override;
+		virtual void			OnFileChanged(FileWatcher::Notification::Type _eType, const char* _szDirectoryPath, const char* _szRelativePath) override;
 
 		inline void PushEvent(EEvent::Type _eType, Asset* _pAsset, bool _bSucceeded)
 		{
