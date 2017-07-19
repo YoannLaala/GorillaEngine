@@ -227,7 +227,10 @@ namespace Gorilla { namespace Engine
 			pAsset->SetState(Asset::EState::Unloaded);
 			pAsset->SetId(uiAssetId);
 			if(bIntrinsic) pAsset->SetFlag(Asset::EFlag::Intrinsic);
-			//if(pDescriptor->IsExternal()) pAsset->SetFlag(Asset::EFlag::External);
+		
+		#if defined(GORILLA_EDITOR)
+			if(pDescriptor->IsExternal()) pAsset->SetFlag(Asset::EFlag::External);
+		#endif
 
 			// Build the relative path
 			Path kRelativeInputPath = _szRelativeFilePath;

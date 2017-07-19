@@ -481,8 +481,31 @@ namespace Gorilla { namespace Editor
 				kWriter.Close();
 			}
 			
+			// Retrieve all files with proper extension and make them relative
+			Vector<String> vFile;
+			FileManager::GetAllFiles(GetAssetManager()->GetPath().GetBuffer(), vFile, true, "hpp;cpp");
+			const uint32 uiFileCount = vFile.GetSize();
+			if(uiFileCount)
+			{
+				for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) GetAssetManager()->FormatToRelative(vFile[uiFile]);
+
+				// Build path
+				String sModule, sModuleRelative;
+				sModuleRelative.Set("Script").Append(".module");
+				sModule.Set(sModuleRelative);
+				GetAssetManager()->FormatToAbsolute(sModule);
+
+				// Update Module file
+				Dictionary dFile;
+				dFile["files"] = vFile;
+				dFile.Write<DictionaryStreamJson>(sModule.GetBuffer());
+
+				// Load module
+				GetEngine()->RemoveModule(sModuleRelative.GetBuffer());
+				GetEngine()->AddModule(sModuleRelative.GetBuffer());
+			}
+
 			this->m_sScript.Set("Gorilla::Component::").Append(sFileName);
-			GetEngine()->LoadModule();
 		});
 
 		pPage->CreateCallback("Gorilla.play", [pWorld](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
@@ -855,7 +878,13 @@ namespace Gorilla { namespace Editor
 			// Apply the project path to the asset manager
 			Path sPath(sProject);
 			GetAssetManager()->SetPath(sPath.GetDirectory().GetBuffer());
-			GetEngine()->LoadModule();
+
+			String sModule;
+			sModule.Set(GetAssetManager()->GetPath().GetBuffer()).Append("Script.module");
+			if(FileManager::IsFileExist(sModule.GetBuffer()))
+			{
+				GetEngine()->AddModule("Script.module");
+			}
 
 			// Load Current world for this project
 			const char* szWorld = dProject["World"];

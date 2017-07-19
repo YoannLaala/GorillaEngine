@@ -77,10 +77,11 @@ namespace Gorilla { namespace Engine
 		}
 
 		// Read Module to get all files
-		Vector<String> vLink;
 		Dictionary dModule;
 		dModule.Read<DictionaryStreamJson>(GetSourcePath().GetBuffer());
-		dModule["files"] = vLink;
+		
+		Vector<String> vLink;
+		dModule["files"].GetBufferString(vLink);
 
 		// Link all file as dependencies
 		const uint32 uiLinkCount = vLink.GetSize();
@@ -88,6 +89,8 @@ namespace Gorilla { namespace Engine
 		{
 			AddLink(vLink[uiLink].GetBuffer());
 		}
+
+		GetEngine()->LoadDescriptor();
 	}
 
 	//!	@brief		Release

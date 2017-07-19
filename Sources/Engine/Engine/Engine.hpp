@@ -77,7 +77,8 @@ namespace Gorilla { namespace Engine
 		uint32						GetLayer			(const char* _szName) const;
 		uint32						AddLayer			(const char* _szName);
 
-		void						LoadModule			();
+		void						AddModule			(const char* _szRelativePath);
+		void						RemoveModule		(const char* _szRelativePath);
 		void						LoadDescriptor		();
 		inline Node					GetComponentDescriptor(const char* _szName) const { return m_dComponentDescriptor.Get(_szName); }
 	#if defined(GORILLA_EDITOR)

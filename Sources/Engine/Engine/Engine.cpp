@@ -230,43 +230,32 @@ namespace Gorilla { namespace Engine
 		return uiLayerId;
 	}
 
-	//!	@brief		UpdateModule
+	//!	@brief		AddModule
 	//!	@date		2015-11-11
-	void Engine::LoadModule()
+	void Engine::AddModule(const char* _szRelativePath)
 	{
-	#if defined(GORILLA_EDITOR)
-		// Retrieve all files with proper extension and make them relative
-		Vector<String> vFile;
-		FileManager::GetAllFiles(GetAssetManager()->GetPath().GetBuffer(), vFile, true, "hpp;cpp");
-		const uint32 uiFileCount = vFile.GetSize();
-		if(uiFileCount)
-		{
-			for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) GetAssetManager()->FormatToRelative(vFile[uiFile]);
-
-			// Build path
-			String sModule, sModuleRelative;
-			sModuleRelative.Set("Script").Append(".module");
-			sModule.Set(sModuleRelative);
-			GetAssetManager()->FormatToAbsolute(sModule);
-
-			// Update Module file
-			Dictionary dFile;
-			dFile["files"] = vFile;
-			dFile.Write<DictionaryStreamJson>(sModule.GetBuffer());
-
-			// Load it the first time
-			if(m_vModule.IsEmpty())
-			{
-				AssetHandle<Module> hAsset = GetAssetManager()->Get<Module>(sModuleRelative.GetBuffer());
-				m_vModule.Add(hAsset);
-			}
-		}
-
-		LoadDescriptor();
-	#endif
+		AssetHandle<Module> hAsset = GetAssetManager()->Get<Module>(_szRelativePath);
+		m_vModule.Add(hAsset);
 	}
 
-	//!	@brief		UpdateModule
+	//!	@brief		RemoveModule
+	//!	@date		2015-11-11
+	void Engine::RemoveModule(const char* _szRelativePath)
+	{
+		const uint32 uiModuleCount = m_vModule.GetSize();
+		for(uint32 uiModule = 0; uiModule < uiModuleCount; ++uiModule)
+		{
+			AssetHandle<Module>& hAsset = m_vModule[uiModule];
+			if(hAsset->GetName() == _szRelativePath)
+			{
+				hAsset.Release();
+				m_vModule.RemoveIndex(uiModule);
+				break;
+			}
+		}
+	}
+
+	//!	@brief		LoadDescriptor
 	//!	@date		2015-11-11
 	void Engine::LoadDescriptor()
 	{
