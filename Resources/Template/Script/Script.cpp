@@ -9,7 +9,7 @@
 ******************************************************************************/
 namespace Gorilla { namespace Component
 {	
-	REGISTER_COMPONENT(Gorilla::Component::${NAME})
+	COMPONENT_REGISTER(Gorilla::Component::${NAME})
 
 	//!	@brief		Constructor
 	//!	@date		2015-04-04

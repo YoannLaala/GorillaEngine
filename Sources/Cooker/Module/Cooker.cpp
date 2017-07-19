@@ -96,7 +96,8 @@ int main(int argc, const char** argv)
 	sLink.Append("\"").Append(sLibrary).Append("Renderer.lib\",");
 	sLink.Append("\"").Append(sLibrary).Append("Engine.lib\",");
 	sLink.Append("\"").Append(sLibrary).Append("Web.lib\",");
-	sLink.Append("\"d3d11.lib\"");
+	sLink.Append("\"d3d11.lib\",");
+	sLink.Append("\"Shlwapi.lib\"");
 	sContent.Replace("${ENGINE_LINK}", sLink.GetBuffer());
 	sContent.Replace("\\", "/");
 	

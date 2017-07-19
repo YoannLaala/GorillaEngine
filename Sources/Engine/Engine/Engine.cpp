@@ -241,12 +241,13 @@ namespace Gorilla { namespace Engine
 		const uint32 uiFileCount = vFile.GetSize();
 		if(uiFileCount)
 		{
-			for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) vFile[uiFile].Remove(GetAssetManager()->GetPath().GetBuffer());
+			for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) GetAssetManager()->FormatToRelative(vFile[uiFile]);
 
 			// Build path
 			String sModule, sModuleRelative;
-			sModuleRelative.Set("Interstellar").Append(".module");
-			sModule.Set(GetAssetManager()->GetPath()).Append(sModuleRelative);		
+			sModuleRelative.Set("Script").Append(".module");
+			sModule.Set(sModuleRelative);
+			GetAssetManager()->FormatToAbsolute(sModule);
 
 			// Update Module file
 			Dictionary dFile;

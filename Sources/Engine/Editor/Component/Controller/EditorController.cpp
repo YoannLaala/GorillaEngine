@@ -39,7 +39,8 @@
 /******************************************************************************
 **	Define
 ******************************************************************************/
-#define GORILLA_EDITOR_VERSION	"Gorilla Editor - Alpha 1.00"
+#define GORILLA_EDITOR_VERSION	"1.0.0-alpha"
+#define GORILLA_EDITOR_TITLE	"Gorilla Editor"
 
 /******************************************************************************
 **	Class Definition
@@ -723,39 +724,39 @@ namespace Gorilla { namespace Editor
 			_vOutput.SetString(0, sResult.GetBuffer());			
 		}, true);
 
-		//pPage->CreateCallback("Gorilla.File.getDefaultFileName", [](const Web::WebArgument& _vArgument, Web::WebValueList& _vOutput)
-		//{
-		//	String sFileNameNew;
-		//	const String& sFileName = _vArgument.GetString(0);
-		//	String sExtension = _vArgument.GetString(1);
+		pPage->CreateCallback("Gorilla.File.getDefaultFileName", [](const Web::WebArgument& _vArgument, Web::WebValueList& _vOutput)
+		{
+			String sFileNameNew;
+			const String& sFileName = _vArgument.GetString(0);
+			String sExtension = _vArgument.GetString(1);
 
-		//	// Retirve the tree from the path
-		//	Vector<String> vList;
-		//	FileManager::GetAllFiles(GetAssetManager()->GetPath().GetBuffer(), vList, false, sExtension.GetBuffer());
-		//	sExtension.Prepend('.');
-		//	
-		//	// Finalize the list name and check if the current filename is valid
-		//	uint32 uiInstance = 0;
-		//	sFileNameNew.Set(sFileName);
-		//	const uint32 uiNameCount = vList.GetSize();
-		//	for(uint32 uiName = 0; uiName < uiNameCount; ++uiName)
-		//	{
-		//		String& sName = vList[uiName];
-		//		sName.Remove(GetAssetManager()->GetPath().GetBuffer());
-		//		sName.Remove(sExtension.GetBuffer());
-		//		if(sName == sFileNameNew)
-		//		{
-		//			++uiInstance;
-		//			sFileNameNew.Set(sFileName).Append(uiInstance);
-		//		}
-		//	}
+			// Retirve the tree from the path
+			Vector<String> vList;
+			FileManager::GetAllFiles(GetAssetManager()->GetPath().GetBuffer(), vList, false, sExtension.GetBuffer());
+			sExtension.Prepend('.');
+			
+			// Finalize the list name and check if the current filename is valid
+			uint32 uiInstance = 0;
+			sFileNameNew.Set(sFileName);
+			const uint32 uiNameCount = vList.GetSize();
+			for(uint32 uiName = 0; uiName < uiNameCount; ++uiName)
+			{
+				String& sName = vList[uiName];
+				sName.Remove(GetAssetManager()->GetPath().GetBuffer());
+				sName.Remove(sExtension.GetBuffer());
+				if(sName == sFileNameNew)
+				{
+					++uiInstance;
+					sFileNameNew.Set(sFileName).Append(uiInstance);
+				}
+			}
 
-		//	// Write to json 
-		//	Dictionary& dResult = GetDictionary();
-		//	dResult["name"] = sFileNameNew;
-		//	dResult["list"] = vList;
-		//	_vOutput.SetString(0, JsonToString(dResult));
-		//});
+			// Write to json 
+			Dictionary& dResult = GetDictionary();
+			dResult["name"] = sFileNameNew;
+			dResult["list"] = vList;
+			_vOutput.SetString(0, JsonToString(dResult));
+		}, true);
 
 		// Dialog
 		pPage->CreateCallback("Gorilla.openDialog", [pPage](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
@@ -862,7 +863,7 @@ namespace Gorilla { namespace Editor
 
 			// Update Window title
 			String sTitle;
-			sTitle.Append(GORILLA_EDITOR_VERSION).Append(" - ").Append(sPath.GetFileName());
+			sTitle.Append(GORILLA_EDITOR_TITLE).Append(" - ").Append(GORILLA_EDITOR_VERSION).Append(" - ").Append(sPath.GetFileName());
 			View->GetWindow()->SetTitle(sTitle.GetBuffer());
 
 			return true;

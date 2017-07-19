@@ -243,7 +243,7 @@ class PropertyPanel extends GorillaPanel
                     name: "Create Script",
                     onClick: function () 
                     { 
-                        var string = Gorilla.FileManager.getDefaultFileName("Script", "hpp");
+                        var string = Gorilla.File.getDefaultFileName("Script", "hpp");
                         var info = JSON.parse(string);
                         var data = { name : info.name, create : true };
                         var html = Mustache.render(Template.property.component, data);

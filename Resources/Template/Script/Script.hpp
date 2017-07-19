@@ -15,7 +15,7 @@ namespace Gorilla { namespace Component
 	public:
 		${NAME}();
 		~${NAME}();
-		DECLARE_COMPONENT(Gorilla::Component::${NAME});
+		COMPONENT_DECLARE(Gorilla::Component::${NAME});
 
 	protected:
 		virtual void Start			() override;
