@@ -94,8 +94,8 @@ class GorillaEngine
         this.stop = function() { window.console.log("Gorilla.stop"); }
         this.createWindow = function(title, width, height) { window.console.log("Gorilla.createWindow", title, width, height); }
         this.createViewport = function(left, top, width, height) { window.console.log("Gorilla.createViewport", left, top, width, height); }
-        this.createScript = function(name) { window.console.log("Gorilla.createScript(", name, ")"); }
         this.openScript = function(name) { window.console.log("Gorilla.openScript(", name, ")"); }
+        this.createScript = function(name) { window.console.log("Gorilla.createScript(", name, ")"); }
         this.openDialog = function(mode, callback, accept, defaultPath) { window.console.log("Gorilla.openDialog(", mode, ",", callback, ",", accept, ",", defaultPath, ")"); callback([]); }
 
         this.getAssetExtension = function(name) { window.console.log("Gorilla.getAssetExtension(", name, ")"); }

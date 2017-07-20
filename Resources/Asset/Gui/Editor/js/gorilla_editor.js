@@ -1,6 +1,6 @@
 function execute_callback(callback) { callback(); }
 
-
+//$(document).on('dblclick', 'a', function() { Gorilla.openScript(""); });
 
 class GorillaPanel
 {
@@ -235,6 +235,8 @@ class PropertyPanel extends GorillaPanel
         this.module = {};
         this.onModuleChanged = function(string)
         {
+            self.descriptors = JSON.parse(string);
+
             var group = [];
             var actions = 
             {
@@ -270,7 +272,7 @@ class PropertyPanel extends GorillaPanel
                                 var data = { name : value, display : true };
                                 var html = Mustache.render(Template.property.component, data);
                                 self.dom.append(html);
-                                Gorilla.createScript(value);                                
+                                Gorilla.createScript(value); 
                             },
                             getError : function()
                             {
@@ -280,8 +282,8 @@ class PropertyPanel extends GorillaPanel
                     }
                 }  
             };
-            this.descriptors = JSON.parse(string);
-            for(var name in this.descriptors)
+            
+            for(var name in self.descriptors)
             {
                 group.push(name);
                 actions[name] =
@@ -295,7 +297,7 @@ class PropertyPanel extends GorillaPanel
                 };
             }   
             
-            this.context_menu_data = 
+            self.context_menu_data = 
             { 
                 actions: actions, 
                 actionsGroups: 
@@ -304,6 +306,9 @@ class PropertyPanel extends GorillaPanel
                     group
                 ] 
             };
+
+            self.deactivate();
+            self.activate();
         }
 
         this.isActivated = false;
@@ -1017,7 +1022,7 @@ class GorillaTemplate
         this.property =
         {
             component : "                                                                                   \
-                <div class='panel-group gorilla_component' component='{{class}}'>                           \
+                <div class='panel-group gorilla_component gorilla_script' component='{{class}}'>                           \
                     <div class='panel panel-default'>                                                       \
                         <div class='panel-heading'>  \
                             <h4 class='panel-title'>                                                        \

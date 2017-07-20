@@ -462,6 +462,8 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-21
 	bool AssetManager::Load(Asset* _pAsset)
 	{
+		if(_pAsset->HasFlag(Asset::EFlag::Changed)) return true;
+
 		// Deserialize asset
 		LOG_INTERNAL_PRINT("[AssetManager] Loading '%s'", _pAsset->GetFilePath().GetBuffer());
 		if(!FileManager::IsFileExist(_pAsset->GetFilePath().GetBuffer()))
@@ -596,6 +598,15 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-21
 	bool AssetManager::Cook(AssetDescriptor* _pDescriptor, Asset* _pAsset)
 	{
+		// Wait the loading canceled before restarting
+		if(_pAsset->HasFlag(Asset::EFlag::Changed))
+		{
+			while(_pAsset->GetState() != Asset::EState::Loaded)
+			{
+				Thread::Sleep(100);
+			}
+		}
+
 		LOG_INTERNAL_PRINT("[AssetManager] Cooking '%s %s'", _pAsset->GetSourcePath().GetBuffer(), _pAsset->GetParam().GetBuffer());
 
 		// Early fail because the file is not present
@@ -773,10 +784,6 @@ namespace Gorilla { namespace Engine
 					{
 						Asset* pAsset = reinterpret_cast<Asset*>(*it);
 						AssetDescriptor* pDescriptor = GetTable<AssetDescriptor>(EDatabase::Descriptor, pAsset->GetClass()->GetId());;
-						while(pAsset->GetState() != Asset::EState::Loaded)
-						{
-							Thread::Sleep(100);
-						}
 						pAsset->SetFlag(Asset::EFlag::Changed);
 						PushCooking(pDescriptor, pAsset);
 

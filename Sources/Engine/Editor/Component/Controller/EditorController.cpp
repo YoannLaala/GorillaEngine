@@ -427,6 +427,17 @@ namespace Gorilla { namespace Editor
 			this->CreateViewport(uiLeft, uiTop, uiWidth, uiHeight);
 		});
 
+		pPage->CreateCallback("Gorilla.openScript", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		{
+			const String& sScript = _vArgument.GetString(0);
+			const char* szProjectName = GetConfig(Config::Project)["Name"].GetString();
+
+			String sArgument;
+			sArgument.Set("\"").Append(GetAssetManager()->GetPath()).Append("..\\").Append(szProjectName).Append(".sln\" /command \"File.OpenFile ").Append(sScript).Append("\"");
+			Process kProcess("C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe", sArgument.GetBuffer());
+			kProcess.Execute();
+		}, true);
+
 		pPage->CreateCallback("Gorilla.createScript", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		{
 			static String aTemplate[2] = { "Script.hpp", "Script.cpp" };
@@ -580,7 +591,7 @@ namespace Gorilla { namespace Editor
 			}
 		});
 
-		//// GameObject Manager
+		// GameObject Manager
 		pPage->CreateCallback("Gorilla.GameObject.create", [this, pPage, pWorld](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		{
 			uint64 uiParentId = _vArgument.GetUInt64(0);
