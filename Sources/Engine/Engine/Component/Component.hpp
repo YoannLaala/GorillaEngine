@@ -11,7 +11,12 @@
 /******************************************************************************
 **	Define
 ******************************************************************************/
-#define COMPONENT_DECLARE_EXTENDED(_type_, _flag_) CLASS_DECLARE_IMPL(Gorilla::Engine::EClass::Component, _type_, _flag_)
+#if defined(GORILLA_GAME)
+	#define COMPONENT_DEFAULT_FLAG 0
+#else
+	#define COMPONENT_DEFAULT_FLAG Component::EFlag::Intrinsic
+#endif
+#define COMPONENT_DECLARE_EXTENDED(_type_, _flag_) CLASS_DECLARE_IMPL(Gorilla::Engine::EClass::Component, _type_, _flag_ | COMPONENT_DEFAULT_FLAG)
 #define COMPONENT_DECLARE(_type_) COMPONENT_DECLARE_EXTENDED(_type_, 0)
 #define COMPONENT_REGISTER(_type_, ...) CLASS_REGISTER(_type_);
 #define COMPONENT_CLASS(_name_) Gorilla::ClassManager::GetInstance()->Get(Gorilla::Engine::EClass::Component, _name_)
@@ -33,6 +38,7 @@ namespace Gorilla { namespace Engine
 {
 	class Component
 	{
+		friend class Engine;
 		friend class World;
 		friend class GameObject;
 	
@@ -71,7 +77,7 @@ namespace Gorilla { namespace Engine
 		{
 			enum Type : uint8
 			{
-				Intrinsic = 1 << 0,
+				Intrinsic	= 1 << 0,
 			};
 		};
 

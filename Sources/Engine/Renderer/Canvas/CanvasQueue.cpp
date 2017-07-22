@@ -35,7 +35,7 @@ namespace Gorilla { namespace Renderer
 		// Wait frame to finish
 		if(m_vCommand[uiIndexExecute].GetSize())
 		{
-			m_aCondition[EContext::Prepare].Wait(m_aMutex[EContext::Prepare]);
+			m_aCondition[EContext::Prepare].Wait();
 		}
 		m_aCondition[EContext::Execute].Signal();
 
@@ -59,7 +59,7 @@ namespace Gorilla { namespace Renderer
 			{
 				pVecCommand = NULL;
 				pParameter = NULL;
-				m_aCondition[EContext::Execute].Wait(m_aMutex[EContext::Execute]);
+				m_aCondition[EContext::Execute].Wait();
 			}
 		} while(!pVecCommand && !pParameter);
 

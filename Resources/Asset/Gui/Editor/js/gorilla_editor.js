@@ -1,6 +1,6 @@
 function execute_callback(callback) { callback(); }
 
-//$(document).on('dblclick', 'a', function() { Gorilla.openScript(""); });
+$(document).on('dblclick', '.gorilla_script a', function() { Gorilla.openScript(""); });
 
 class GorillaPanel
 {

@@ -7,6 +7,14 @@
 #include "Asset.hpp"
 
 /******************************************************************************
+**	Forward Declaration
+******************************************************************************/
+namespace Gorilla { namespace Engine
+{
+	class AssetManager;
+}}
+
+/******************************************************************************
 **	Class Declaration
 ******************************************************************************/
 namespace Gorilla { namespace Engine
@@ -14,6 +22,8 @@ namespace Gorilla { namespace Engine
 	template <class T>
 	class AssetHandle
 	{
+		friend class AssetManager;
+
 	public:
 		AssetHandle();
 		AssetHandle(const AssetHandle<T>& _hAsset);

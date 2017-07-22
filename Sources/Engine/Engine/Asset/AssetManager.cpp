@@ -168,7 +168,7 @@ namespace Gorilla { namespace Engine
 			for(uint32 uiEvent = 0; uiEvent < uiEventCount; ++uiEvent)
 			{
 				Event& kEvent = vEvent[uiEvent];
-				SIGNAL_SEND(AssetChanged, kEvent.Type, kEvent.Asset.operator->(), kEvent.Succeeded);
+				SIGNAL_SEND(AssetChanged, kEvent.Type, kEvent.Asset.m_pValue, kEvent.Succeeded);
 				kEvent.Asset.Release();
 			}
 			vEvent.Clear();
@@ -207,11 +207,10 @@ namespace Gorilla { namespace Engine
 		Table* pTableAsset = GetOrCreateTable<Table>(EDatabase::Asset, _pClass->GetId());
 		Asset* pAsset = reinterpret_cast<Asset*>(pTableAsset->GetValue(uiAssetId));
 		if(!pAsset)
-		{
-			AssetDescriptor* pDescriptor = nullptr;
+		{		
 		#if defined(GORILLA_EDITOR)
 			// Search for the proper descriptor
-			pDescriptor = GetTable<AssetDescriptor>(EDatabase::Descriptor, _pClass->GetId());
+			AssetDescriptor* pDescriptor = GetTable<AssetDescriptor>(EDatabase::Descriptor, _pClass->GetId());;
 			if(!pDescriptor)
 			{
 				LOG_INTERNAL_PRINT("Asset of type '%s' is not supported", _pClass->GetName().GetBuffer());
@@ -276,7 +275,7 @@ namespace Gorilla { namespace Engine
 			}
 			
 			// Cook or load the asset
-			if(bCook) PushCooking(pDescriptor, pAsset);
+			if(bCook) PushCooking(pAsset);
 			else PushLoading(pAsset, Thread::EPriority::Normal);
 
 			// Register the file allowing to reload all asset related to a file modification
@@ -327,10 +326,7 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-29
 	void AssetManager::PushUnloading(Asset* _pAsset)
 	{
-		if(_pAsset->GetState() != Asset::EState::Reloading)
-		{
-			_pAsset->SetState(Asset::EState::Unloading);
-		}
+		_pAsset->SetState(Asset::EState::Unloading);
 
 		m_kMutexAssetToUnload.Lock();
 		m_vAssetToUnload.Add(_pAsset);
@@ -349,9 +345,18 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		PushCooking
 	//!	@date		2015-11-29
-	void AssetManager::PushCooking(AssetDescriptor* _pAssetDescriptor, Asset* _pAsset)
+	void AssetManager::PushCooking(Asset* _pAsset)
 	{
 	#if defined(GORILLA_EDITOR)
+		// Wait the loading canceled before restarting
+		if(_pAsset->HasFlag(Asset::EFlag::Changed))
+		{
+			while(_pAsset->GetState() != Asset::EState::Loaded)
+			{
+				Thread::Sleep(100);
+			}
+			_pAsset->RemoveFlag(Asset::EFlag::Changed);
+		}
 		_pAsset->SetState(Asset::EState::Cooking);
 
 		// Load dependency directly
@@ -359,18 +364,17 @@ namespace Gorilla { namespace Engine
 			|| Thread::GetId() == m_aThreadId[EThread::LoadingThreadNormalPriority]
 			|| Thread::GetId() == m_aThreadId[EThread::LoadingThreadHighPriority] )
 		{
-			bool bResult = Cook(_pAssetDescriptor, _pAsset);
+			bool bResult = Cook(_pAsset);
 			if(bResult) PushLoading(_pAsset, Thread::EPriority::Normal);
 			else _pAsset->SetState(Asset::EState::Loaded);
 			return;
 		}
 
 		m_kMutexAssetToCook.Lock();
-		m_vAssetToCook.Add(Pair<AssetDescriptor*, Asset*>(_pAssetDescriptor, _pAsset));
+		m_vAssetToCook.Add(_pAsset);
 		m_kMutexAssetToCook.Unlock();
 		m_kConditionAssetToCook.Signal();
 	#else
-		UNUSED(_pAssetDescriptor); 
 		LOG_INTERNAL_ERROR("Failed to find Asset '%s'", _pAsset->GetName().GetBuffer());
 		_pAsset->SetState(Asset::EState::Loaded);
 	#endif
@@ -429,16 +433,15 @@ namespace Gorilla { namespace Engine
 
 		// Check if we need to wait
 		Vector<Asset*>& vAssetToLoad = m_aAssetToLoad[_ePriotity];
-		Mutex& kMutex = m_aMutexAssetToLoad[_ePriotity];
 		if(vAssetToLoad.IsEmpty())
 		{
-			m_aConditionAssetToLoad[_ePriotity].Wait(kMutex);
-		}
-		
+			m_aConditionAssetToLoad[_ePriotity].Wait();
+		}		
 		Vector<Asset*>& vAssetToLoadCopy = aAssetToLoadCopy[_ePriotity];
 		vAssetToLoadCopy.Clear();
 
 		// Copy in Loading thread
+		Mutex& kMutex = m_aMutexAssetToLoad[_ePriotity];
 		kMutex.Lock();
 		vAssetToLoadCopy.Add(vAssetToLoad);
 		vAssetToLoad.Clear();
@@ -512,7 +515,7 @@ namespace Gorilla { namespace Engine
 		// Check if we need to wait
 		if(m_vAssetToUnload.IsEmpty())
 		{
-			m_kConditionAssetToUnload.Wait(m_kMutexAssetToUnload);
+			m_kConditionAssetToUnload.Wait();
 		}
 		
 		// Copy in Unloading thread
@@ -530,7 +533,13 @@ namespace Gorilla { namespace Engine
 			LOG_INTERNAL_PRINT("[AssetManager] Unloading '%s'", pAsset->GetFilePath().GetBuffer());
 			pAsset->Release();
 			LOG_INTERNAL_PRINT("[AssetManager] Unloaded '%s'", pAsset->GetFilePath().GetBuffer());			
-			pAsset->SetState(Asset::EState::Unloaded);		
+
+			if(pAsset->HasFlag(Asset::EFlag::Changed))
+			{
+				pAsset->SetState(Asset::EState::Loaded);	
+				PushCooking(pAsset);
+			}
+			else pAsset->SetState(Asset::EState::Unloaded);	
 		}
 		vAssetToUnloadCopy.Clear();
 	}
@@ -552,16 +561,16 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-21
 	void AssetManager::CookingLoop()
 	{
-		static Vector<Pair<AssetDescriptor*, Asset*>> vAssetToCookCopy;
+		static Vector<Asset*> vAssetToCookCopy;
 
 		// Check if we need to wait
-		m_kMutexAssetToCook.Lock();
 		if(m_vAssetToCook.IsEmpty())
 		{
-			m_kConditionAssetToCook.Wait(m_kMutexAssetToCook);
+			m_kConditionAssetToCook.Wait();
 		}
 
 		// Copy in Cooking thread
+		m_kMutexAssetToCook.Lock();
 		vAssetToCookCopy.Add(m_vAssetToCook);
 		m_vAssetToCook.Clear();
 		m_kMutexAssetToCook.Unlock();
@@ -570,23 +579,16 @@ namespace Gorilla { namespace Engine
 		const uint32 uiAssetCount = vAssetToCookCopy.GetSize();
 		for (uint32 uiAsset = 0; uiAsset < uiAssetCount; ++uiAsset)
 		{
-			Pair<AssetDescriptor*, Asset*>& kPair = vAssetToCookCopy[uiAsset];
-			AssetDescriptor* pDescriptor = kPair.GetKey();
-			Asset* pAsset = kPair.GetValue();
+			Asset* pAsset = vAssetToCookCopy[uiAsset];
 
 			PushEvent(EEvent::CookingStarted, pAsset, true);
-			bool bResult = Cook(pDescriptor, pAsset);
+			bool bResult = Cook(pAsset);
 			if(bResult)
 			{
 				// Release the asset only if the new cooking has succeeded
-				if(pAsset->HasFlag(Asset::EFlag::Changed)) 
-				{
-					pAsset->Release();
-					pAsset->RemoveFlag(Asset::EFlag::Changed);
-				}
-			
-				// Load the asset
-				PushLoading(pAsset, Thread::EPriority::Normal);
+				pAsset->Release();
+				if(pAsset->HasFlag(Asset::EFlag::Changed)) pAsset->SetState(Asset::EState::Loaded);
+				else PushLoading(pAsset, Thread::EPriority::Normal);				
 			}
 			else pAsset->SetState(Asset::EState::Loaded);
 			PushEvent(EEvent::CookingFinished, pAsset, bResult);
@@ -596,17 +598,8 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		Cook
 	//!	@date		2015-11-21
-	bool AssetManager::Cook(AssetDescriptor* _pDescriptor, Asset* _pAsset)
+	bool AssetManager::Cook(Asset* _pAsset)
 	{
-		// Wait the loading canceled before restarting
-		if(_pAsset->HasFlag(Asset::EFlag::Changed))
-		{
-			while(_pAsset->GetState() != Asset::EState::Loaded)
-			{
-				Thread::Sleep(100);
-			}
-		}
-
 		LOG_INTERNAL_PRINT("[AssetManager] Cooking '%s %s'", _pAsset->GetSourcePath().GetBuffer(), _pAsset->GetParam().GetBuffer());
 
 		// Early fail because the file is not present
@@ -620,7 +613,8 @@ namespace Gorilla { namespace Engine
 		FileManager::CreateADirectory(_pAsset->GetFilePath().GetBuffer());
 
 		// if there isn't converter, just copy to the output
-		AssetProcess* pProcess = _pDescriptor->GetProcess();
+		AssetDescriptor* pDescriptor = GetTable<AssetDescriptor>(EDatabase::Descriptor, _pAsset->GetClass()->GetId());
+		AssetProcess* pProcess = pDescriptor->GetProcess();
 		if(!pProcess) 
 		{
 			if (!FileManager::CopyAFile(_pAsset->GetSourcePath().GetBuffer(), _pAsset->GetFilePath().GetBuffer()))
@@ -782,11 +776,9 @@ namespace Gorilla { namespace Engine
 					HashMap<uint32, uint64>::Iterator itEnd = pTable->GetLastRow();
 					while(it != itEnd)
 					{
-						Asset* pAsset = reinterpret_cast<Asset*>(*it);
-						AssetDescriptor* pDescriptor = GetTable<AssetDescriptor>(EDatabase::Descriptor, pAsset->GetClass()->GetId());;
-						pAsset->SetFlag(Asset::EFlag::Changed);
-						PushCooking(pDescriptor, pAsset);
-
+						Asset* pAsset = reinterpret_cast<Asset*>(*it);						
+						pAsset->SetFlag(Asset::EFlag::Changed); 
+						PushCooking(pAsset);
 						++it;
 					}
 				}
@@ -836,7 +828,7 @@ namespace Gorilla { namespace Engine
 		//	LoadAsset(pAssetTable, pAsset, true);
 		//}
 	#else
-		UNUSED(_eType); UNUSED(_szFilePath);
+		UNUSED(_eType, _szDirectoryPath, _szRelativePath);
 	#endif
 	}
 }}

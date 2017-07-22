@@ -157,9 +157,6 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-12-29
 	void Component::Execute()
 	{	
-		bool bPaused = m_pGameObject->GetWorld()->HasFlag(World::EFlag::Paused);
-		if(bPaused && !GetClass()->HasFlag(EFlag::Intrinsic)) return;
-
 		// Allow user script to crash without crashing the engine
 	#if defined(MASTER)
 		__try 

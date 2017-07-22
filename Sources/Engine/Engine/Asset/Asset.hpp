@@ -52,7 +52,6 @@ namespace Gorilla { namespace Engine
 				Unloading,
 				Unloaded,
 				Cooking,
-				Reloading,
 			};
 		};
 

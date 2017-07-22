@@ -63,13 +63,6 @@ namespace Gorilla { namespace Engine
 		m_vGameObject.Clear();
 	}
 
-	//!	@brief		Start
-	//!	@date		2015-11-07
-	void World::Start()
-	{
-		RemoveFlag(EFlag::Paused);
-	}
-
 	//!	@brief		Update
 	//!	@date		2015-11-07
 	void World::Update()
@@ -78,11 +71,11 @@ namespace Gorilla { namespace Engine
 		const uint32 uiGameObjectCount = m_vGameObject.GetSize();
 		for(uint32 uiGameObject = 0; uiGameObject < uiGameObjectCount; ++uiGameObject)
 		{
-			// Get all component for the current pass on the current GameObject
+			// Update all component available for this GameObject
 			GameObject* pGameObject = m_vGameObject[uiGameObject];
-			if(pGameObject->IsActivated())
+			bool bCanUpdate = pGameObject->IsActivated() && (!HasFlag(World::EFlag::Paused) || pGameObject->HasFlag(GameObject::EFlag::UpdateDuringPause));
+			if(bCanUpdate)
 			{
-				// Update all component available for this pass
 				pGameObject->Update();
 			}
 		}

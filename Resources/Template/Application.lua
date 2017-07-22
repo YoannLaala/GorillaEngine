@@ -46,7 +46,7 @@ solution(_SOLUTION_NAME_)
 		kind("SharedLib")
 		objdir (_TARGET_DIR_ .. "Temp/")
 		debugdir(_TARGET_DIR_ .. "Temp/")
-		targetdir(_TARGET_DIR_)
+		targetdir(_TARGET_DIR_ .. "Temp/")
 		targetname(_TARGET_NAME_)
 		targetextension(".asset")
 		files

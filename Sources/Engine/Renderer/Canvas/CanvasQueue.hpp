@@ -55,8 +55,6 @@ namespace Gorilla { namespace Renderer
 		Vector<CanvasCommand>	m_vCommand[EContext::Count];
 		Vector<uint8>			m_kParameter[EContext::Count];
 		uint32					m_aBufferIndex[EContext::Count];
-
-		Mutex					m_aMutex[EContext::Count];
 		ConditionVariable		m_aCondition[EContext::Count];
 	};
 

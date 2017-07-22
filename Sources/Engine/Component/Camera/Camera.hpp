@@ -44,7 +44,7 @@ namespace Gorilla { namespace Component
 
 		Camera();
 		~Camera();
-		COMPONENT_DECLARE_EXTENDED(Gorilla::Component::Camera, Component::EFlag::Intrinsic);
+		COMPONENT_DECLARE(Gorilla::Component::Camera);
 
 	protected:
 		virtual void Start			() override;

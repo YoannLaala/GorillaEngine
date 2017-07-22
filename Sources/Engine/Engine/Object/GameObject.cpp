@@ -93,9 +93,37 @@ namespace Gorilla { namespace Engine
 			pComponent = static_cast<Component*>(_pClass->New());
 			pComponent->SetGameObject(this);
 			m_mComponent.Add(uiComponentId, pComponent);
+
+		#if defined GORILLA_EDITOR
+			if(!_pClass->HasFlag(Component::EFlag::Intrinsic))
+			{
+				GetEngine()->RegisterScript(uiComponentId, this);
+			}
+		#endif
 		}
 
 		return pComponent;
+	}
+
+	//!	@brief		RemoveComponent
+	//!	@date		2015-04-04
+	void GameObject::RemoveComponent(const Class* _pClass)
+	{
+		// Delete it if found one
+		uint32 uiComponentId = _pClass->GetId();
+		Component* pComponent = m_mComponent[uiComponentId];
+		if(pComponent)
+		{
+		#if defined GORILLA_EDITOR
+			if(!pComponent->HasFlag(Component::EFlag::Intrinsic))
+			{
+				GetEngine()->UnregisterScript(uiComponentId, this);
+			}
+		#endif
+
+			m_mComponent.Remove(uiComponentId);
+			SAFE_DELETE(pComponent);
+		}
 	}
 
 	//!	@brief		Serialize

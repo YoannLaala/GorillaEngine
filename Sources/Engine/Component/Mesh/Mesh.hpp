@@ -43,7 +43,7 @@ namespace Gorilla { namespace Component
 	public:
 		Mesh();
 		~Mesh();
-		COMPONENT_DECLARE_EXTENDED(Gorilla::Component::Mesh, Component::EFlag::Intrinsic);
+		COMPONENT_DECLARE(Gorilla::Component::Mesh);
 
 	protected:
 		virtual void Start			() override;

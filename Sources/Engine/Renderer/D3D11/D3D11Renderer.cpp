@@ -232,7 +232,7 @@ namespace Gorilla { namespace Renderer
 	{
 		while (GetFrameDifference() == 0)
 		{
-			m_aCondition[EThread::Render].Wait(m_aMutex[EThread::Render]);
+			m_aCondition[EThread::Render].Wait();
 		}
 
 		uint8 uiFrameIndex = GetFrameIndex(EThread::Render);

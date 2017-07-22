@@ -34,8 +34,16 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-10-18
 	void Module::Initialize(StreamReader* /*_pStream*/)
 	{
+		// Need to read library from memory
+		// Copy from temp so we can build the library before releasing it (dll + pdb)
+		String sLibrarySource;
+		Path sLibraryDestination(GetFilePath());
+		sLibrarySource.Set(sLibraryDestination.GetDirectory()).Append("Temp\\").Append(sLibraryDestination.GetFileNameWithExtension());
+		FileManager::CopyAFile(sLibrarySource.GetBuffer(), sLibraryDestination.GetFull().GetBuffer());
+		// Need to read library from memory
+
 		// Load the Module
-		m_hModule = ::LoadLibrary(GetFilePath().GetBuffer());
+		m_hModule = ::LoadLibrary(sLibraryDestination.GetFull().GetBuffer());
 		if (!m_hModule) 
 		{
 			return;

@@ -39,7 +39,7 @@
 /******************************************************************************
 **	Define
 ******************************************************************************/
-#define GORILLA_EDITOR_VERSION	"1.0.0-alpha"
+#define GORILLA_EDITOR_VERSION	"1.0.1-alpha"
 #define GORILLA_EDITOR_TITLE	"Gorilla Editor"
 
 /******************************************************************************
@@ -176,7 +176,11 @@ namespace Gorilla { namespace Editor
 			case Engine::AssetManager::EEvent::CookingStarted:
 			{
 				sMessage.Set("Cooking ").Append(_pAsset->GetClass()->GetName()).Append(' ').Append(_pAsset->GetName());
-				SendNotification("info", sMessage.GetBuffer());
+				SendNotification("info", sMessage.GetBuffer());				
+				if(_pAsset->GetClass() == Engine::Module::Class::GetInstance())
+				{
+					m_pWorld->Pause();
+				}
 				break;
 			}
 
@@ -192,6 +196,7 @@ namespace Gorilla { namespace Editor
 				// Module Changed
 				if(_pAsset->GetClass() == Engine::Module::Class::GetInstance())
 				{
+					m_pWorld->Play();
 					SendJson("Editor.panels.property.onModuleChanged", GetEngine()->GetAllComponentDescriptor());
 					if(m_pSelection && m_sScript.GetLength())
 					{
@@ -427,14 +432,15 @@ namespace Gorilla { namespace Editor
 			this->CreateViewport(uiLeft, uiTop, uiWidth, uiHeight);
 		});
 
-		pPage->CreateCallback("Gorilla.openScript", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		pPage->CreateCallback("Gorilla.openScript", [this](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
 		{
-			const String& sScript = _vArgument.GetString(0);
-			const char* szProjectName = GetConfig(Config::Project)["Name"].GetString();
+			//const String& sScript = _vArgument.GetString(0);
+			//const char* szProjectName = GetConfig(Config::Project)["Name"].GetString();
 
 			String sArgument;
-			sArgument.Set("\"").Append(GetAssetManager()->GetPath()).Append("..\\").Append(szProjectName).Append(".sln\" /command \"File.OpenFile ").Append(sScript).Append("\"");
-			Process kProcess("C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe", sArgument.GetBuffer());
+			//sArgument.Set("\"").Append(GetAssetManager()->GetPath()).Append("..\\").Append(szProjectName).Append(".sln\" /command \"File.OpenFile ").Append(sScript).Append("\"");
+			sArgument.Set("/c start \"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe\" \"").Append(GetAssetManager()->GetPath()).Append("..\\Script.sln\"");
+			Process kProcess("cmd", sArgument.GetBuffer());
 			kProcess.Execute();
 		}, true);
 
@@ -521,7 +527,7 @@ namespace Gorilla { namespace Editor
 
 		pPage->CreateCallback("Gorilla.play", [pWorld](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
 		{
-			pWorld->Start();
+			pWorld->Play();
 		});
 
 		pPage->CreateCallback("Gorilla.pause", [pWorld](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
@@ -923,6 +929,7 @@ namespace Gorilla { namespace Editor
 
 		// Intrinsic GameObject
 		Engine::GameObject* pGoEditor = m_pWorld->AddGameObject("@Editor");
+		pGoEditor->SetFlag(Engine::GameObject::EFlag::UpdateDuringPause);
 		pGoEditor->AddComponent<Gorilla::Component::Node>()->SetPosition(0.0f, 0.0f, -3.0f);
 		Gorilla::Component::Camera* pCpnCamera = pGoEditor->AddComponent<Gorilla::Component::Camera>();
 		pGoEditor->AddComponent<Gorilla::Component::CameraFree>();

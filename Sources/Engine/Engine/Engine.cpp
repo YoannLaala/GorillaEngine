@@ -272,6 +272,26 @@ namespace Gorilla { namespace Engine
 		// User Descriptor
 		sDescriptor.Set(GetAssetManager()->GetPath()).Append("..\\Cooked\\Temp\\ComponentDescriptor.json");
 		m_dComponentDescriptor.Read<DictionaryStreamJson>(sDescriptor.GetBuffer());
+
+		// Recreate Script if needed
+		HashMap<uint32, Vector<GameObject*>*>::Iterator it = m_mScript.GetFirst();
+		HashMap<uint32, Vector<GameObject*>*>::Iterator itEnd = m_mScript.GetLast();
+		while(it != itEnd)
+		{
+			Class* pClass = ClassManager::GetInstance()->Get(EClass::Component, it.GetKey());
+
+			Vector<GameObject*>* pVecGameObject = (*it);
+			const uint32 uiElementCount = pVecGameObject->GetSize();
+			for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement)
+			{
+				GameObject* pGameObject = pVecGameObject->Get(uiElement);
+				pGameObject->RemoveComponent(pClass);
+				pGameObject->AddComponent(pClass);
+			}
+
+			++it;
+		}
+
 	#else
 		// Intrinsic Descriptor
 		if(!m_dComponentDescriptor.Read<DictionaryStream>("Component.bin"))
@@ -281,7 +301,7 @@ namespace Gorilla { namespace Engine
 	#endif
 	}
 
-	//!	@brief		AddLayer
+	//!	@brief		OnRenderContextCreated
 	//!	@date		2015-11-11
 	void Engine::OnRenderContextCreated(Renderer::RenderContext* _pContext, uint8 _eFilter)
 	{
@@ -309,4 +329,30 @@ namespace Gorilla { namespace Engine
 			}
 		}
 	}
+
+#if defined(GORILLA_EDITOR)
+	//!	@brief		RegisterScript
+	//!	@date		2015-11-11
+	void Engine::RegisterScript(uint32 _uiComponentId, GameObject* _pGameObject)
+	{
+		Vector<GameObject*>* pVecGameObject = m_mScript.Get(_uiComponentId, nullptr);
+		if(!pVecGameObject)
+		{
+			pVecGameObject = new Vector<GameObject*>();
+			m_mScript.Add(_uiComponentId, pVecGameObject);
+		}
+		pVecGameObject->Add(_pGameObject);
+	}
+
+	//!	@brief		UnregisterScript
+	//!	@date		2015-11-11
+	void Engine::UnregisterScript(uint32 _uiComponentId, GameObject* _pGameObject)
+	{
+		Vector<GameObject*>* pVecGameObject = m_mScript.Get(_uiComponentId, nullptr);
+		if(pVecGameObject)
+		{
+			pVecGameObject->Remove(_pGameObject);
+		}
+	}
+#endif
 }}

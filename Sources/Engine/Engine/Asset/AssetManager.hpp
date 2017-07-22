@@ -128,7 +128,7 @@ namespace Gorilla { namespace Engine
 		void					PushUnloading	(Asset* pAsset);
 		void					ClearUnloading	();
 
-		void					PushCooking		(AssetDescriptor* _pAssetDescriptor, Asset* _pAsset);
+		void					PushCooking		(Asset* _pAsset);
 		void					ClearCooking	();
 
 		template <typename TYPE>
@@ -166,9 +166,9 @@ namespace Gorilla { namespace Engine
 
 		// Cooking
 	#if defined(GORILLA_EDITOR)
-		static void				CookingThreadEntry				(void* _pData);
+		static void				CookingThreadEntry	(void* _pData);
 		void					CookingLoop			();
-		bool					Cook				(AssetDescriptor* _pDescriptor, Asset* _pAsset);
+		bool					Cook				(Asset* _pAsset);
 	#endif
 
 	private:
@@ -188,7 +188,7 @@ namespace Gorilla { namespace Engine
 
 	#if defined(GORILLA_EDITOR)
 		// Cooking
-		Vector<Pair<AssetDescriptor*, Asset*>> m_vAssetToCook;
+		Vector<Asset*>			m_vAssetToCook;
 		Mutex					m_kMutexAssetToCook;
 		ConditionVariable		m_kConditionAssetToCook;
 	

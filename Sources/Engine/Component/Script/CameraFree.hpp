@@ -16,7 +16,7 @@ namespace Gorilla { namespace Component
 	public:
 		CameraFree();
 		~CameraFree();
-		COMPONENT_DECLARE_EXTENDED(CameraFree, Component::EFlag::Intrinsic);
+		COMPONENT_DECLARE(CameraFree);
 
 	protected:
 		virtual void Update			() override;

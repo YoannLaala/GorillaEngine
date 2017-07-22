@@ -13,7 +13,7 @@
 /******************************************************************************
 **	Defines
 ******************************************************************************/
-#if !defined(DEBUG)
+#if defined(DEBUG)
 	#define LOG_ENGINE_ENABLED
 #endif
 
@@ -42,6 +42,8 @@ namespace Gorilla
 namespace Gorilla { namespace Engine
 {
 	class AssetManager;
+	class GameObject;
+	class Component;
 	class World;
 }}
 
@@ -58,6 +60,8 @@ namespace Gorilla { namespace Engine
 {
 	class Engine : public Singleton<Engine>
 	{
+		friend class GameObject;
+
 	public:
 		Engine();
 		~Engine();
@@ -104,11 +108,17 @@ namespace Gorilla { namespace Engine
 		Time*							m_pTime;
 		Input*							m_pInput;
 		AssetManager*					m_pAssetManager;
-
 		Dictionary						m_dComponentDescriptor;
 		Vector<AssetHandle<Module>>		m_vModule;
 		Vector<World*>					m_vWorld;
 		HashMap<const char*, uint32>	m_mLayer;
+
+	#if defined(GORILLA_EDITOR)
+	private:
+		void RegisterScript		(uint32 _uiComponentId, GameObject* _pGameObject);
+		void UnregisterScript	(uint32 _uiComponentId, GameObject* _pGameObject);
+		HashMap<uint32, Vector<GameObject*>*>	m_mScript;
+	#endif
 	};
 }}
 

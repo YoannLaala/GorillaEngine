@@ -31,15 +31,6 @@ namespace Gorilla { namespace Engine
 		friend class World;
 
 	private:
-		struct EFlag
-		{
-			enum Type : uint8
-			{
-				Activated = 1 << 0,
-			};
-		};
-
-	private:
 		GameObject();
 		~GameObject();
 
@@ -47,11 +38,6 @@ namespace Gorilla { namespace Engine
 		void					Release			();
 
 		void					Update			();
-
-	private:
-		inline bool				HasFlag		(EFlag::Type _eFlag) const { return (m_eFlag & _eFlag) != 0; }
-		inline void				SetFlag		(EFlag::Type _eFlag) { m_eFlag |= _eFlag; }
-		inline void				RemoveFlag	(EFlag::Type _eFlag) { m_eFlag &= ~_eFlag; }
 
 	public:
 		inline const String&	GetName			() const { return m_sName; } 
@@ -74,11 +60,24 @@ namespace Gorilla { namespace Engine
 
 		template <class T>
 		void					RemoveComponent	();
+		void					RemoveComponent	(const Class* _pClass);
 
 		bool					Serialize		(Node& _dWriter);
 		bool					Deserialize		(Node& _dReader);
 
 	public:
+		struct EFlag
+		{
+			enum Type : uint8
+			{
+				Activated			= 1 << 0,
+				UpdateDuringPause	= 1 << 1,
+			};
+		};
+		inline bool				HasFlag		(EFlag::Type _eFlag) const { return (m_eFlag & _eFlag) != 0; }
+		inline void				SetFlag		(EFlag::Type _eFlag) { m_eFlag |= _eFlag; }
+		inline void				RemoveFlag	(EFlag::Type _eFlag) { m_eFlag &= ~_eFlag; }
+
 		inline void				Activate	() { SetFlag(EFlag::Activated); }
 		inline void				Deactivate	() { RemoveFlag(EFlag::Activated); }
 		inline bool				IsActivated	() const { return HasFlag(EFlag::Activated); }
@@ -114,16 +113,8 @@ namespace Gorilla { namespace Engine
 	template <class T>
 	void GameObject::RemoveComponent()
 	{
-		uint32 uiComponentId = T::Class::GetId();
-		Vector<uint32>& vComponentOrder = m_aComponentOrder[uiPassId];
-
-		// Delete it if found one
-		Component* pComponent = m_mComponent[uiComponentId];
-		if(pComponent)
-		{
-			m_mComponent.Remove(uiComponentId);
-			SAFE_DELETE(pComponent);
-		}
+		const Class* pClass = T::Class::GetInstance();
+		RemoveComponent(pClass);
 	}
 }}
 

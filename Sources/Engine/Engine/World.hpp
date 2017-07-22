@@ -62,7 +62,7 @@ namespace Gorilla { namespace Engine
 		void				Update				();
 
 	public:
-		void				Start				();
+		inline void			Play				() { RemoveFlag(EFlag::Paused); }
 		inline void			Pause				() { SetFlag(EFlag::Paused); }
 		void				Stop				();
 

@@ -138,5 +138,15 @@ int main(int argc, const char** argv)
 		return -1;
 	}
 
+	// Copy to real output (HACK waiting for reading dll from memory)
+	Gorilla::String sLibrarySource;
+	sLibrarySource.Set(sOutput.GetDirectory()).Append("Temp\\").Append(sOutput.GetFileNameWithExtension());
+	Gorilla::FileManager::CopyAFile(sLibrarySource.GetBuffer(), sOutput.GetFull().GetBuffer());
+
+	Gorilla::String sPdbFile;
+	sPdbFile.Set(sOutput.GetDirectory()).Append("Temp\\").Append(sOutput.GetFileName()).Append(".pdb");
+	Gorilla::FileManager::DeleteAFile(sPdbFile.GetBuffer());
+
+
 	return 0;
 }
