@@ -454,9 +454,7 @@ class ProfilerPanel extends GorillaPanel
 
         function addChartValue(chart, value, label, color)
         {
-            window.console.log(color);
             if(color == null) color = 'rgba(255, 255, 255, 1.0f)';
-            window.console.log(color);
 
             // Limit
             var dataset = chart.data.datasets[0];
