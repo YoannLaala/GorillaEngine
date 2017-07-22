@@ -471,7 +471,7 @@ namespace Gorilla { namespace Engine
 		LOG_INTERNAL_PRINT("[AssetManager] Loading '%s'", _pAsset->GetFilePath().GetBuffer());
 		if(!FileManager::IsFileExist(_pAsset->GetFilePath().GetBuffer()))
 		{
-			LOG_INTERNAL_PRINT("[AssetManager] File not found '%s'", _pAsset->GetFilePath().GetBuffer());
+			LOG_ERROR("File not found '%s'", _pAsset->GetFilePath().GetBuffer());
 			return false;
 		}
 
@@ -482,7 +482,7 @@ namespace Gorilla { namespace Engine
 			kStream.Open(_pAsset->GetFilePath().GetBuffer());
 			if(!kStream.CanRead())
 			{
-				LOG_INTERNAL_PRINT("[AssetManager] Failed to Open '%s'", _pAsset->GetFilePath().GetBuffer());
+				LOG_ERROR("Failed to Open '%s'", _pAsset->GetFilePath().GetBuffer());
 				return false;
 			}
 		
@@ -605,7 +605,7 @@ namespace Gorilla { namespace Engine
 		// Early fail because the file is not present
 		if(!FileManager::IsFileExist(_pAsset->GetSourcePath().GetBuffer()))
 		{
-			LOG_INTERNAL_ERROR("[AssetManager] Cooking failed to find %s", _pAsset->GetSourcePath().GetBuffer());
+			LOG_ERROR("Cooking failed to find %s", _pAsset->GetSourcePath().GetBuffer());
 			return false;
 		}
 
@@ -619,7 +619,7 @@ namespace Gorilla { namespace Engine
 		{
 			if (!FileManager::CopyAFile(_pAsset->GetSourcePath().GetBuffer(), _pAsset->GetFilePath().GetBuffer()))
 			{
-				LOG_INTERNAL_ERROR("[AssetManager] Cooking failed to copy '%s' to '%s'", _pAsset->GetSourcePath().GetBuffer(), _pAsset->GetFilePath().GetBuffer());
+				LOG_ERROR("Cooking failed to copy '%s' to '%s'", _pAsset->GetSourcePath().GetBuffer(), _pAsset->GetFilePath().GetBuffer());
 				return false;
 			}
 		}
@@ -638,7 +638,7 @@ namespace Gorilla { namespace Engine
 			if(!pProcess->Execute(vArgument, sError))
 			{
 				// Generate command line for debug purpose
-				LOG_INTERNAL_ERROR("[AssetManager] Cooking failed for %s\n%s", _pAsset->GetSourcePath().GetBuffer(), sError.GetBuffer());
+				LOG_ERROR("Cooking failed for %s\n%s", _pAsset->GetSourcePath().GetBuffer(), sError.GetBuffer());
 				return false;
 			}
 		}

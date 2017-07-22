@@ -2,6 +2,7 @@
 #include <Core/File/FileManager.hpp>
 #include <Core/Stream/FileReader.hpp>
 #include <Core/Stream/FileWriter.hpp>
+#include <Core/String/StringHelper.hpp>
 #include <Core/Process/ArgumentParser.hpp>
 #include <Core/Process/Process.hpp>
 #include <Core/Container/Dictionary.hpp>
@@ -13,14 +14,24 @@
 #define ARGUMENT_OUTPUT		"-output"
 #define ARGUMENT_IDE		"-ide"
 
+#if defined(DEBUG)
+	#define BUILD_CONFIGURATION "Debug"
+#elif defined(RELEASE)
+	#define BUILD_CONFIGURATION "Release"
+#elif defined(MASTER)
+	#define BUILD_CONFIGURATION "Master"
+#endif
+
+using namespace Gorilla;
+
 int main(int argc, const char** argv)
 {
-	Gorilla::ArgumentParser kParser("Module Cooker", "Cook a dll for a specific project", VERSION);
+	ArgumentParser kParser("Module Cooker", "Cook a dll for a specific project", VERSION);
 	kParser.Add(ARGUMENT_INPUT, "Define which project will be cooked", true);
 	kParser.Add(ARGUMENT_OUTPUT, "Define where the asset file will be cooked", true);
 	kParser.Add(ARGUMENT_IDE, "Define the ide to use", false);
 
-	Gorilla::String sUsage;
+	String sUsage;
 	if(!kParser.Parse(argc, argv, &sUsage))
 	{
 		printf(sUsage.GetBuffer());
@@ -28,36 +39,36 @@ int main(int argc, const char** argv)
 	}
 
 	// Retrieve main information
-	Gorilla::Path sInput = kParser.Get<Gorilla::String>(ARGUMENT_INPUT);
-	Gorilla::Path sOutput = kParser.Get<Gorilla::String>(ARGUMENT_OUTPUT);
-	Gorilla::String sIde = kParser.Get<Gorilla::String>(ARGUMENT_IDE);
+	Path sInput = kParser.Get<String>(ARGUMENT_INPUT);
+	Path sOutput = kParser.Get<String>(ARGUMENT_OUTPUT);
+	String sIde = kParser.Get<String>(ARGUMENT_IDE);
 	if(sIde.IsEmpty()) sIde = "vs2013";
 
-	Gorilla::String sSolution(sInput.GetDirectory());
+	String sSolution(sInput.GetDirectory());
 	sSolution.Append("..\\");
 
 	// Check if there file to compile
-	Gorilla::Dictionary dModule;
-	if(!dModule.Read<Gorilla::DictionaryStreamJson>(sInput.GetFull().GetBuffer()))
+	Dictionary dModule;
+	if(!dModule.Read<DictionaryStreamJson>(sInput.GetFull().GetBuffer()))
 	{
 		printf("Failed to read module %s", sInput.GetFull().GetBuffer());
 		return -1;
 	}
-	Gorilla::Vector<Gorilla::String> vFile;
+	Vector<String> vFile;
 	dModule.GetValue("files", vFile);
 	if(vFile.IsEmpty()) return true;
 
-	Gorilla::String sCookerPath, sEditorPath;
-	Gorilla::FileManager::GetDirectory(Gorilla::FileManager::Directory::Executable, sCookerPath);
+	String sCookerPath, sEditorPath;
+	FileManager::GetDirectory(FileManager::Directory::Executable, sCookerPath);
 	sEditorPath.Set(sCookerPath).Append("..\\..\\");
-	Gorilla::Path::Format(sEditorPath);
+	Path::Format(sEditorPath);
 
 	// Generate premake file from template
-	Gorilla::String sTemplatePath(sCookerPath);
+	String sTemplatePath(sCookerPath);
 	sTemplatePath.Append("Application.lua");
 
 	// Read template application lua
-	Gorilla::FileReader kReader;
+	FileReader kReader;
 	if(!kReader.Open(sTemplatePath.GetBuffer()))
 	{
 		printf("Failed to open %s", sTemplatePath.GetBuffer());
@@ -65,8 +76,8 @@ int main(int argc, const char** argv)
 	}
 
 	// Replace variable
-	const Gorilla::uint32 uiFileSize = kReader.GetSize();
-	Gorilla::String sContent;
+	const uint32 uiFileSize = kReader.GetSize();
+	String sContent;
 	sContent.Resize(uiFileSize);
 	kReader.Read(&sContent[0], uiFileSize);
 	sContent.Replace("${SOLUTION_NAME}", sInput.GetFileName().GetBuffer());
@@ -75,23 +86,23 @@ int main(int argc, const char** argv)
 	sContent.Replace("${TARGET_NAME}", sOutput.GetFileName().GetBuffer());
 	
 	// Generate file include
-	Gorilla::String sIncludePath, sInclude;
+	String sIncludePath, sInclude;
 	sIncludePath.Set(sEditorPath).Append("Resources\\Include\\");
-	const Gorilla::uint32 uiFileCount = vFile.GetSize();
-	for(Gorilla::uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) sInclude.Append("\"").Append(sInput.GetDirectory()).Append(vFile[uiFile]).Append("\",");
+	const uint32 uiFileCount = vFile.GetSize();
+	for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) sInclude.Append("\"").Append(sInput.GetDirectory()).Append(vFile[uiFile]).Append("\",");
 	sInclude.Append("\"").Append(sIncludePath).Append("Engine\\System\\Module.hpp").Append("\",");
 	sInclude.Append("\"").Append(sIncludePath).Append("Engine\\System\\Module.cpp").Append("\",");
 	sContent.Replace("${SCRIPT_FILE}", sInclude.GetBuffer());
 
 	// Generate include lib
 	sInclude.Set("\"").Append(sEditorPath).Append("..\\..\\Sources\\Engine\\\"");
-	Gorilla::Path::Format(sInclude);
+	Path::Format(sInclude);
 	sContent.Replace("${ENGINE_INCLUDE}", sInclude.GetBuffer());
 
 	// Generate Library to link with
-	Gorilla::String sLibrary, sLink;
+	String sLibrary, sLink;
 	sLibrary.Set(sEditorPath).Append("Resources\\Libraries\\");
-	Gorilla::Path::Format(sLibrary);
+	Path::Format(sLibrary);
 	sLink.Append("\"").Append(sLibrary).Append("Core.lib\",");
 	sLink.Append("\"").Append(sLibrary).Append("Renderer.lib\",");
 	sLink.Append("\"").Append(sLibrary).Append("Engine.lib\",");
@@ -102,12 +113,12 @@ int main(int argc, const char** argv)
 	sContent.Replace("\\", "/");
 	
 	// Configuration file
-	Gorilla::String sConfiguration;
-	Gorilla::FileManager::GetDirectory(Gorilla::FileManager::Directory::Temporary, sConfiguration);
+	String sConfiguration;
+	FileManager::GetDirectory(FileManager::Directory::Temporary, sConfiguration);
 	sConfiguration.Append("Application.lua");
 
 	// Write premake file
-	Gorilla::FileWriter kWriter;
+	FileWriter kWriter;
 	if(!kWriter.Open(sConfiguration.GetBuffer()))
 	{
 		printf("Failed to open %s", sConfiguration.GetBuffer());
@@ -116,10 +127,10 @@ int main(int argc, const char** argv)
 	kWriter.Write(sContent.GetBuffer(), sContent.GetLength());
 	kWriter.Close();
 	
-	Gorilla::String sArgument, sError;
+	String sArgument, sError;
 	
 	// Generate solution
-	Gorilla::Process kPremake;
+	Process kPremake;
 	sArgument.Set("--file=").Append(sConfiguration.GetBuffer()).Append(" ").Append(sIde);
 	kPremake.Initialize("premake5.exe", sArgument.GetBuffer());
 	if(!kPremake.Execute(&sError))
@@ -129,23 +140,55 @@ int main(int argc, const char** argv)
 	}
 
 	// Build solution
-	Gorilla::Process sDevEnv;
-	sArgument.Set("\"").Append(sSolution.GetBuffer()).Append(sInput.GetFileName()).Append(".vcxproj\" /build Debug");
+	Process sDevEnv;
+	sArgument.Set("\"").Append(sSolution.GetBuffer()).Append(sInput.GetFileName()).Append(".vcxproj\" /build ").Append(BUILD_CONFIGURATION);
 	sDevEnv.Initialize("C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\IDE\\devenv.exe", sArgument.GetBuffer());
-	if(!sDevEnv.Execute(&sError))
+	if(!sDevEnv.Execute())
 	{
+		String sLogFile;
+		sLogFile.Set(sOutput.GetDirectory()).Append("Temp\\x64\\").Append(BUILD_CONFIGURATION).Append("\\Script.log");
+
+		// Read log to display errors
+		FileReader kReader(sLogFile.GetBuffer());
+		if(kReader.CanRead())
+		{
+			Vector<String> vLine;
+			
+			// Split content by lines
+			String sContent;
+			sContent.Resize(kReader.GetSize());
+			kReader.Read(&sContent[0], kReader.GetSize());
+			StringHelper::Split(sContent.GetBuffer(), "\n", vLine);
+
+			// Check each line
+			const uint32 uiElementCount = vLine.GetSize();
+			for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) 
+			{
+				String& sLine = vLine[uiElement];
+				if(sLine.Find(": error ") != (uint32)-1)
+				{
+					uint32 uiStartPosition = sLine.Find(">")+1;
+					sError.Append(&sLine[uiStartPosition], sLine.GetLength() - uiStartPosition).Append("\n");
+				}
+			}
+			String sInputDirectoryToLower(sInput.GetDirectory());
+			sInputDirectoryToLower.Remove("Asset\\");
+			sInputDirectoryToLower.ToLower();
+			sError.Remove(sInputDirectoryToLower.GetBuffer());
+		}
+		
 		printf(sError.GetBuffer());
 		return -1;
 	}
 
 	// Copy to real output (HACK waiting for reading dll from memory)
-	Gorilla::String sLibrarySource;
+	String sLibrarySource;
 	sLibrarySource.Set(sOutput.GetDirectory()).Append("Temp\\").Append(sOutput.GetFileNameWithExtension());
-	Gorilla::FileManager::CopyAFile(sLibrarySource.GetBuffer(), sOutput.GetFull().GetBuffer());
+	FileManager::CopyAFile(sLibrarySource.GetBuffer(), sOutput.GetFull().GetBuffer());
 
-	Gorilla::String sPdbFile;
+	String sPdbFile;
 	sPdbFile.Set(sOutput.GetDirectory()).Append("Temp\\").Append(sOutput.GetFileName()).Append(".pdb");
-	Gorilla::FileManager::DeleteAFile(sPdbFile.GetBuffer());
+	FileManager::DeleteAFile(sPdbFile.GetBuffer());
 
 
 	return 0;

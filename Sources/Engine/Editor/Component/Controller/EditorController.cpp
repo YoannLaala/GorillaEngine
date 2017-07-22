@@ -2,6 +2,7 @@
 **	Includes
 ******************************************************************************/
 #include "EditorController.hpp"
+#include <Core/String/StringHelper.hpp>
 #include <Core/Container/Dictionary.hpp>
 #include <Core/File/FileManager.hpp>
 #include <Core/Stream/MemoryWriter.hpp>
@@ -93,24 +94,32 @@ namespace Gorilla { namespace Editor
 	Gorilla::Component::WebView* pWebView = nullptr;
 	void EditorController::OnLogChanged(ELog::Type _eLog, const char* _szMessage)
 	{
-		switch(_eLog)
+		static Vector<String> vLine; vLine.Clear();
+
+		// Check each line
+		StringHelper::Split(_szMessage, "\n", vLine);
+		const uint32 uiElementCount = vLine.GetSize();
+		for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) 
 		{
-			case ELog::Normal:
+			switch(_eLog)
 			{
-				pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onPrint", _szMessage);
-				break;
-			}
+				case ELog::Normal:
+				{
+					for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onPrint", vLine[uiElement].GetBuffer());
+					break;
+				}
 
-			case ELog::Warning:
-			{
-				pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onWarning", _szMessage);
-				break;
-			}
+				case ELog::Warning:
+				{
+					for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onWarning", vLine[uiElement].GetBuffer());
+					break;
+				}
 
-			case ELog::Error:
-			{
-				pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onError", _szMessage);
-				break;
+				case ELog::Error:
+				{
+					for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onError", vLine[uiElement].GetBuffer());
+					break;
+				}
 			}
 		}
 	}
@@ -501,30 +510,7 @@ namespace Gorilla { namespace Editor
 				kWriter.Write(sContent.GetBuffer(), sContent.GetLength());
 				kWriter.Close();
 			}
-			
-			// Retrieve all files with proper extension and make them relative
-			Vector<String> vFile;
-			FileManager::GetAllFiles(GetAssetManager()->GetPath().GetBuffer(), vFile, true, "hpp;cpp");
-			const uint32 uiFileCount = vFile.GetSize();
-			if(uiFileCount)
-			{
-				for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) GetAssetManager()->FormatToRelative(vFile[uiFile]);
-
-				// Build path
-				String sModule, sModuleRelative;
-				sModuleRelative.Set("Script").Append(".module");
-				sModule.Set(sModuleRelative);
-				GetAssetManager()->FormatToAbsolute(sModule);
-
-				// Update Module file
-				Dictionary dFile;
-				dFile["files"] = vFile;
-				dFile.Write<DictionaryStreamJson>(sModule.GetBuffer());
-
-				// Load module
-				GetEngine()->RemoveModule(sModuleRelative.GetBuffer());
-				GetEngine()->AddModule(sModuleRelative.GetBuffer());
-			}
+			RefreshModule();
 
 			this->m_sScript.Set("Gorilla::Component::").Append(sFileName);
 		});
@@ -858,6 +844,31 @@ namespace Gorilla { namespace Editor
 		return uiLastIndex;
 	}
 
+	//!	@brief		RefreshModule
+	//!	@date		2015-04-04
+	void EditorController::RefreshModule()
+	{
+		// Retrieve all files with proper extension and make them relative
+		Vector<String> vFile;
+		FileManager::GetAllFiles(GetAssetManager()->GetPath().GetBuffer(), vFile, true, "hpp;cpp");
+		const uint32 uiFileCount = vFile.GetSize();
+		if(uiFileCount)
+		{
+			for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile) GetAssetManager()->FormatToRelative(vFile[uiFile]);
+
+			// Build path
+			String sModule, sModuleRelative;
+			sModuleRelative.Set("Script").Append(".module");
+			sModule.Set(sModuleRelative);
+			GetAssetManager()->FormatToAbsolute(sModule);
+
+			// Refresh Module file
+			Dictionary dFile;
+			dFile["files"] = vFile;
+			dFile.Write<DictionaryStreamJson>(sModule.GetBuffer());
+		}
+	}
+
 	//!	@brief		LoadProject
 	//!	@date		2015-04-04
 	bool EditorController::LoadProject(const char* _szProjectPath /*= nullptr*/)
@@ -899,6 +910,8 @@ namespace Gorilla { namespace Editor
 			Path sPath(sProject);
 			GetAssetManager()->SetPath(sPath.GetDirectory().GetBuffer());
 
+			// Refresh module
+			RefreshModule();
 			String sModule;
 			sModule.Set(GetAssetManager()->GetPath().GetBuffer()).Append("Script.module");
 			if(FileManager::IsFileExist(sModule.GetBuffer()))

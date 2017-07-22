@@ -385,33 +385,37 @@ class ConsolePanel extends GorillaPanel
         ]);
 
         var self = this;
+        self.onLoaded = function()
+        {
+            self.dom.css("overflow-y", "auto");
+        }
 
         this.logs = {};
         function logInternal(template, ...args)
         {
             // Collapse logs
             var message = args.join(" ");
-            var hash = md5(message);
-            var info = self.logs[hash];
-            if(info == null)
+            //var hash = md5(message);
+            //var info = self.logs[hash];
+            //if(info == null)
             {
                 // add new info instance
-                self.logs[hash] =
+                /*self.logs[hash] =
                 {
                     count : 1,
                     index: self.dom.children().size()
-                }
+                }*/
 
                 // add html to console
                 var html = Mustache.render(template, {message:message});
                 self.dom.append(html);
                 self.dom.scrollTop(self.dom.height());
             }
-            else
+            /*else
             {
                 ++info.count;
                 self.dom.find("span:eq("+info.index+")").html(info.count);
-            }
+            }*/
         }
         this.onPrint = function(...args) { logInternal(Template.console.print, args); }
         this.onWarning = function(...args) { logInternal(Template.console.warning, args); }
@@ -1012,9 +1016,24 @@ class GorillaTemplate
 
         this.console = 
         {
-            print : "<div class='alert'><span class='label label-info'>1</span>{{message}}</div>",
-            warning : "<div class='alert alert-warning'><span class='label label-warning'>1</span>{{message}}</div>",
-            error : "<div class='alert alert-danger'><span class='label label-danger'>1</span>{{message}}</div>",
+            print : "                                                                                                                          \
+            <div class='alert alert-dismissable fade in' style='padding:5px;margin:0px;border-radius:0px;'>                                     \
+                <a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>                                                  \
+                <span class='label label-info' style='position:relative;top:-2px;margin-right:5px'>1</span>                                    \
+                {{message}}                                                                                                                    \
+            </div>",
+            warning : "                                                                                                                          \
+            <div class='alert alert-warning alert-dismissable fade in' style='padding:5px;margin:0px;border-radius:0px;'>                       \
+                <a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>                                                  \
+                <span class='label label-warning' style='position:relative;top:-2px;margin-right:5px'>1</span>                                  \
+                {{message}}                                                                                                                    \
+            </div>",
+            error : "                                                                                                                          \
+            <div class='alert alert-danger alert-dismissable fade in' style='padding:5px;margin:0px;border-radius:0px;'>                       \
+                <a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>                                                  \
+                <span class='label label-danger' style='position:relative;top:-2px;margin-right:5px'>1</span>                                  \
+                {{message}}                                                                                                                    \
+            </div>"
         };
 
         this.property =
@@ -1138,6 +1157,17 @@ $(document).ready(function()
         Editor.panels.property.onModuleChanged("{\"Gorilla::Component::Camera\":{\"fields\":{\"Viewport\":{\"visible\":true,\"type\":\"Pointer\",\"offset\":24},\"m_pCamera\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":32},\"m_fFOV\":{\"visible\":false,\"type\":\"Float\",\"offset\":40},\"m_fZNear\":{\"visible\":false,\"type\":\"Float\",\"offset\":44},\"m_fZFar\":{\"visible\":false,\"type\":\"Float\",\"offset\":48},\"m_uiLayer\":{\"visible\":false,\"type\":\"UInt\",\"offset\":52},\"m_eProjection\":{\"visible\":false,\"type\":\"Enum\",\"offset\":56}},\"dependencies\":[\"Gorilla::Engine::Component\"]},\"Gorilla::Engine::Component\":{\"fields\":{\"m_pGameObject\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":8},\"m_eFlag\":{\"visible\":false,\"type\":\"UInt\",\"offset\":16},\"m_eState\":{\"visible\":false,\"type\":\"Enum\",\"offset\":20}},\"dependencies\":{}},\"Gorilla::Component::RenderableNode\":{\"fields\":{},\"dependencies\":[\"Gorilla::Engine::Component\",\"Gorilla::Renderer::IRenderable\"]},\"Gorilla::Renderer::IRenderable\":{\"fields\":{},\"dependencies\":{}},\"Gorilla::Component::Decal\":{\"fields\":{\"Asset\":{\"visible\":true,\"type\":\"Gorilla::Engine::AssetHandle\",\"offset\":32,\"element_type\":\"Gorilla::Engine::Material\"}},\"dependencies\":[\"Gorilla::Component::RenderableNode\"]},\"Gorilla::Component::EnvironmentMap\":{\"fields\":{\"Asset\":{\"visible\":true,\"type\":\"Gorilla::Engine::AssetHandle\",\"offset\":32,\"element_type\":\"Gorilla::Engine::CubeMap\"}},\"dependencies\":[\"Gorilla::Component::RenderableNode\"]},\"Gorilla::Component::Sprite\":{\"fields\":{\"Texture\":{\"visible\":true,\"type\":\"Pointer\",\"offset\":32}},\"dependencies\":[\"Gorilla::Component::RenderableNode\"]},\"Gorilla::Component::Renderable\":{\"fields\":{},\"dependencies\":[\"Gorilla::Engine::Component\",\"Gorilla::Renderer::IRenderable\"]},\"Gorilla::Component::WebView\":{\"fields\":{\"Document\":{\"visible\":true,\"type\":\"Gorilla::Engine::AssetHandle\",\"offset\":32,\"element_type\":\"Gorilla::Engine::WebDocument\"},\"RenderTexture\":{\"visible\":true,\"type\":\"Pointer\",\"offset\":40},\"Transparent\":{\"visible\":true,\"type\":\"Bool\",\"offset\":48},\"m_pInstance\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":53},\"m_pTexture\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":61}},\"dependencies\":[\"Gorilla::Component::Renderable\"]},\"Gorilla::Component::DirectionalLight\":{\"fields\":{\"m_pLight\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":32}},\"dependencies\":[\"Gorilla::Component::Renderable\"]},\"Gorilla::Component::PointLight\":{\"fields\":{\"m_pLight\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":32}},\"dependencies\":[\"Gorilla::Component::RenderableNode\"]},\"Gorilla::Component::Material\":{\"fields\":{\"m_vInstance\":{\"visible\":false,\"type\":\"Gorilla::Vector\",\"offset\":24,\"element_type\":\"MaterialInstance\"}},\"dependencies\":[\"Gorilla::Engine::Component\"]},\"Gorilla::Component::Mesh\":{\"fields\":{\"Asset\":{\"visible\":true,\"type\":\"Gorilla::Engine::AssetHandle\",\"offset\":32,\"element_type\":\"Gorilla::Engine::Mesh\"},\"Materials\":{\"visible\":true,\"type\":\"Gorilla::Vector\",\"offset\":40,\"element_type\":\"Gorilla::Engine::AssetHandle\"}},\"dependencies\":[\"Gorilla::Component::RenderableNode\"]},\"Gorilla::Component::Node\":{\"fields\":{\"Position\":{\"visible\":true,\"type\":\"Gorilla::Math::Vector3\",\"offset\":24,\"element_type\":\"\"},\"Rotation\":{\"visible\":true,\"type\":\"Gorilla::Math::Vector3\",\"offset\":36,\"element_type\":\"\"},\"Scale\":{\"visible\":true,\"type\":\"Gorilla::Math::Vector3\",\"offset\":48,\"element_type\":\"\"},\"m_vUp\":{\"visible\":false,\"type\":\"Gorilla::Math::Vector3\",\"offset\":60,\"element_type\":\"\"},\"m_vRight\":{\"visible\":false,\"type\":\"Gorilla::Math::Vector3\",\"offset\":72,\"element_type\":\"\"},\"m_vForward\":{\"visible\":false,\"type\":\"Gorilla::Math::Vector3\",\"offset\":84,\"element_type\":\"\"},\"m_pNode\":{\"visible\":false,\"type\":\"Pointer\",\"offset\":96}},\"dependencies\":[\"Gorilla::Engine::Component\"]},\"Gorilla::Component::CameraFree\":{\"fields\":{\"m_fRotationSpeed\":{\"visible\":false,\"type\":\"Float\",\"offset\":24},\"m_fMoveSpeed\":{\"visible\":false,\"type\":\"Float\",\"offset\":28}},\"dependencies\":[\"Gorilla::Engine::Component\"]}}");
         Editor.panels.property.onSelectionChanged("{\"name\":\"Cube\",\"components\":{\"Gorilla::Component::Material\":{},\"Gorilla::Component::Mesh\":{\"Asset\":{\"filepath\":\"@Mesh/Cube.fbx\",\"parameters\":\"\"},\"Materials\":{}},\"Gorilla::Component::Node\":{\"Position\":[0,0,0],\"Rotation\":[0,0,0],\"Scale\":[1,1,1]}}}");
         Editor.panels.profiler.onChanged("{\"structure\":{\"World\":{},\"Display\":{\"EditorPass\":{},\"GuiPass\":{},\"FullScreenPass\":{},\"VisibilityPass\":{},\"ShadowPass\":{},\"GeometryPass\":{},\"DecalPass\":{},\"LightPass\":{},\"PrimitivePass\":{},\"GuiPass\":{},\"CompositingPass\":{},\"FullScreenPass\":{}}},\"time\":[0.172839,1.31351,0.000310303,0,0,0.00341333,0,0.000310303,0,0,0,0,0,0.000310303]}");
+        Editor.panels.console.onError("balbbala0");
+        Editor.panels.console.onError("balbbala1");
+        Editor.panels.console.onError("balbbala2");
+        Editor.panels.console.onError("balbbala3");
+        Editor.panels.console.onError("balbbala4");
+        Editor.panels.console.onError("balbbala5");
+        Editor.panels.console.onError("balbbala6");
+        Editor.panels.console.onError("balbbala7");
+        Editor.panels.console.onError("balbbala8");
+        Editor.panels.console.onError("balbbala9");
+
     }
     viewLoaded();
 });

@@ -53,6 +53,7 @@ namespace Gorilla { namespace Editor
 		uint32 CreateViewport(uint32 _uiLeft, uint32 _uiTop, uint32 _uiWidth, uint32 _uiHeight);
 
 	private:
+		void RefreshModule();
 		bool LoadProject(const char* _szProjectPath = nullptr);
 		void LoadWorld(const char* _szWorldPath = nullptr);
 		void SaveWorld(const char* _szWorldPath);
