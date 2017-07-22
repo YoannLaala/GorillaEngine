@@ -150,6 +150,25 @@ namespace Gorilla { namespace Editor
 		SendJson("Editor.onNotification", dNotification);
 	}
 
+	void SendWorldTree(Engine::World* _pWorld)
+	{
+		Dictionary& dWorld = GetDictionary();
+		const uint32 uiGameObjectCount = _pWorld->GetGameObjectCount();
+		for(uint32 uiGameObject = 0; uiGameObject < uiGameObjectCount; ++uiGameObject)
+		{
+			Engine::GameObject* pGameObject = _pWorld->GetGameObject(uiGameObject);
+			if(pGameObject->GetName()[0] == '@') continue; // Avoid intrinsic GameObject
+
+			Engine::GameObject* pParent = pGameObject->GetParent();
+			Node kGameObject = dWorld.Add();
+			kGameObject["id"] = (uint64)pGameObject;
+			kGameObject["text"] = pGameObject->GetName();
+			if(pParent) kGameObject["parent"] = (uint64)pParent;
+			else kGameObject["parent"] = "#";
+		}	
+		SendJson("Editor.panels.world.onChanged", dWorld);
+	}		
+
 	//!	@brief		SelectGameObject
 	//!	@date		2015-04-04
 	void EditorController::SelectGameObject(Engine::GameObject* _pGameObject)
@@ -255,22 +274,7 @@ namespace Gorilla { namespace Editor
 			}
 
 			// World
-			Dictionary& dWorld = GetDictionary();
-			Engine::World* pWorld = this->m_pWorld;
-			const uint32 uiGameObjectCount = pWorld->GetGameObjectCount();
-			for(uint32 uiGameObject = 0; uiGameObject < uiGameObjectCount; ++uiGameObject)
-			{
-				Engine::GameObject* pGameObject = pWorld->GetGameObject(uiGameObject);
-				if(pGameObject->GetName()[0] == '@') continue; // Avoid intrinsic GameObject
-
-				Engine::GameObject* pParent = pGameObject->GetParent();
-				Node kGameObject = dWorld.Add();
-				kGameObject["id"] = (uint64)pGameObject;
-				kGameObject["text"] = pGameObject->GetName();
-				if(pParent) kGameObject["parent"] = (uint64)pParent;
-				else kGameObject["parent"] = "#";
-			}	
-			SendJson("Editor.panels.world.onChanged", dWorld);
+			SendWorldTree(m_pWorld);
 
 			// Component
 			SendJson("Editor.panels.property.onModuleChanged", GetEngine()->GetAllComponentDescriptor());
@@ -312,7 +316,7 @@ namespace Gorilla { namespace Editor
 			//_vOutput.SetBool(0, bResult);
 		});
 
-		pPage->CreateCallback("Gorilla.Project.Open", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		pPage->CreateCallback("Gorilla.Project.open", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		{
 			const String& sProjecPath = _vArgument.GetString(0);
 			this->LoadProject(sProjecPath.GetBuffer());
@@ -820,13 +824,12 @@ namespace Gorilla { namespace Editor
 	
 	void EditorController::Update()
 	{	
-		static uint32 uiFrame = 0;
+		/*static uint32 uiFrame = 0;
 		Dictionary& dValue = Profiler::GetInstance()->GetValue();
 		if(dValue.Get("fps").IsValid())
 		{
 			SendJson("Editor.panels.profiler.onChanged", dValue);
-		}
-		
+		}*/	
 	}
 
 	//!	@brief		Stop
@@ -923,6 +926,18 @@ namespace Gorilla { namespace Editor
 	//!	@date		2015-04-04
 	void EditorController::LoadWorld(const char* _szWorldPath /*= nullptr*/)
 	{
+		String sWorld;
+		if(_szWorldPath && *_szWorldPath != '\0')
+		{
+			// World not in current project
+			sWorld.Set(_szWorldPath);
+			if(!GetAssetManager()->FormatToAbsolute(sWorld))
+			{
+				LOG_ERROR("World %s does not belong to current project", _szWorldPath);
+				return;
+			}
+		}
+
 		GetEngine()->DestroyWorld(m_pWorld);
 		m_pWorld = GetEngine()->CreateWorld();
 		m_pWorld->Pause();
@@ -936,11 +951,8 @@ namespace Gorilla { namespace Editor
 		if(m_vViewport.GetSize()) pCpnCamera->Viewport = m_vViewport[m_vViewport.GetSize()-1];
 
 		// User World Object
-		if(_szWorldPath && *_szWorldPath != '\0')
+		if(sWorld.GetLength())
 		{
-			String sWorld(_szWorldPath);
-			GetAssetManager()->FormatToAbsolute(sWorld);
-
 			Dictionary dWorld;
 			bool bResult = dWorld.Read<DictionaryStreamJson>(sWorld.GetBuffer());
 			if(bResult) bResult = m_pWorld->Deserialize(dWorld);
@@ -963,6 +975,7 @@ namespace Gorilla { namespace Editor
 			Engine::GameObject* pGoCamera = m_pWorld->AddGameObject("Camera");
 			pGoCamera->AddComponent<Gorilla::Component::Camera>();
 		}
+		SendWorldTree(m_pWorld);
 	}
 
 	//!	@brief		SaveWorld
