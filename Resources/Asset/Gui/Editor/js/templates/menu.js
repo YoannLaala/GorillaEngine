@@ -1,0 +1,36 @@
+Gorilla.Template.files.menu_bar = "                                                                                                                                                                                     \
+<nav class='navbar navbar-default'>                                                                                                                                                                                     \
+	<div class='container-fluid'>                                                                                                                                                                                       \
+		<div class='collapse navbar-collapse' id='bs-example-navbar-collapse-1'>                                                                                                                                        \
+			<ul class='nav navbar-nav'>                                                                                                                                                                                 \
+	            {{#.}}                                                                                                                                                                                                  \
+	            <li class='dropdown'>                                                                                                                                                                                   \
+		            <a href='#' class='dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'>{{name}}</a>                                                                    \
+		            <ul class='dropdown-menu'>                                                                                                                                                                          \
+			            {{#actions}}                                                                                                                                                                                    \
+			            <li onclick='execute_callback({{func}});'><a href='#'>{{name}}</a></li>                                                                                                                         \
+			            {{#separator}}                                                                                                                                                                                  \
+			            <li role='separator' class='divider'></li>                                                                                                                                                      \
+			            {{/separator}}                                                                                                                                                                                  \
+			            {{/actions}}                                                                                                                                                                                    \
+		            </ul>                                                                                                                                                                                               \
+	            </li>                                                                                                                                                                                                   \
+	            {{/.}}                                                                                                                                                                                                  \
+            </ul>                                                                                                                                                                                                       \
+			<span class='gorilla_bar glyphicon glyphicon-play' onclick='Gorilla.play();'/>                                                                                                                              \
+			<span class='gorilla_bar glyphicon glyphicon-pause' onclick='Gorilla.pause();'/>                                                                                                                            \
+			<span class='gorilla_bar glyphicon glyphicon-stop' onclick='Gorilla.stop();'/>                                                                                                                              \
+		</div>                                                                                                                                                                                                          \
+	</div>                                                                                                                                                                                                              \
+</nav>"
+
+Gorilla.Template.files.menu_vitem = "                                                                                                                                                                                   \
+<nav class='navbar navbar-default'>                                                                                                                                                                                     \
+	<div class='container-fluid'>                                                                                                                                                                                       \
+		<ul class='nav navbar-nav'>                                                                                                                                                                                     \
+			{{#items}}                                                                                                                                                                                                  \
+			<li class='{{active}}'><a href='#'>{{name}}</a></li>                                                                                                                                                        \
+			{{/items}}                                                                                                                                                                                                  \
+		</ul>                                                                                                                                                                                                           \
+	</div>                                                                                                                                                                                                              \
+</nav>"

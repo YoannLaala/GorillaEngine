@@ -1,0 +1,43 @@
+Gorilla.Template.files.property_component = "                                                                                                                                                                           \
+<div class='panel-group gorilla_component gorilla_script' component='{{class}}'>                                                                                                                                        \
+	<div class='panel panel-default'>                                                                                                                                                                                   \
+		<div class='panel-heading'>                                                                                                                                                                                     \
+			<h4 class='panel-title'>                                                                                                                                                                                    \
+				{{#create}}                                                                                                                                                                                             \
+				<div class='form-group has-feedback'>                                                                                                                                                                   \
+					<input type='text' class='form-control' placeholder='Script Name' value='{{name}}' maxLength='32' required='true'>                                                                                  \
+					<span class='glyphicon form-control-feedback'></span>                                                                                                                                               \
+				</div>                                                                                                                                                                                                  \
+				{{/create}}                                                                                                                                                                                             \
+				{{#display}}                                                                                                                                                                                            \
+				<a data-toggle='collapse' href='#{{name}}'>{{name}}</a>                                                                                                                                                 \
+				{{/display}}                                                                                                                                                                                            \
+			</h4>                                                                                                                                                                                                       \
+		</div>                                                                                                                                                                                                          \
+		<div id='{{name}}' class='panel-collapse collapse'>                                                                                                                                                             \
+			<ul class='list-group'>                                                                                                                                                                                     \
+				{{#fields}}                                                                                                                                                                                             \
+				<li class='list-group-item'>                                                                                                                                                                            \
+					<div class='row'>                                                                                                                                                                                   \
+						<div class='col-sm-6'>{{name}}</div>                                                                                                                                                            \
+						<div class='col-sm-6 form-group'>                                                                                                                                                               \
+							{{#Bool}}                                                                                                                                                                                   \
+							<input type='checkbox'>                                                                                                                                                                     \
+							{{/Bool}}                                                                                                                                                                                   \
+							{{#Gorilla::Math::Vector3}}                                                                                                                                                                 \
+							{{#value}}                                                                                                                                                                                  \
+							<input type='number' class='gorilla_asset' gorilla_type='9' offset='{{offset}}' min='1' max='5' value='{{.}}'>                                                                              \
+							{{/value}}                                                                                                                                                                                  \
+							{{/Gorilla::Math::Vector3}}                                                                                                                                                                 \
+							{{#Gorilla::Engine::AssetHandle}}                                                                                                                                                           \
+							<button type='file' default_path='{{default_path}}' accept='{{extension}}' class='btn btn-default btn-small'>...</button>                                                                   \
+							<input type='text' gorilla_type='12' gorilla_asset='{{type}}' class='form-control gorilla_asset' offset='{{offset}}' placeholder='Asset path' value='{{value.filepath}}'>                   \
+							{{/Gorilla::Engine::AssetHandle}}                                                                                                                                                           \
+						</div>                                                                                                                                                                                          \
+					</div>                                                                                                                                                                                              \
+				</li>                                                                                                                                                                                                   \
+				{{/fields}}                                                                                                                                                                                             \
+			</ul>                                                                                                                                                                                                       \
+		<div class='panel-footer'></div>                                                                                                                                                                                \
+	</div>                                                                                                                                                                                                              \
+</div>"

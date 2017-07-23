@@ -1,0 +1,5 @@
+Gorilla.Template.files.form_input = "                                                                                                                                                                                   \
+<div class='form-group'>                                                                                                                                                                                                \
+		<button type='{{button_type}}' default_path='{{button_default_path}}' accept='{{button_accept}}' class='btn btn-default btn-small'>{{button_text}}</button>                                                     \
+		<input type='text' class='form-control' placeholder='{{place_holder}}'>                                                                                                                                         \
+</div>"
