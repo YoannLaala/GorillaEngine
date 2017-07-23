@@ -19,9 +19,9 @@
 
 #ifdef LOG_ENGINE_ENABLED
 	#define PRINT(_format_, ...)			Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(_format_, __VA_ARGS__);
-	#define LOG_PRINT(_format_, ...)		Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(Gorilla::ELog::Normal, _format_, __VA_ARGS__);
-	#define LOG_WARNING(_format_, ...)		Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(Gorilla::ELog::Warning, _format_, __VA_ARGS__);
-	#define LOG_ERROR(_format_, ...)		Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(Gorilla::ELog::Error, _format_, __VA_ARGS__);
+	#define LOG_PRINT(_format_, ...)		LOG_INTERNAL_PRINT(_format_, __VA_ARGS__); Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(Gorilla::ELog::Normal, _format_, __VA_ARGS__);
+	#define LOG_WARNING(_format_, ...)		LOG_INTERNAL_WARNING(_format_, __VA_ARGS__); Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(Gorilla::ELog::Warning, _format_, __VA_ARGS__);
+	#define LOG_ERROR(_format_, ...)		LOG_INTERNAL_ERROR(_format_, __VA_ARGS__); Gorilla::Engine::Engine::GetInstance()->GetLogManager()->Print(Gorilla::ELog::Error, _format_, __VA_ARGS__);
 #else
 	#define PRINT(_format_, ...) UNUSED(__VA_ARGS__)
 	#define LOG_PRINT(_format_, ...) UNUSED(__VA_ARGS__)

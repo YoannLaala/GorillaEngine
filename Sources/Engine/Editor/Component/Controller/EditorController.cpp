@@ -99,32 +99,27 @@ namespace Gorilla { namespace Editor
 		// Check each line
 		StringHelper::Split(_szMessage, "\n", vLine);
 		const uint32 uiElementCount = vLine.GetSize();
-		for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) 
+		switch(_eLog)
 		{
-			switch(_eLog)
+			case ELog::Normal:
 			{
-				case ELog::Normal:
-				{
-					for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onPrint", vLine[uiElement].GetBuffer());
-					break;
-				}
+				for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onPrint", vLine[uiElement].GetBuffer());
+				break;
+			}
 
-				case ELog::Warning:
-				{
-					for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onWarning", vLine[uiElement].GetBuffer());
-					break;
-				}
+			case ELog::Warning:
+			{
+				for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onWarning", vLine[uiElement].GetBuffer());
+				break;
+			}
 
-				case ELog::Error:
-				{
-					for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onError", vLine[uiElement].GetBuffer());
-					break;
-				}
+			case ELog::Error:
+			{
+				for(uint32 uiElement = 0; uiElement < uiElementCount; ++uiElement) pWebView->GetPage()->ExecuteFunction("Editor.panels.console.onError", vLine[uiElement].GetBuffer());
+				break;
 			}
 		}
 	}
-
-	
 
 	Dictionary& GetDictionary()
 	{
