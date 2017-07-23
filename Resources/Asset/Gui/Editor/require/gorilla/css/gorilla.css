@@ -4,6 +4,7 @@
 	--default-color: white;
 	--content-color: rgb(37,37,38);
 	--border-color: rgb(45,45,48);
+    --focus-color: #111111;
 }
 
 /* Gorilla */
@@ -51,6 +52,36 @@ input
     width:80%;
     border-top-right-radius:0;
     border-bottom-right-radius:0;
+}
+
+/* tree */
+.gorilla_tree 
+{
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+    padding-left: 10px;
+    cursor: default;
+}
+
+.gorilla_tree > div > span
+{
+   float: left;
+   margin-right: 5px;
+}
+
+.gorilla_tree_header:hover
+{
+    background:var(--border-color);
+}
+
+.gorilla_tree_selected
+{
+    background:var(--focus-color);
+}
+.gorilla_tree_selected:hover
+{
+    background:var(--focus-color);
 }
 
 /* Bootstrap override */
