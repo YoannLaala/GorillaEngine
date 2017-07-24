@@ -5,6 +5,15 @@ class WorkspacePanel extends Panel
         super(layoutManager, "Workspace", 
         [
             {
+                name: 'Create Script',
+                onClick: function () 
+                { 
+                    var node = Editor.panels.workspace.treeview.selection;
+                    var parent = node != null ? node.id : "";
+                    Gorilla.createScript(parent);
+                }
+            },
+            {
                 name: 'Create Directory',
                 onClick: function () 
                 { 
@@ -43,45 +52,11 @@ class WorkspacePanel extends Panel
         _self.onLoaded = function()
         {
             _self.treeview = new TreeView(_self.dom);
-            this.onChanged("");
         }
 
         this.onChanged = function(string)
         {
-            //var json = JSON.parse(string);
-            var json = 
-            [
-                {
-                    id : "87ef07b0-f0c7-4cb2-9bf5-1e2a66c08a45",
-                    name : "fooa",
-                    childs: 
-                    [
-                        {
-                            id : "87ef07b0-f0c7-4cb2-9bf5-1e2a66c08a40",
-                            name : "fooa.a",
-                        },
-                        {
-                            id : "87ef07b0-f0c7-4cb2-9bf5-1e2a66c08a41",
-                            name : "fooa.b",
-                            childs: 
-                            [
-                                {
-                                    id : "87ef07b0-f0c7-4cb2-9bf5-1e2a66c08a42",
-                                    name : "fooa.b.a",
-                                } 
-                            ]
-                        }  
-                    ]
-                },
-                {
-                    id : "87ef07b0-f0c7-4cb2-9bf5-1e2a66c08a43",
-                    name : "foob",
-                },
-                {
-                    id : "87ef07b0-f0c7-4cb2-9bf5-1e2a66c08a44",
-                    name : "fooc",
-                }
-            ];
+            var json = JSON.parse(string);
             _self.treeview.set(json);
         }
     }

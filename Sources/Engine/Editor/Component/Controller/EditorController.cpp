@@ -68,26 +68,31 @@ namespace Gorilla { namespace Editor
 
 	void ConvertRecursive(const FileManager::Directory& _input, Node _kParent)
 	{
-		String stest;
-		Node kNode = _kParent.Add();
-		kNode["id"] =  (int64)&_input;
-		//kNode["text"].SetValue(_input.GetPath());
-		kNode["text"].SetValue(stest);
+		static String sDirectoryName;
+		sDirectoryName.Set(_input.GetPath());
+		sDirectoryName[sDirectoryName.GetLength()-1] = '\0';
 
-		Node kChildren = kNode["children"];
+		Node kNode = _kParent.Add();
+		kNode["id"] =  _input.GetPath();
+		kNode["name"] = &sDirectoryName[sDirectoryName.FindLast("\\") + 1];
+
+		Node kChilds = kNode["childs"];
 		const uint32 uiDirectoryCount = _input.GetDirectoryCount();
 		for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
 		{
-			ConvertRecursive(_input.GetDirectory(uiDirectory), kChildren);
+			ConvertRecursive(_input.GetDirectory(uiDirectory), kChilds);
 		}
 
+		static String sFilePath;
 		const uint32 uiFileCount = _input.GetFileCount();
 		for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile)
 		{
 			const String& sFileName = _input.GetFile(uiFile);
+			sFilePath.Set(_input.GetPath()).Append(sFileName);
 
-			Node kFile = kChildren.Add();
-			kFile["text"] = sFileName;
+			Node kFile = kChilds.Add();
+			kFile["id"] = sFilePath;
+			kFile["name"] = sFileName;
 		}		
 	}
 
@@ -265,17 +270,21 @@ namespace Gorilla { namespace Editor
 				return;
 			}
 
-			// Notify the workspace only if a project has been set
-			if(GetAssetManager()->GetPath().GetLength())
-			{
-				// Retrieve the filesystem tree
-				FileManager::Directory kDirectory(GetAssetManager()->GetPath().GetBuffer());
-				FileManager::GetTree(kDirectory, true);
+			// Retrieve file structure
+			FileManager::Directory kDirectory(GetAssetManager()->GetPath().GetBuffer());
+			FileManager::GetTree(kDirectory, true);
 
-				Dictionary& dTree = GetDictionary();
-				ConvertRecursive(kDirectory, dTree);
-				SendJson("Editor.panels.workspace.onChanged", dTree);
+			// Convert to Json
+			Dictionary& dTree = GetDictionary();
+			const uint32 uiDirectoryCount = kDirectory.GetDirectoryCount();
+			for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
+			{
+				Node dDirectory = dTree.Add();
+				ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dDirectory);
 			}
+
+			// Notify the workspace only if a project has been set
+			SendJson("Editor.panels.workspace.onChanged", dTree);
 
 			// World
 			SendWorldTree(m_pWorld);
@@ -454,26 +463,32 @@ namespace Gorilla { namespace Editor
 
 		pPage->CreateCallback("Gorilla.createScript", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		{
-			static String aTemplate[2] = { "Script.hpp", "Script.cpp" };
+			static const char* szName = "Script";
+			static const char* aExtension[2] = { ".hpp", ".cpp" };
 
-			// Check filename
-			const String& sFileName = _vArgument.GetString(0);
-			if(sFileName.IsEmpty())
-			{
-				LOG_ERROR("err");
-				return;
-			}
+			const String& sRelativePath = _vArgument.GetString(0);
+			String sAbsolutePath(sRelativePath);
+			GetAssetManager()->FormatToAbsolute(sAbsolutePath);
+
+			// Retirve the tree from the path
+			Vector<String> vFile;
+			FileManager::GetAllFiles(sAbsolutePath.GetBuffer(), vFile, false, "hpp");
 			
-			// Check output file
-			String sOutput;
-			sOutput.Set(GetAssetManager()->GetPath()).Append(sFileName).Append(".hpp");
-			if(FileManager::IsFileExist(sOutput.GetBuffer()))
+			// Finalize the list name and check if the current filename is valid
+			uint32 uiInstance = 0;
+			String sFileNameNew(szName);
+			const uint32 uiNameCount = vFile.GetSize();
+			for(uint32 uiName = 0; uiName < uiNameCount; ++uiName)
 			{
-				LOG_ERROR("err");
-				return;
+				String& sFileName = vFile[uiName];
+				sFileName.Remove(sAbsolutePath.GetBuffer()).Remove(aExtension[0]);
+				if(sFileName == sFileNameNew)
+				{
+					sFileNameNew.Set(szName).Append(++uiInstance);
+				}
 			}
-
-			String sDirectory, sInput, sContent;
+		
+			String sInput, sOutput, sDirectory, sContent;
 			FileManager::GetDirectory(FileManager::Directory::Executable, sDirectory);
 
 			// Copy cpp & hpp files
@@ -482,32 +497,91 @@ namespace Gorilla { namespace Editor
 			for(uint32 uiFile = 0; uiFile < 2; ++uiFile)
 			{
 				// Read input file
-				sInput.Set(sDirectory).Append("Resources\\Template\\Script\\").Append(aTemplate[uiFile]);
+				sInput.Set(sDirectory).Append("Resources\\Template\\Script\\").Append(szName).Append(aExtension[uiFile]);
 				if(!kReader.Open(sInput.GetBuffer()))
 				{
-					LOG_ERROR("err");
+					LOG_ERROR("Failed to read script template %s", sInput.GetBuffer());
 					return;
 				}
 				uint32 uiFileSize = kReader.GetSize();
 				sContent.Resize(uiFileSize);
 				kReader.Read(&sContent[0], uiFileSize);
 				kReader.Close();
-				sContent.Replace("${NAME}", sFileName.GetBuffer());
+				sContent.Replace("${NAME}", sFileNameNew.GetBuffer());
 
 				// Write ouput file
-				const char* szExtension = &aTemplate[uiFile][6];
-				sOutput.Set(GetAssetManager()->GetPath()).Append(sFileName).Append(szExtension);
+				sOutput.Set(GetAssetManager()->GetPath()).Append(sFileNameNew).Append(aExtension[uiFile]);
 				if(!kWriter.Open(sOutput.GetBuffer()))
 				{
-					LOG_ERROR("err");
+					LOG_ERROR("Failed to write script %s", sOutput.GetBuffer());
 					return;
 				}
 				kWriter.Write(sContent.GetBuffer(), sContent.GetLength());
 				kWriter.Close();
 			}
-			RefreshModule();
+			GetEngine()->LoadDescriptor();
 
-			this->m_sScript.Set("Gorilla::Component::").Append(sFileName);
+
+
+
+
+
+
+
+
+
+			//// Check filename
+			//const String& sFileName = _vArgument.GetString(0);
+			//if(sFileName.IsEmpty())
+			//{
+			//	LOG_ERROR("err");
+			//	return;
+			//}
+			//
+			//// Check output file
+			//String sOutput;
+			//sOutput.Set(GetAssetManager()->GetPath()).Append(sFileName).Append(".hpp");
+			//if(FileManager::IsFileExist(sOutput.GetBuffer()))
+			//{
+			//	LOG_ERROR("err");
+			//	return;
+			//}
+
+			//String sDirectory, sInput, sContent;
+			//FileManager::GetDirectory(FileManager::Directory::Executable, sDirectory);
+
+			//// Copy cpp & hpp files
+			//FileReader kReader;
+			//FileWriter kWriter;
+			//for(uint32 uiFile = 0; uiFile < 2; ++uiFile)
+			//{
+			//	// Read input file
+			//	sInput.Set(sDirectory).Append("Resources\\Template\\Script\\").Append(aTemplate[uiFile]);
+			//	if(!kReader.Open(sInput.GetBuffer()))
+			//	{
+			//		LOG_ERROR("err");
+			//		return;
+			//	}
+			//	uint32 uiFileSize = kReader.GetSize();
+			//	sContent.Resize(uiFileSize);
+			//	kReader.Read(&sContent[0], uiFileSize);
+			//	kReader.Close();
+			//	sContent.Replace("${NAME}", sFileName.GetBuffer());
+
+			//	// Write ouput file
+			//	const char* szExtension = &aTemplate[uiFile][6];
+			//	sOutput.Set(GetAssetManager()->GetPath()).Append(sFileName).Append(szExtension);
+			//	if(!kWriter.Open(sOutput.GetBuffer()))
+			//	{
+			//		LOG_ERROR("err");
+			//		return;
+			//	}
+			//	kWriter.Write(sContent.GetBuffer(), sContent.GetLength());
+			//	kWriter.Close();
+			//}
+			//RefreshModule();
+
+			//this->m_sScript.Set("Gorilla::Component::").Append(sFileName);
 		});
 
 		pPage->CreateCallback("Gorilla.play", [pWorld](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
@@ -904,6 +978,22 @@ namespace Gorilla { namespace Editor
 			// Apply the project path to the asset manager
 			Path sPath(sProject);
 			GetAssetManager()->SetPath(sPath.GetDirectory().GetBuffer());
+
+			// Retrieve file structure
+			FileManager::Directory kDirectory(GetAssetManager()->GetPath().GetBuffer());
+			FileManager::GetTree(kDirectory, true);
+
+			// Convert to Json
+			Dictionary& dTree = GetDictionary();
+			const uint32 uiDirectoryCount = kDirectory.GetDirectoryCount();
+			for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
+			{
+				Node dDirectory = dTree.Add();
+				ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dDirectory);
+			}
+
+			// Notify the workspace only if a project has been set
+			SendJson("Editor.panels.workspace.onChanged", dTree);
 
 			// Refresh module
 			RefreshModule();

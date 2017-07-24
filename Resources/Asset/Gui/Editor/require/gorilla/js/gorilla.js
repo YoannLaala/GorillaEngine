@@ -25,7 +25,7 @@ else
         createWindow : function(title, width, height) { window.console.log("Gorilla.createWindow", title, width, height); },
         createViewport : function(left, top, width, height) { window.console.log("Gorilla.createViewport", left, top, width, height); },
         openScript : function(name) { window.console.log("Gorilla.openScript(", name, ")"); },
-        createScript : function(name) { window.console.log("Gorilla.createScript(", name, ")"); },
+        createScript: function (path) { window.console.log("Gorilla.createScript(", path, ")"); },
         openDialog : function(mode, callback, accept, defaultPath) { window.console.log("Gorilla.openDialog(", mode, ",", callback, ",", accept, ",", defaultPath, ")"); callback([]); },
     
         getAssetExtension : function(name) { window.console.log("Gorilla.getAssetExtension(", name, ")"); },
