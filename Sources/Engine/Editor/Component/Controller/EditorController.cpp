@@ -68,7 +68,7 @@ namespace Gorilla { namespace Editor
 
 	void ConvertRecursive(const FileManager::Directory& _input, Node _kParent)
 	{
-		static String sDirectoryName;
+		static String sDirectoryName, sFilePath;
 		sDirectoryName.Set(_input.GetPath());
 		sDirectoryName[sDirectoryName.GetLength()-1] = '\0';
 
@@ -83,7 +83,6 @@ namespace Gorilla { namespace Editor
 			ConvertRecursive(_input.GetDirectory(uiDirectory), kChilds);
 		}
 
-		static String sFilePath;
 		const uint32 uiFileCount = _input.GetFileCount();
 		for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile)
 		{
@@ -279,8 +278,7 @@ namespace Gorilla { namespace Editor
 			const uint32 uiDirectoryCount = kDirectory.GetDirectoryCount();
 			for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
 			{
-				Node dDirectory = dTree.Add();
-				ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dDirectory);
+				ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dTree);
 			}
 
 			// Notify the workspace only if a project has been set
