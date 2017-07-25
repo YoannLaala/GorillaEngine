@@ -762,13 +762,14 @@ namespace Gorilla { namespace Engine
 	void AssetManager::OnFileChanged(FileWatcher::Notification::Type _eType, const char* _szDirectoryPath, const char* _szRelativePath)
 	{
 	#if defined(GORILLA_EDITOR)
+		bool bIsIntrinsic = m_aPath[EPath::AssetIntrinsic] == _szDirectoryPath;
 		switch(_eType)
 		{
 			case FileWatcher::Notification::Modified:
 			{
 				static String sRelativePath;
 				sRelativePath.Set(_szRelativePath);
-				if(m_aPath[EPath::AssetIntrinsic] == _szDirectoryPath) sRelativePath.Prepend('@');
+				if(bIsIntrinsic) sRelativePath.Prepend('@');
 
 				uint32 uiFileId = Hash::Generate(sRelativePath.GetBuffer());
 				Table* pTable = GetTable<Table>(EDatabase::File, uiFileId);
@@ -789,6 +790,7 @@ namespace Gorilla { namespace Engine
 				break;
 			}
 		}
+		if(!bIsIntrinsic) SIGNAL_SEND(FileChanged, static_cast<uint8>(_eType), _szDirectoryPath, _szRelativePath);
 		//AssetDescriptor* pAssetDescriptor = NULL;
 		//const Vector<Database::Row*>& vRow = GetDescriptorTable()->GetVecRow();
 		//const uint32 uiRowCount = vRow.GetSize();

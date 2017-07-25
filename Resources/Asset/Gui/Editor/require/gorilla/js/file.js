@@ -6,7 +6,7 @@ class FileManager
 {
     constructor()
     {
-        this.openFolder = function(path) {  window.console.log("Gorilla.File.openFolder(", path, ")"); }   
+        this.show = function(path) {  window.console.log("Gorilla.File.show(", path, ")"); }   
         this.create = function(path) {  window.console.log("Gorilla.File.create(", path, ")"); } 
         this.rename = function(old_path, new_path) {  window.console.log("Gorilla.File.rename(", old_path, ",", new_path, ")"); } 
         this.delete = function(path) {  window.console.log("Gorilla.File.delete(", path, ")"); } 

@@ -100,6 +100,7 @@ namespace Gorilla { namespace Engine
 
 	#if defined(GORILLA_EDITOR)
 		SIGNAL_SENDER(AssetChanged, uint8 /*_eEvent*/, Asset* /*_pAsset*/, bool /*_bSucceeded*/);
+		SIGNAL_SENDER(FileChanged, uint8 /*_eType*/, const char* /*_szDirectoryPath*/, const char* /*_szRelativePath*/);
 
 		void					SetPath(const char* _szPath);
 		inline const String&	GetPath() const { return m_aPath[EPath::Asset]; }

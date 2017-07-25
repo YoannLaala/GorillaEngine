@@ -75,6 +75,7 @@ namespace Gorilla { namespace Editor
 		{
 			const String& sFileName = _input.GetFile(uiFile);
 			sFilePath.Set(_input.GetPath()).Append(sFileName);
+			sFilePath.Replace("\\", "/");
 
 			Node kFile = _kParent.Add();
 			kFile["id"] = sFilePath;
@@ -86,11 +87,13 @@ namespace Gorilla { namespace Editor
 	{
 		static String sDirectoryName, sFilePath;
 		sDirectoryName.Set(_input.GetPath());
-		sDirectoryName[sDirectoryName.GetLength()-1] = '\0';
-
+		sDirectoryName.Replace("\\", "/");
+		
 		Node kNode = _kParent.Add();
-		kNode["id"] =  _input.GetPath();
-		kNode["name"] = &sDirectoryName[sDirectoryName.FindLast("\\") + 1];
+		kNode["id"] =  sDirectoryName;
+
+		sDirectoryName[sDirectoryName.GetLength()-1] = '\0';
+		kNode["name"] = &sDirectoryName[sDirectoryName.FindLast("/") + 1];
 
 		Node kChilds = kNode["childs"];
 		const uint32 uiDirectoryCount = _input.GetDirectoryCount();
@@ -267,6 +270,13 @@ namespace Gorilla { namespace Editor
 		}
 	}
 
+	//!	@brief		OnFileChanged
+	//!	@date		2015-11-21
+	void EditorController::OnFileChanged(uint8 /*_eType*/, const char* /*_szDirectoryPath*/, const char* /*_szRelativePath*/)
+	{
+		SendWorkspaceTree();
+	}
+
 	EditorPass* pEditorPass = nullptr;
 
 	//!	@brief		Start
@@ -285,9 +295,9 @@ namespace Gorilla { namespace Editor
 		LoadProject();
 		Engine::World* pWorld = m_pWorld;
 		Web::WebPage* pPage = pWebView->GetPage();
-
 		SIGNAL_CONNECT(GetLogManager(), this, LogChanged);
 		SIGNAL_CONNECT(GetAssetManager(), this, AssetChanged);
+		SIGNAL_CONNECT(GetAssetManager(), this, FileChanged);
 
 		pPage->CreateCallback("viewLoaded", [this, pPage, pWorld](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
 		{
@@ -536,7 +546,6 @@ namespace Gorilla { namespace Editor
 				kWriter.Close();
 			}
 			GetEngine()->LoadDescriptor();
-			SendWorkspaceTree();
 			SendComponentAvailable();
 
 
@@ -798,15 +807,18 @@ namespace Gorilla { namespace Editor
 			}
 		});
 
-		//// FileManager
-		//pPage->CreateCallback("Gorilla.File.openDirectory", [](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
-		//{
-		//	String sArg;
-		//	sArg.Set("\"").Append(GetAssetManager()->GetPath()).Append("\"");
-		//	Process kProcess("explorer.exe", sArg.GetBuffer());
-		//	String sError;
-		//	kProcess.Execute(&sError);
-		//});
+		// FileManager
+		pPage->CreateCallback("Gorilla.File.show", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		{
+			String sFilePath(_vArgument.GetString(0));
+			GetAssetManager()->FormatToAbsolute(sFilePath);
+			Path sPath(sFilePath);
+
+			String sArg;
+			sArg.Set("/c explorer.exe \"").Append(sPath.GetDirectory()).Append("\"");
+			Process kProcess("cmd.exe", sArg.GetBuffer());
+			kProcess.Execute();
+		});
 
 		pPage->CreateCallback("Gorilla.File.create", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		{	
@@ -817,17 +829,25 @@ namespace Gorilla { namespace Editor
 			FileManager::CreateADirectory(sDirectory.GetBuffer());
 		});
 
+		pPage->CreateCallback("Gorilla.File.rename", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		{	
+			String sSource(_vArgument.GetString(0));
+			GetAssetManager()->FormatToAbsolute(sSource);
+
+			String sDestination(_vArgument.GetString(1));
+			GetAssetManager()->FormatToAbsolute(sDestination);
+
+			FileManager::Move(sSource.GetBuffer(), sDestination.GetBuffer());
+		});
+
 		pPage->CreateCallback("Gorilla.File.delete", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		{
-			const String& sFilePath = _vArgument.GetString(0);
+			String sFilePath(_vArgument.GetString(0));
+			GetAssetManager()->FormatToAbsolute(sFilePath);
+
 			if(FileManager::IsFileExist(sFilePath.GetBuffer())) FileManager::DeleteAFile(sFilePath.GetBuffer());
 			else if(FileManager::IsDirectoryExist(sFilePath.GetBuffer())) FileManager::DeleteADirectory(sFilePath.GetBuffer());
 		});
-
-		//pPage->CreateCallback("Gorilla.File.rename", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
-		//{
-		//	FileManager::CreateADirectory(_vArgument[0]->GetString().GetBuffer());
-		//});
 
 		pPage->CreateCallback("Gorilla.File.getPath", [](const Web::WebArgument& _vArgument, Web::WebValueList& _vOutput)
 		{
@@ -915,7 +935,9 @@ namespace Gorilla { namespace Editor
 	//!	@date		2015-04-04
 	void EditorController::Stop()
 	{
-
+		SIGNAL_DISCONNECT(GetLogManager(), this, LogChanged);
+		SIGNAL_DISCONNECT(GetAssetManager(), this, AssetChanged);
+		SIGNAL_DISCONNECT(GetAssetManager(), this, FileChanged);
 	}
 
 	//!	@brief		CreateViewport

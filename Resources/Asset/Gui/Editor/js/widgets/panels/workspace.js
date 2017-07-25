@@ -4,79 +4,6 @@ class WorkspacePanel extends Panel
     {
         super(layoutManager, "Workspace", null);
 		
-		
-		
-		
-		
-		// {
-			// fetchElementData: function() 
-			// {
-				// return Editor.panels.workspace.treeview.selection;
-			// },
-			// actions : 
-			// [
-				// {
-					// name: 'Create Script',
-					// onClick: function (node) 
-					// { 
-						// var parent = node != null ? node.id : "";
-						// Gorilla.createScript(parent);
-					// }
-				// },
-				// {
-					// name: 'Create Folder',
-					// onClick: function (node) 
-					// { 
-						// var parent = node != null ? node.id : "";
-						// Gorilla.File.create(parent);
-					// }
-				// },
-				// {
-					// name: 'Show In Folder',
-					// onClick: function (node) 
-					// { 
-						// if(node) Gorilla.File.openFolder(node.id);
-					// },
-					// isShown: function(node) { return node != null; }
-				// },
-				// {
-					// name: 'Rename',
-					// onClick: function (node) 
-					// { 
-						// if(node) Gorilla.File.rename(node.id, "newname");
-					// },
-					// isShown: function(node) { return node != null; }
-				// },
-				// {
-					// name: 'Delete',
-					// onClick: function (node) 
-					// { 
-						// if(node) Gorilla.File.delete(node.id);
-					// },
-					// isShown: function(node) { return node != null; }
-				// },
-				// {
-					// name: 'test',
-					// actions: [{
-					  // name: 'Action',
-					  // onClick: function() {
-						// // run when the action is clicked
-					  // }
-					// }, {
-					  // name: 'Another action',
-					  // onClick: function() {
-						// // run when the action is clicked
-					  // }
-					// }, {
-					  // name: 'A third action',
-					  // onClick: function() {
-						// // run when the action is clicked
-					  // }
-				  // }]
-				// },
-			// ]
-		// });
-		
         var _self = this;
         _self.onLoaded = function()
         {
@@ -86,6 +13,18 @@ class WorkspacePanel extends Panel
 				selector: '#gorilla_layout_workspace', 
 				autoHide: true,
 				zIndex: 2000,
+                animation: { duration: 0 },
+                events: 
+                {
+                    show : function(options)
+                    {
+                        if(!options.items.create.visible())
+                        {
+                            options.items.separator = { visible: false };
+                        }
+                        return true;
+                    }            
+                },
 				items: 
 				{
 					create:
@@ -99,87 +38,78 @@ class WorkspacePanel extends Panel
 								callback: function() 
 								{
 									var node = Editor.panels.workspace.treeview.selection;
-									var parent = node != null ? node.id : "";
-									Gorilla.createScript(parent);
+									var path = node != null ? node.id : "";
+									Gorilla.createScript(path);
 								},
 							},
 							folder:
 							{
-								name: "Folder"
+								name: "Folder", 
+                                callback: function() 
+								{
+									var node = Editor.panels.workspace.treeview.selection;
+									var path = node != null ? node.id : "";
+									Gorilla.File.create(path);
+								},
 							}
-						}
-						
+						},
+                        visible: function()
+                        {
+                            var node = Editor.panels.workspace.treeview.selection;
+							return node == null || node.childs != null;
+                        },
 					},
 					separator: "---------",
 					showInFolder:
 					{
-						name: "Show in folder"
+						name: "Show in folder",
+                        callback: function() 
+						{
+							var node = Editor.panels.workspace.treeview.selection;
+							var path = node != null ? node.id : "";
+							Gorilla.File.show(path);
+						},
 					},
 					rename:
 					{
-						name: "Rename"
+						name: "Rename",
+                        callback: function() 
+						{
+							var node = Editor.panels.workspace.treeview.selection;
+                            var path_old = node.id;
+                            _self.treeview.edit(node, function()
+                            {
+                                Gorilla.File.rename(path_old, node.id);    
+                            });
+							
+						},
+                        visible: function()
+                        {
+                            var node = Editor.panels.workspace.treeview.selection;
+							return node != null;
+                        },
 					},
 					delete:
 					{
-						name: "Delete"
+						name: "Delete",
+                        callback: function() 
+						{
+							var node = Editor.panels.workspace.treeview.selection;
+							Gorilla.File.delete(node.id);
+						},
+                        visible: function()
+                        {
+                            var node = Editor.panels.workspace.treeview.selection;
+							return node != null;
+                        },
 					}
 				}
 			});
-			
-			_self.onChanged("");
         }
 
-        this.onChanged = function(string)
+        _self.onChanged = function(string)
         {
-            //var json = JSON.parse(string);
-			var json = 
-			[
-				{
-					id: "/FolderA/",
-					name : "FolderA",
-					childs:
-					[
-						{
-							id: "/FolderA/FolderAA/",
-							name : "FolderAA",
-							childs:
-							[
-								{
-									id: "/FolderA/FolderAA/FileC.ext",
-									name : "FileC.ext"
-								},
-							]
-						},
-						{
-							id: "/FolderA/FolderAB/",
-							name : "FolderAB",
-							childs:
-							[
-								
-							]
-						},
-					]
-				},
-				{
-					id: "/FolderB/",
-					name : "FolderB",
-					childs:
-					[
-						{
-							id: "/FolderB/FileD.ext",
-							name : "FileD.ext"
-						},
-					]
-				},
-				{
-					id: "/FileA.a",
-					name : "FileA.a"
-				},
-				{
-					id: "/FileB.b",
-					name : "FileB.b"
-				}
-			]
+            var json = JSON.parse(string);
             _self.treeview.set(json);
         }
     }

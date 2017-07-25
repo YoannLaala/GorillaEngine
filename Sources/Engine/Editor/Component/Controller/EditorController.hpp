@@ -67,6 +67,9 @@ namespace Gorilla { namespace Editor
 		SIGNAL_RECEIVER(EditorController, AssetChanged, uint8 /*_eEvent*/, Engine::Asset* /*_pAsset*/, bool /*_bSucceeded*/);
 		void OnAssetChanged(uint8 _eEvent, Engine::Asset* _pAsset, bool _bSucceeded);
 
+		SIGNAL_RECEIVER(EditorController, FileChanged, uint8 /*_eType*/, const char* /*_szDirectoryPath*/, const char* /*_szRelativePath*/);
+		void OnFileChanged(uint8 _eType, const char* _szDirectoryPath, const char* _szRelativePath);
+
 	public:
 		Engine::View*				View;
 

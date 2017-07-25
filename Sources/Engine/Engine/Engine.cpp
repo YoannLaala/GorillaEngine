@@ -273,6 +273,7 @@ namespace Gorilla { namespace Engine
 
 		String sArgument;
 		sArgument.Set("-input \"").Append(GetAssetManager()->GetPath()).Append("\" -output \"").Append(sDescriptor).Append("\"");
+		sArgument.Replace("\\", "/");
 		Process kProcess("Cooker/Reflection/Reflection.exe");
 		kProcess.SetArgument(sArgument.GetBuffer());
 		if(!kProcess.Execute())

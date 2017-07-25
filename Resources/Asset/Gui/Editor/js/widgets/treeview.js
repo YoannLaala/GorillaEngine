@@ -9,7 +9,8 @@ class TreeView
         var _self = this;
         var _dom = dom;
         var _data = {};
-        var _template = Gorilla.Template.files.tree_simplified = "                                  \
+        var _template_input = "<input type='text' value='{{text}}' style='height:17px'/>";
+        var _template = "                                                                           \
         <ul class='gorilla_tree'>                                                                   \
             {{#.}}                                                                                  \
             <li node_id='{{id}}'>                                                                   \
@@ -25,6 +26,7 @@ class TreeView
             </li>                                                                                   \
             {{/.}}                                                                                  \
         </ul>";
+        Mustache.parse(_template_input);
         Mustache.parse(_template);
 
         // initialize internal data
@@ -71,17 +73,45 @@ class TreeView
                 if(_self.selection != null)
                 {
                     var header_old = $(".gorilla_tree li[node_id=\"" + _self.selection.id + "\"] .gorilla_tree_header:first");
-                    header_old.toggleClass("gorilla_tree_selected");
+                    header_old.removeClass("gorilla_tree_selected");
                 }
 
                 // select new one
                 if(node)
                 {
-                    var header_new = $(".gorilla_tree li[node_id=\"" + node.id + "\"] .gorilla_tree_header:first");
-                    header_new.toggleClass("gorilla_tree_selected");
+                    var header_new = $(".gorilla_tree li[node_id=\"" + node.id + "\"] .gorilla_tree_header:first"); 
+                    header_new.addClass("gorilla_tree_selected");
                 }
                 _self.selection = node;
             }
+        }
+
+        this.edit = function(node, callback)
+        {
+            // keep old value
+            var span = $(".gorilla_tree li[node_id=\"" + node.id + "\"] .gorilla_tree_header:first>span:eq(1)");
+            var text = span.text();
+
+            // generate input 
+            span.html(Mustache.render(_template_input, {text:text}));
+            var input = span.find("input");
+            input[0].setSelectionRange(0, text.lastIndexOf("."));
+            input.focus();
+
+            // function to render the result
+            function finalize() 
+            {
+                node.name = input.val();
+                span.html(node.name);
+                if(text != node.name) callback();
+            }
+
+            // wait & propagate modification
+            input.focusout(finalize);
+            input.keyup(function(e) 
+            {
+              if (e.keyCode === 13 || e.keyCode === 27) finalize();
+            });
         }
 
     // events

@@ -80,13 +80,8 @@ function openDialogInternal(button, type)
         input.change();
     }, button.attr("accept"), button.attr("default_path"));
 }
-$(document).on('DOMNodeInserted', 'input', function() 
-{ 
-    window.console.log("ok");
-});
 $(document).on('click', 'button[type=\'folder\']', function() { openDialogInternal($(this), Gorilla.EDialog.Folder); });
 $(document).on('click', 'button[type=\'file\']', function() { openDialogInternal($(this), Gorilla.EDialog.File); });
-
 
 // Asset
 $(document).on('change', 'input.gorilla_asset', function() 
