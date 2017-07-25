@@ -66,6 +66,22 @@ namespace Gorilla { namespace Editor
 		// Nothing to do
 	}
 
+	void ConvertRecursiveFile(const FileManager::Directory& _input, Node _kParent)
+	{
+		static String sFilePath;
+
+		const uint32 uiFileCount = _input.GetFileCount();
+		for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile)
+		{
+			const String& sFileName = _input.GetFile(uiFile);
+			sFilePath.Set(_input.GetPath()).Append(sFileName);
+
+			Node kFile = _kParent.Add();
+			kFile["id"] = sFilePath;
+			kFile["name"] = sFileName;
+		}		
+	}
+
 	void ConvertRecursive(const FileManager::Directory& _input, Node _kParent)
 	{
 		static String sDirectoryName, sFilePath;
@@ -83,16 +99,7 @@ namespace Gorilla { namespace Editor
 			ConvertRecursive(_input.GetDirectory(uiDirectory), kChilds);
 		}
 
-		const uint32 uiFileCount = _input.GetFileCount();
-		for(uint32 uiFile = 0; uiFile < uiFileCount; ++uiFile)
-		{
-			const String& sFileName = _input.GetFile(uiFile);
-			sFilePath.Set(_input.GetPath()).Append(sFileName);
-
-			Node kFile = kChilds.Add();
-			kFile["id"] = sFilePath;
-			kFile["name"] = sFileName;
-		}		
+		ConvertRecursiveFile(_input, kChilds);
 	}
 
 	Gorilla::Component::WebView* pWebView = nullptr;
@@ -158,6 +165,25 @@ namespace Gorilla { namespace Editor
 		SendJson("Editor.onNotification", dNotification);
 	}
 
+	void SendWorkspaceTree()
+	{
+		// Retrieve file structure
+		FileManager::Directory kDirectory(GetAssetManager()->GetPath().GetBuffer());
+		FileManager::GetTree(kDirectory, true);
+
+		// Convert to Json
+		Dictionary& dTree = GetDictionary();
+		const uint32 uiDirectoryCount = kDirectory.GetDirectoryCount();
+		for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
+		{
+			ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dTree);
+		}
+		ConvertRecursiveFile(kDirectory, dTree);
+
+		// Notify the workspace only if a project has been set
+		SendJson("Editor.panels.workspace.onChanged", dTree);
+	}
+
 	void SendWorldTree(Engine::World* _pWorld)
 	{
 		Dictionary& dWorld = GetDictionary();
@@ -175,7 +201,12 @@ namespace Gorilla { namespace Editor
 			else kGameObject["parent"] = "#";
 		}	
 		SendJson("Editor.panels.world.onChanged", dWorld);
-	}		
+	}	
+
+	void SendComponentAvailable()
+	{
+		SendJson("Editor.panels.property.onModuleChanged", GetEngine()->GetAllComponentDescriptor());
+	}
 
 	//!	@brief		SelectGameObject
 	//!	@date		2015-04-04
@@ -224,7 +255,6 @@ namespace Gorilla { namespace Editor
 				if(_pAsset->GetClass() == Engine::Module::Class::GetInstance())
 				{
 					m_pWorld->Play();
-					SendJson("Editor.panels.property.onModuleChanged", GetEngine()->GetAllComponentDescriptor());
 					if(m_pSelection && m_sScript.GetLength())
 					{
 						Gorilla::Class* pClass = COMPONENT_CLASS(m_sScript.GetBuffer());
@@ -269,26 +299,14 @@ namespace Gorilla { namespace Editor
 				return;
 			}
 
-			// Retrieve file structure
-			FileManager::Directory kDirectory(GetAssetManager()->GetPath().GetBuffer());
-			FileManager::GetTree(kDirectory, true);
-
-			// Convert to Json
-			Dictionary& dTree = GetDictionary();
-			const uint32 uiDirectoryCount = kDirectory.GetDirectoryCount();
-			for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
-			{
-				ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dTree);
-			}
-
-			// Notify the workspace only if a project has been set
-			SendJson("Editor.panels.workspace.onChanged", dTree);
+			// Workspace
+			SendWorkspaceTree();
 
 			// World
 			SendWorldTree(m_pWorld);
 
 			// Component
-			SendJson("Editor.panels.property.onModuleChanged", GetEngine()->GetAllComponentDescriptor());
+			SendComponentAvailable();
 			pWorld->Stop();
 
 			this->View->Show();
@@ -518,11 +536,8 @@ namespace Gorilla { namespace Editor
 				kWriter.Close();
 			}
 			GetEngine()->LoadDescriptor();
-
-
-
-
-
+			SendWorkspaceTree();
+			SendComponentAvailable();
 
 
 
@@ -793,10 +808,21 @@ namespace Gorilla { namespace Editor
 		//	kProcess.Execute(&sError);
 		//});
 
-		//pPage->CreateCallback("Gorilla.File.createDirectory", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
-		//{
-		//	FileManager::CreateADirectory(_vArgument[0]->GetString().GetBuffer());
-		//});
+		pPage->CreateCallback("Gorilla.File.create", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		{	
+			String sDirectory;
+			sDirectory.Set(_vArgument.GetString(0)).Append("New Folder\\");
+			GetAssetManager()->FormatToAbsolute(sDirectory);
+
+			FileManager::CreateADirectory(sDirectory.GetBuffer());
+		});
+
+		pPage->CreateCallback("Gorilla.File.delete", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		{
+			const String& sFilePath = _vArgument.GetString(0);
+			if(FileManager::IsFileExist(sFilePath.GetBuffer())) FileManager::DeleteAFile(sFilePath.GetBuffer());
+			else if(FileManager::IsDirectoryExist(sFilePath.GetBuffer())) FileManager::DeleteADirectory(sFilePath.GetBuffer());
+		});
 
 		//pPage->CreateCallback("Gorilla.File.rename", [](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
 		//{
@@ -977,24 +1003,10 @@ namespace Gorilla { namespace Editor
 			Path sPath(sProject);
 			GetAssetManager()->SetPath(sPath.GetDirectory().GetBuffer());
 
-			// Retrieve file structure
-			FileManager::Directory kDirectory(GetAssetManager()->GetPath().GetBuffer());
-			FileManager::GetTree(kDirectory, true);
-
-			// Convert to Json
-			Dictionary& dTree = GetDictionary();
-			const uint32 uiDirectoryCount = kDirectory.GetDirectoryCount();
-			for(uint32 uiDirectory = 0; uiDirectory < uiDirectoryCount; ++uiDirectory)
-			{
-				Node dDirectory = dTree.Add();
-				ConvertRecursive(kDirectory.GetDirectory(uiDirectory), dDirectory);
-			}
-
-			// Notify the workspace only if a project has been set
-			SendJson("Editor.panels.workspace.onChanged", dTree);
+			SendWorkspaceTree();
 
 			// Refresh module
-			RefreshModule();
+			//RefreshModule();
 			String sModule;
 			sModule.Set(GetAssetManager()->GetPath().GetBuffer()).Append("Script.module");
 			if(FileManager::IsFileExist(sModule.GetBuffer()))

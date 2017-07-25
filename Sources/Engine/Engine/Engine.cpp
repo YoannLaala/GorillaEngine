@@ -110,7 +110,6 @@ namespace Gorilla { namespace Engine
 		// AssetManager
 		m_pAssetManager = new AssetManager();
 		m_pAssetManager->Initialize();
-		LoadDescriptor();
 
 		if(!Profiler::IsCreated()) Profiler::Create();
 
@@ -269,8 +268,19 @@ namespace Gorilla { namespace Engine
 			LOG_ERROR("Failed to read component descriptor %s", sDescriptor.GetBuffer());
 		}
 
-		// User Descriptor
+		// Update User Component Descriptor
 		sDescriptor.Set(GetAssetManager()->GetPath()).Append("..\\Cooked\\Temp\\ComponentDescriptor.json");
+
+		String sArgument;
+		sArgument.Set("-input \"").Append(GetAssetManager()->GetPath()).Append("\" -output \"").Append(sDescriptor).Append("\"");
+		Process kProcess("Cooker/Reflection/Reflection.exe");
+		kProcess.SetArgument(sArgument.GetBuffer());
+		if(!kProcess.Execute())
+		{
+			LOG_ERROR("Failed to cook user component descriptor %s", sDescriptor.GetBuffer());
+		}
+
+		// User Descriptor
 		m_dComponentDescriptor.Read<DictionaryStreamJson>(sDescriptor.GetBuffer());
 
 		// Recreate Script if needed

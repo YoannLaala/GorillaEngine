@@ -14,7 +14,7 @@ class WorkspacePanel extends Panel
                 }
             },
             {
-                name: 'Create Directory',
+                name: 'Create Folder',
                 onClick: function () 
                 { 
                     var node = Editor.panels.workspace.treeview.selection;
@@ -27,7 +27,7 @@ class WorkspacePanel extends Panel
                 onClick: function () 
                 { 
                     var node = Editor.panels.workspace.treeview.selection;
-                    if(node) Gorilla.File.open(node.id);
+                    if(node) Gorilla.File.openFolder(node.id);
                 }
             },
             {

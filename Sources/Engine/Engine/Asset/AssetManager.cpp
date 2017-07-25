@@ -145,6 +145,9 @@ namespace Gorilla { namespace Engine
 	#if !defined(MASTER)
 		GetFileManager()->AddFileWatcher(this, m_aPath[EPath::AssetIntrinsic].GetBuffer(), true);
 	#endif
+
+		// Load descriptor related to this path
+		GetEngine()->LoadDescriptor();
 	}
 #endif
 
