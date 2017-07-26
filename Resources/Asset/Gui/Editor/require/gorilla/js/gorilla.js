@@ -15,6 +15,7 @@ else
         GameObject : new GameObjectManager(),
         Profiler : new ProfilerManager(),
         Project : new ProjectManager(),
+        Viewport : new ViewportManager(),
         World : new WorldManager(),
     
         // generic action
@@ -23,7 +24,6 @@ else
         pause : function() { window.console.log("Gorilla.pause"); },
         stop : function() { window.console.log("Gorilla.stop"); },
         createWindow : function(title, width, height) { window.console.log("Gorilla.createWindow", title, width, height); },
-        createViewport : function(left, top, width, height) { window.console.log("Gorilla.createViewport", left, top, width, height); },
         openScript : function(name) { window.console.log("Gorilla.openScript(", name, ")"); },
         createScript: function (path) { window.console.log("Gorilla.createScript(", path, ")"); },
         openDialog : function(mode, callback, accept, defaultPath) { window.console.log("Gorilla.openDialog(", mode, ",", callback, ",", accept, ",", defaultPath, ")"); callback([]); },

@@ -679,6 +679,11 @@ namespace Gorilla { namespace Web
 		reinterpret_cast<CefListValue*>(this)->SetBool(_uiIndex, _bValue);
 	}
 
+	void WebPage::ArgumentList::SetUint32(uint32 _uiIndex, uint32 _uiValue)
+	{
+		reinterpret_cast<CefListValue*>(this)->SetInt(_uiIndex, _uiValue);
+	}
+
 	void  WebPage::ArgumentList::SetArrayString(uint32 _uiIndex, const Vector<String>& _vValue)
 	{
 		CefRefPtr<CefListValue> pCefArgumentValue = CefListValue::Create();

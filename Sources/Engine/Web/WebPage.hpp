@@ -99,6 +99,7 @@ namespace Gorilla { namespace Web
 		public:
 			template<typename T> inline void Add(T _kValue);
 			template<> inline void Add(bool _bValue) { SetBool(GetSize(), _bValue); }
+			template<> inline void Add(uint32 _uiValue) { SetUint32(GetSize(), _uiValue); }
 
 			template<typename T> inline void Add(const Vector<T>& _kValue);
 			template<> inline void Add(const Vector<String>& _vValue) { SetArrayString(GetSize(), _vValue); }
@@ -106,6 +107,7 @@ namespace Gorilla { namespace Web
 		private:
 			uint32 GetSize() const;
 			void SetBool(uint32 _uiIndex, bool _bValue);
+			void SetUint32(uint32 _uiIndex, uint32 _uiValue);
 			void SetArrayString(uint32 _uiIndex, const Vector<String>& _vValue);
 		};
 

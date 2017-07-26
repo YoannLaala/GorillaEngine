@@ -465,16 +465,6 @@ namespace Gorilla { namespace Editor
 			FileManager::CopyAFile(sSource.GetBuffer(), sDestination.GetBuffer());
 		});
 
-		// Engine
-		pPage->CreateCallback("Gorilla.createViewport", [this](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
-		{
-			uint32 uiLeft = _vArgument.GetUInt32(0);
-			uint32 uiTop = _vArgument.GetUInt32(1);
-			uint32 uiWidth = _vArgument.GetUInt32(2);
-			uint32 uiHeight = _vArgument.GetUInt32(3);
-			this->CreateViewport(uiLeft, uiTop, uiWidth, uiHeight);
-		});
-
 		pPage->CreateCallback("Gorilla.openScript", [this](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
 		{
 			//const String& sScript = _vArgument.GetString(0);
@@ -644,6 +634,38 @@ namespace Gorilla { namespace Editor
 			}
 			_vOutput.SetString(0, sResult.GetBuffer());
 		}, true);
+
+		// Engine
+		pPage->CreateCallback("Gorilla.Viewport.create", [this, pPage](const Web::WebArgument& _vArgument, Web::WebValueList& _vOutput)
+		{
+			Renderer::Viewport* pMainViewport = this->View->GetViewport();
+
+			uint32 uiLeft = Math::Clamp(_vArgument.GetUInt32(0), pMainViewport->GetLeft(), pMainViewport->GetLeft() + pMainViewport->GetWidth());
+			uint32 uiTop = Math::Clamp(_vArgument.GetUInt32(1), pMainViewport->GetTop(), pMainViewport->GetTop() + pMainViewport->GetHeight());
+			uint32 uiWidth = Math::Clamp(_vArgument.GetUInt32(2), static_cast<uint32>(1), pMainViewport->GetWidth());
+			uint32 uiHeight = Math::Clamp(_vArgument.GetUInt32(3), static_cast<uint32>(1), pMainViewport->GetHeight());
+			uint32 uiViewportIndex = this->CreateViewport(uiLeft, uiTop, uiWidth, uiHeight);
+			_vOutput.SetUInt32(0, uiViewportIndex);
+
+			//void* pCallback = _vArgument.GetCallback(4);
+			//pPage->ExecuteCallback(pCallback, uiViewportIndex);
+		}, true);
+
+		pPage->CreateCallback("Gorilla.Viewport.set", [this, pPage](const Web::WebArgument& _vArgument, Web::WebValueList& /*_vOutput*/)
+		{
+			uint32 uiViewportIndex = _vArgument.GetUInt32(0);
+			uint32 uiLeft = _vArgument.GetUInt32(1);
+			uint32 uiTop = _vArgument.GetUInt32(2);
+			uint32 uiWidth = _vArgument.GetUInt32(3);
+			uint32 uiHeight = _vArgument.GetUInt32(4);
+			
+			Renderer::Viewport* pViewport = this->GetViewport(uiViewportIndex);
+			if(pViewport)
+			{
+				pViewport->SetPosition(uiLeft, uiTop);
+				pViewport->Resize(uiWidth, uiHeight);
+			}
+		});
 
 		pPage->CreateCallback("Gorilla.World.create", [this](const Web::WebArgument& /*_vArgument*/, Web::WebValueList& /*_vOutput*/)
 		{

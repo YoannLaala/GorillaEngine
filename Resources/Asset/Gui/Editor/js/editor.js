@@ -273,10 +273,6 @@ class GorillaEditor
             profiler : new ProfilerPanel(myLayout),
         }
         myLayout.init();
-
-        // Display world
-	    var viewport_dom = this.panels.viewport.dom;     
-	    Gorilla.createViewport(viewport_dom.offset().left, viewport_dom.offset().top, viewport_dom.width(), viewport_dom.height());
     }
 }
 

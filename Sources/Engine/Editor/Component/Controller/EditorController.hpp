@@ -50,7 +50,8 @@ namespace Gorilla { namespace Editor
 		virtual void Stop			() override;
 
 	public:
-		uint32 CreateViewport(uint32 _uiLeft, uint32 _uiTop, uint32 _uiWidth, uint32 _uiHeight);
+		inline Renderer::Viewport*	GetViewport(uint32 _uiIndex) { return _uiIndex < m_vViewport.GetSize() ? m_vViewport[_uiIndex] : nullptr; }
+		uint32						CreateViewport(uint32 _uiLeft, uint32 _uiTop, uint32 _uiWidth, uint32 _uiHeight);
 
 	private:
 		void RefreshModule();
