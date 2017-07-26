@@ -35,11 +35,11 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		Initialize
 	//!	@date		2015-04-08
-	void View::Initialize(Application* _pApplication, Window* _pWindow, bool _bRenderContext)
+	void View::Initialize(Application* _pApplication, Window* _pWindow, uint8 _eFlag)
 	{
 		m_pApplication = _pApplication;
 		m_pWindow = _pWindow;
-		m_pViewport = GetRenderer()->CreateViewport(m_pWindow, Renderer::EFormat::R8G8B8A8_UNORM, _bRenderContext);
+		m_pViewport = GetRenderer()->CreateViewport(m_pWindow, Renderer::EFormat::R8G8B8A8_UNORM, _eFlag);
 	}
 
 	//!	@brief		Release

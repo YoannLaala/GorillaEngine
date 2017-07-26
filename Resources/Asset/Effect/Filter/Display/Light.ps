@@ -507,13 +507,13 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	kFragment.NdotV = abs(dot(kMaterial.Normal, kFragment.View));
 	
 	// Compute Fresnel
-	kFragment.Fresnel = ComputeFresnel(kFragment, kMaterial);
+	kFragment.Fresnel = ComputeFresnel(kFragment, kMaterial); 
 	
 	
 	// Compute Direct Light (Reflectance)
 	float3 vReflectance = (float3)0.0f;
-	//vReflectance += ComputeDirectionalLightReflectance(kFragment, kMaterial);
-	vReflectance += ComputePointReflectance(kFragment, kMaterial);
+	vReflectance += ComputeDirectionalLightReflectance(kFragment, kMaterial);
+	//vReflectance += ComputePointReflectance(kFragment, kMaterial);
 	
 	// Compute reflection
 	float3 vReflection = reflect(kFragment.View, kMaterial.Normal);
@@ -522,7 +522,7 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	// Compute final color
 	float ao = 0.0f;
     float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
-	output.DirectLighting = float4(1.0f,0.0f,0.0f,1.0f);//vAmbient + vReflectance;
+	output.DirectLighting = vAmbient + vReflectance;
 	
 	
 	

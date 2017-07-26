@@ -105,8 +105,8 @@ namespace Gorilla { namespace Renderer
 
 		inline Viewport*							GetViewport						(uint32 _uiIndex) { return m_vViewport[_uiIndex]; }
 		inline uint32								GetViewportCount				() const { return m_vViewport.GetSize(); }
-		Viewport*									CreateViewport					(Window* _pWindow, EFormat::Type _eFormat, uint8 _eFilter = 0);
-		Viewport*									CreateViewport					(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat, uint8 _eFilter = 0);
+		Viewport*									CreateViewport					(Window* _pWindow, EFormat::Type _eFormat, uint8 _eFlag = 0);
+		Viewport*									CreateViewport					(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat, uint8 _eFlag = 0);
 		void										DestroyViewport					(Viewport* _pViewport);
 
 		RenderTarget*								CreateRenderTarget				();
@@ -198,7 +198,7 @@ namespace Gorilla { namespace Renderer
 		void										Render							();
 
 	private:
-		Viewport*									CreateViewport					(SwapChain* _pSwapChain, uint8 _eFilter = 0);
+		Viewport*									CreateViewport					(SwapChain* _pSwapChain, uint8 _eFlag = 0);
 		SwapChain*									CreateSwapChain					(Window* _pWindow, uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat);
 		SwapChain*									CreateSwapChain					(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat);
 

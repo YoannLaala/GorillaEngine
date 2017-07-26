@@ -23,6 +23,14 @@
 ******************************************************************************/
 namespace Gorilla { namespace Renderer
 {
+	namespace EFlag
+	{
+		enum Type : uint8
+		{
+			EmptyPass = 1 << 0,
+		};
+	};
+
 	namespace EResource
 	{
 		enum Type : uint8

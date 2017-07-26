@@ -38,7 +38,7 @@ namespace Gorilla { namespace Engine
 		View();
 		~View();
 
-		void Initialize(Application* _pApplication, Window* _pWindow, bool _bRenderContext);
+		void Initialize(Application* _pApplication, Window* _pWindow, uint8 _eFlag);
 		void Release();
 
 	public:

@@ -144,13 +144,13 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		CreateView
 	//!	@date		2015-04-08
-	View* Application::CreateView(const char* _szName, uint32 _uiWidth, uint32 _uiHeight, bool _bRenderContext /*= true*/)
+	View* Application::CreateView(const char* _szName, uint32 _uiWidth, uint32 _uiHeight, uint8 _eFlag /*= 0*/)
 	{
 		Window* pWindow = Window::Create(_szName, _uiWidth, _uiHeight, WindowProcess);
 
 		// Create View
 		View* pView = new View();
-		pView->Initialize(this, pWindow, _bRenderContext);		
+		pView->Initialize(this, pWindow, _eFlag);		
 		vView.Add(pView);
 
 		return pView;

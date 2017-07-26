@@ -30,7 +30,7 @@ namespace Gorilla { namespace Engine
 		virtual void Run();
 
 	protected:
-		View*	CreateView(const char* _szName, uint32 _uiWidth, uint32 _uiHeight, bool _bRenderContext = true);
+		View*	CreateView(const char* _szName, uint32 _uiWidth, uint32 _uiHeight, uint8 _eFlag = 0);
 	};
 }}
 

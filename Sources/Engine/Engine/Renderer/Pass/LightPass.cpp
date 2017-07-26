@@ -135,7 +135,7 @@ namespace Gorilla { namespace Engine
 			m_pLightFilter->SetResource(LIGHT_PASS_REGISTER_INDEX_DIRECTIONAL_SHADOW, pShadowMap);
 		}
 		
-		pBuffer =  SharedResource::Light::Buffer[SharedResource::Light::Point];
+		pBuffer = SharedResource::Light::Buffer[SharedResource::Light::Point];
 		if(pBuffer)
 		{
 			Renderer::Texture2D* pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Point];

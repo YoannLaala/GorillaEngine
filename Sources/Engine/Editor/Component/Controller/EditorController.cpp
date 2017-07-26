@@ -20,6 +20,7 @@
 #include <Renderer/Renderer.hpp>
 #include <Engine/Renderer/ResourceShared.hpp>
 #include <Engine/Renderer/Pass/GuiPass.hpp>
+#include <Engine/Renderer/Pass/FullScreenPass.hpp>
 #include <Engine/World.hpp>
 #include <Engine/Object/GameObject.hpp>
 #include <Engine/View.hpp>
@@ -284,9 +285,12 @@ namespace Gorilla { namespace Editor
 	void EditorController::Start()
 	{
 		Renderer::Viewport* pViewport = View->GetViewport();
-		pEditorPass = pViewport->GetRenderContext()->CreatePassBefore<EditorPass>(Engine::GuiPass::Class::GetType());
+		Renderer::RenderContext* pContext = pViewport->GetRenderContext();
+		pEditorPass = pContext->CreatePass<EditorPass>();
 		pEditorPass->SetRenderTarget(pViewport->GetRenderTarget());
-
+		pContext->CreatePass<Engine::GuiPass>();
+		pContext->CreatePass<Engine::FullScreenPass>();
+		
 		pWebView = GetOrCreate<Gorilla::Component::WebView>();
 		pWebView->Document = GetAssetManager()->Get<Gorilla::Engine::WebDocument>("@Gui/Editor/_game_view_.html");
 		pWebView->Transparent = true;

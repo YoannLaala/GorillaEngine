@@ -123,7 +123,7 @@ namespace Gorilla { namespace Engine
 		};
 
 		// Remove Watchers
-		if(m_aPath[EPath::Asset].IsEmpty())
+		if(!m_aPath[EPath::Asset].IsEmpty())
 		{
 			GetFileManager()->RemoveFileWatcher(this, m_aPath[EPath::Asset].GetBuffer());
 		
@@ -133,21 +133,22 @@ namespace Gorilla { namespace Engine
 		}
 
 		// Build mandatory path
-		for(uint32 ePath = 0; ePath < EPath::AssetIntrinsic; ++ePath)
+		if(_szPath)
 		{
-			m_aPath[ePath].Set(_szPath).Append(aPath[ePath]).Append(REPERTORY_SEPARATOR);
-		}
-		FileManager::CreateADirectory(m_aPath[EPath::Asset].GetBuffer());
+			for(uint32 ePath = 0; ePath < EPath::AssetIntrinsic; ++ePath)
+			{
+				m_aPath[ePath].Set(_szPath).Append(aPath[ePath]).Append(REPERTORY_SEPARATOR);
+			}
+			FileManager::CreateADirectory(m_aPath[EPath::Asset].GetBuffer());
+			GetEngine()->LoadDescriptor();
 
-		// Watch the asset directory to reload them on the fly
-		GetFileManager()->AddFileWatcher(this, m_aPath[EPath::Asset].GetBuffer(), true);
+			// Watch the asset directory to reload them on the fly
+			GetFileManager()->AddFileWatcher(this, m_aPath[EPath::Asset].GetBuffer(), true);
+		}
 
 	#if !defined(MASTER)
 		GetFileManager()->AddFileWatcher(this, m_aPath[EPath::AssetIntrinsic].GetBuffer(), true);
 	#endif
-
-		// Load descriptor related to this path
-		GetEngine()->LoadDescriptor();
 	}
 #endif
 

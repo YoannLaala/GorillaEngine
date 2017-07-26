@@ -99,7 +99,7 @@ namespace Gorilla { namespace Engine
 
 	private:
 		SIGNAL_RECEIVER(Engine, RenderContextCreated, Renderer::RenderContext*, uint8);
-		void OnRenderContextCreated(Renderer::RenderContext* _pContext, uint8 _eFilter);
+		void OnRenderContextCreated(Renderer::RenderContext* _pContext, uint8 _eFlag);
 	
 	private:
 		LogManager*						m_pLogManager;

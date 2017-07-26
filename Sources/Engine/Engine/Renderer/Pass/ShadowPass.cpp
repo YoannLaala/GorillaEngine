@@ -99,54 +99,8 @@ namespace Gorilla { namespace Engine
 	{	
 		MARKER_GPU(_pContext, "Shadow");
 
-		//ExecuteDirectionalLight(_pRenderer, _pContext, _pBuffer);
-		ExecutePointLight(_pRenderer, _pContext, _pBuffer);
-	}
-
-	//!	@brief		ExecuteDirectionalLight 
-	//!	@date		2015-11-11
-	void ShadowPass::ExecuteDirectionalLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
-	{	
-		MARKER_GPU(_pContext, "Directional");
-		Renderer::RenderBuffer* pFrameBuffer = _pRenderer->GetFrameBuffer();
-		pFrameBuffer;
-
-		RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
-		if(_pBuffer->Get(&pBatchArray, uiBatchCount))
-		{
-			// Clear
-			/*Renderer::Texture2D* pDepthStencilTexture = m_pRenderTarget->GetDepthStencil();
-			_pRenderer->SetRenderTarget(_pContext, m_pRenderTarget);
-			_pRenderer->SetViewport(_pContext, 0, 0, pDepthStencilTexture->GetWidth(), pDepthStencilTexture->GetHeight());
-			_pRenderer->Clear(_pContext, m_pRenderTarget);*/
-
-			//if(UpdateBuffer<RenderBuffer::Light::Directional>(_pContext, _pBuffer, &m_aBuffer[Directional]))
-
-			//// Set RenderState
-			//Renderer::Effect* pEffect = m_aEffect[Directional]->GetData();
-			//_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
-			//_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
-
-			//// Set Vertex Shader and resources
-			//Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
-			//_pRenderer->SetVertexShader(_pContext, pVertexShader);
-			//_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
-			//_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
-
-			//// Draw shadow for all lights
-			//for(uint32 uiLight = 0; uiLight < uiLightCount; ++uiLight)
-			//{
-			//	RenderBuffer::Light::Directional& kLight = pLightBufferSource[uiLight];
-
-			//	// Update ConstantBuffer
-			//	RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
-			//	pSceneBuffer->View = kLight.View; 
-			//	pSceneBuffer->Projection = kLight.Projection;
-			//	_pRenderer->Unmap(_pContext, m_pSceneBuffer);
-
-			//	GeometryPass::DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
-			//}
-		}
+		ExecuteDirectionalLight(_pRenderer, _pContext, _pBuffer);
+		//ExecutePointLight(_pRenderer, _pContext, _pBuffer);
 	}
 
 	template <class T>
@@ -180,6 +134,62 @@ namespace Gorilla { namespace Engine
 		}
 
 		return bChanged;
+	}
+
+	//!	@brief		ExecuteDirectionalLight 
+	//!	@date		2015-11-11
+	void ShadowPass::ExecuteDirectionalLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
+	{	
+		MARKER_GPU(_pContext, "Directional");
+		Renderer::RenderBuffer* pFrameBuffer = _pRenderer->GetFrameBuffer();
+		pFrameBuffer;
+
+		RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
+		if(_pBuffer->Get(&pBatchArray, uiBatchCount))
+		{
+			UpdateBuffer<RenderBuffer::Light::Directional>(_pContext, _pBuffer, &SharedResource::Light::Buffer[SharedResource::Light::Directional]);
+
+			Renderer::RenderTarget* pRenderTarget = m_aRenderTarget[SharedResource::Light::Directional];
+			Renderer::Texture2D*& pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Directional];
+			if(!pShadowMap)
+			{
+				pShadowMap = _pRenderer->CreateTexture2D(LIGHT_DIRECTIONAL_RESOLUTION, LIGHT_DIRECTIONAL_RESOLUTION, 1, Renderer::EFormat::R24G8_TYPELESS, Renderer::EBind::DepthStencil | Renderer::EBind::ShaderResource);
+				pRenderTarget->SetDepthStencil(pShadowMap);
+			}
+
+			// Clear
+			Renderer::Texture2D* pDepthStencilTexture = pRenderTarget->GetDepthStencil();
+			_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
+			_pRenderer->SetViewport(_pContext, 0, 0, pDepthStencilTexture->GetWidth(), pDepthStencilTexture->GetHeight());
+			_pRenderer->Clear(_pContext, pRenderTarget);
+
+			// Set RenderState
+			Renderer::Effect* pEffect = m_aEffect[SharedResource::Light::Directional]->GetData();
+			_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
+			_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
+
+			// Set Vertex Shader and resources
+			Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
+			_pRenderer->SetVertexShader(_pContext, pVertexShader);
+			_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
+			_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
+
+			// Draw shadow for all lights
+			RenderBuffer::Light::Directional* pBufferSource; uint32 uiCount;
+			_pBuffer->Get(&pBufferSource, uiCount);
+			for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
+			{
+				RenderBuffer::Light::Directional& kLight = pBufferSource[uiLight];
+
+				// Update ConstantBuffer
+				RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
+				pSceneBuffer->View = kLight.View; 
+				pSceneBuffer->Projection = kLight.Projection;
+				_pRenderer->Unmap(_pContext, m_pSceneBuffer);
+
+				GeometryPass::DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
+			}
+		}
 	}
 
 	//!	@brief		ExecutePointLight 

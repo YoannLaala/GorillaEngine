@@ -314,30 +314,19 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		OnRenderContextCreated
 	//!	@date		2015-11-11
-	void Engine::OnRenderContextCreated(Renderer::RenderContext* _pContext, uint8 _eFilter)
+	void Engine::OnRenderContextCreated(Renderer::RenderContext* _pContext, uint8 _eFlag)
 	{
-		switch(_eFilter)
+		if((_eFlag & Renderer::EFlag::EmptyPass) == 0)
 		{
-			case Renderer::Viewport::EFilter::Gui:
-			{
-				_pContext->CreatePass<GuiPass>();
-				_pContext->CreatePass<FullScreenPass>();
-				break;
-			}
-
-			case Renderer::Viewport::EFilter::None:
-			{
-				_pContext->CreatePass<VisibilityPass>();
-				_pContext->CreatePass<ShadowPass>();
-				_pContext->CreatePass<GeometryPass>();
-				_pContext->CreatePass<DecalPass>();
-				_pContext->CreatePass<LightPass>();
-				_pContext->CreatePass<PrimitivePass>();
-				_pContext->CreatePass<GuiPass>();
-				_pContext->CreatePass<CompositingPass>();
-				_pContext->CreatePass<FullScreenPass>();
-				break;
-			}
+			_pContext->CreatePass<VisibilityPass>();
+			_pContext->CreatePass<ShadowPass>();
+			_pContext->CreatePass<GeometryPass>();
+			_pContext->CreatePass<DecalPass>();
+			_pContext->CreatePass<LightPass>();
+			_pContext->CreatePass<PrimitivePass>();
+			_pContext->CreatePass<GuiPass>();
+			_pContext->CreatePass<CompositingPass>();
+			_pContext->CreatePass<FullScreenPass>();
 		}
 	}
 

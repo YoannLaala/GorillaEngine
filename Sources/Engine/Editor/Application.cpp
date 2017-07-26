@@ -63,7 +63,8 @@ namespace Gorilla { namespace Editor
 	//!	@date		2015-04-08
 	void Application::Run()
 	{
-		Engine::View* pView = CreateView("Gorilla Editor", 1280, 720, Renderer::Viewport::EFilter::Gui);
+		Engine::View* pView = CreateView("Gorilla Editor", 1280, 720, Renderer::EFlag::EmptyPass);
+
 
 		// Create the world and add the Editor GameObject
 		m_pWorld = GetEngine()->CreateWorld();

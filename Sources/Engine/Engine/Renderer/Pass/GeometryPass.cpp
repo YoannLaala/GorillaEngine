@@ -300,124 +300,124 @@ namespace Gorilla { namespace Engine
 		}
 		
 
-		{
-			MARKER_GPU(_pContext, "Voxelization");
+		//{
+		//	MARKER_GPU(_pContext, "Voxelization");
 
-			// Clear Voxel Fragment List
-			{
-				MARKER_GPU(_pContext, "Clear");
+		//	// Clear Voxel Fragment List
+		//	{
+		//		MARKER_GPU(_pContext, "Clear");
 
-				_pRenderer->Clear(_pContext, prt);
+		//		_pRenderer->Clear(_pContext, prt);
 
-				_pRenderer->SetComputeShader(_pContext, (*hShader_clear_fragment_list)->GetData());
-				_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelNode);
-				_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 1, pVoxelGridState);
-				_pRenderer->Compute(_pContext, 1, 1, 1);
+		//		_pRenderer->SetComputeShader(_pContext, (*hShader_clear_fragment_list)->GetData());
+		//		_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelNode);
+		//		_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 1, pVoxelGridState);
+		//		_pRenderer->Compute(_pContext, 1, 1, 1);
 
-				_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 2);
-			}
-		
-			// Create Voxel Fragment list
-			{
-				MARKER_GPU(_pContext, "Create Fragment List");
+		//		_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 2);
+		//	}
+		//
+		//	// Create Voxel Fragment list
+		//	{
+		//		MARKER_GPU(_pContext, "Create Fragment List");
 
-				RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
-				if(_pBuffer->Get(&pBatchArray, uiBatchCount))
-				{
-					_pRenderer->SetRenderTarget(_pContext, prt);
-					_pRenderer->SetViewport(_pContext, 0, 0, VOXEL_GRID_SIZE, VOXEL_GRID_SIZE);
+		//		RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
+		//		if(_pBuffer->Get(&pBatchArray, uiBatchCount))
+		//		{
+		//			_pRenderer->SetRenderTarget(_pContext, prt);
+		//			_pRenderer->SetViewport(_pContext, 0, 0, VOXEL_GRID_SIZE, VOXEL_GRID_SIZE);
 
-					Renderer::Effect* pEffect = (*hEffect_create_fragment_list)->GetData();
-					_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
-					_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
+		//			Renderer::Effect* pEffect = (*hEffect_create_fragment_list)->GetData();
+		//			_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
+		//			_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
 
-					// Set Shaders and resources
-					Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
-					_pRenderer->SetVertexShader(_pContext, pVertexShader);
-					_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
+		//			// Set Shaders and resources
+		//			Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
+		//			_pRenderer->SetVertexShader(_pContext, pVertexShader);
+		//			_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
 
-					Renderer::Shader* pGeometryShader = pEffect->GetShader(Renderer::EShader::Geometry, Renderer::ETechnique::Instancing);
-					_pRenderer->SetGeometryShader(_pContext, pGeometryShader);
-					_pRenderer->SetGeometryShaderConstantBuffer(_pContext, 0, pconstant_buffer);
+		//			Renderer::Shader* pGeometryShader = pEffect->GetShader(Renderer::EShader::Geometry, Renderer::ETechnique::Instancing);
+		//			_pRenderer->SetGeometryShader(_pContext, pGeometryShader);
+		//			_pRenderer->SetGeometryShaderConstantBuffer(_pContext, 0, pconstant_buffer);
 
-					Renderer::Shader* pPixelShader = pEffect->GetShader(Renderer::EShader::Pixel);
-					_pRenderer->SetPixelShader(_pContext, pPixelShader);
-					_pRenderer->SetPixelShaderConstantBuffer(_pContext, 0, pconstant_buffer);
+		//			Renderer::Shader* pPixelShader = pEffect->GetShader(Renderer::EShader::Pixel);
+		//			_pRenderer->SetPixelShader(_pContext, pPixelShader);
+		//			_pRenderer->SetPixelShaderConstantBuffer(_pContext, 0, pconstant_buffer);
 
-					// Handle Instancing
-					DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
-				}
-				_pRenderer->SetGeometryShader(_pContext, NULL);
-			}
+		//			// Handle Instancing
+		//			DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
+		//		}
+		//		_pRenderer->SetGeometryShader(_pContext, NULL);
+		//	}
 
-			// CLEAN RENTER TARGET WITH UAV ON OUTPUT
-			//_pRenderer->SetRenderTarget(_pContext, m_pRenderTarget);
-			// CLEAN RENTER TARGET WITH UAV ON OUTPUT
-		
-			//{
-			//	MARKER_GPU(_pContext, "Create Sparse Voxel Octree");
+		//	// CLEAN RENTER TARGET WITH UAV ON OUTPUT
+		//	//_pRenderer->SetRenderTarget(_pContext, m_pRenderTarget);
+		//	// CLEAN RENTER TARGET WITH UAV ON OUTPUT
+		//
+		//	//{
+		//	//	MARKER_GPU(_pContext, "Create Sparse Voxel Octree");
 
-			//	for(uint32 uiDepth = 0; uiDepth < VOXEL_OCTREE_DEPTH_LITMIT; ++uiDepth)
-			//	{
-			//		MARKER_GPU(_pContext, (String("Depth") + uiDepth).GetBuffer());
+		//	//	for(uint32 uiDepth = 0; uiDepth < VOXEL_OCTREE_DEPTH_LITMIT; ++uiDepth)
+		//	//	{
+		//	//		MARKER_GPU(_pContext, (String("Depth") + uiDepth).GetBuffer());
 
-			//		// Flag node
-			//		{
-			//			_pRenderer->SetComputeShader(_pContext, (*hFlagVoxelNode)->GetData());
-			//			//_pRenderer->SetComputeShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
-			//			_pRenderer->SetComputeShaderConstantBuffer(_pContext, 0, pconstant_buffer);			
-			//			_pRenderer->SetComputeShaderResource(_pContext, 0, pVoxelFragment);
-			//			_pRenderer->SetComputeShaderResource(_pContext, 1, pVoxelGridState);
-			//			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelNode);
-			//			_pRenderer->Compute(_pContext, pVoxelGridState);
+		//	//		// Flag node
+		//	//		{
+		//	//			_pRenderer->SetComputeShader(_pContext, (*hFlagVoxelNode)->GetData());
+		//	//			//_pRenderer->SetComputeShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
+		//	//			_pRenderer->SetComputeShaderConstantBuffer(_pContext, 0, pconstant_buffer);			
+		//	//			_pRenderer->SetComputeShaderResource(_pContext, 0, pVoxelFragment);
+		//	//			_pRenderer->SetComputeShaderResource(_pContext, 1, pVoxelGridState);
+		//	//			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelNode);
+		//	//			_pRenderer->Compute(_pContext, pVoxelGridState);
 
-			//			_pRenderer->UnsetComputeShaderResource(_pContext, 0, 2);
-			//			_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 1);
-			//		}
+		//	//			_pRenderer->UnsetComputeShaderResource(_pContext, 0, 2);
+		//	//			_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 1);
+		//	//		}
 
-			//		// Subdivide node
-			//		{
-			//			_pRenderer->SetComputeShader(_pContext, (*hSubdivideVoxelNode)->GetData());		
-			//			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelNode);
-			//			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 1, pVoxelGridState);
-			//			_pRenderer->Compute(_pContext, pVoxelGridState, 12);
+		//	//		// Subdivide node
+		//	//		{
+		//	//			_pRenderer->SetComputeShader(_pContext, (*hSubdivideVoxelNode)->GetData());		
+		//	//			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelNode);
+		//	//			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 1, pVoxelGridState);
+		//	//			_pRenderer->Compute(_pContext, pVoxelGridState, 12);
 
-			//			_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 2);
-			//		}
-			//	}
-			//}
-		}
+		//	//			_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 2);
+		//	//		}
+		//	//	}
+		//	//}
+		//}
 
-		// Inject Light
-		{
-			_pRenderer->SetRenderTarget(_pContext, m_pRenderTarget);
+		//// Inject Light
+		//{
+		//	_pRenderer->SetRenderTarget(_pContext, m_pRenderTarget);
 
-			// Update ConstantBuffer
-			RenderBuffer::Constant::Scene* pSceneBufferSource; uint32 uiSceneCount;
-			if(_pBuffer->Get(&pSceneBufferSource, uiSceneCount))
-			{
-				RenderBuffer::Light::Directional* pLightBufferSource; uint32 uiLightCount;
-				if(_pRenderer->GetFrameBuffer()->Get(&pLightBufferSource, uiLightCount))
-				{
-					RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
-					pSceneBuffer->View = pLightBufferSource->View.Inverse();
-					pSceneBuffer->Projection = pLightBufferSource->Projection.Inverse();				
-					_pRenderer->Unmap(_pContext, m_pSceneBuffer);
-				}
-			}
+		//	// Update ConstantBuffer
+		//	RenderBuffer::Constant::Scene* pSceneBufferSource; uint32 uiSceneCount;
+		//	if(_pBuffer->Get(&pSceneBufferSource, uiSceneCount))
+		//	{
+		//		RenderBuffer::Light::Directional* pLightBufferSource; uint32 uiLightCount;
+		//		if(_pRenderer->GetFrameBuffer()->Get(&pLightBufferSource, uiLightCount))
+		//		{
+		//			RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
+		//			pSceneBuffer->View = pLightBufferSource->View.Inverse();
+		//			pSceneBuffer->Projection = pLightBufferSource->Projection.Inverse();				
+		//			_pRenderer->Unmap(_pContext, m_pSceneBuffer);
+		//		}
+		//	}
 
-			// Inject direct light
-			_pRenderer->SetComputeShader(_pContext, (*hInjectLightDirect)->GetData());
-			_pRenderer->SetComputeShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
-			_pRenderer->SetComputeShaderConstantBuffer(_pContext, 1, pconstant_buffer);
-			//_pRenderer->SetComputeShaderResource(_pContext, 0, pShadow);
-			_pRenderer->SetComputeShaderResource(_pContext, 1, pVoxelFragment);
-			_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelColor);
-			_pRenderer->Compute(_pContext, 32, 32, 1);
-			_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 1);
-		}
+		//	// Inject direct light
+		//	_pRenderer->SetComputeShader(_pContext, (*hInjectLightDirect)->GetData());
+		//	_pRenderer->SetComputeShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
+		//	_pRenderer->SetComputeShaderConstantBuffer(_pContext, 1, pconstant_buffer);
+		//	//_pRenderer->SetComputeShaderResource(_pContext, 0, pShadow);
+		//	_pRenderer->SetComputeShaderResource(_pContext, 1, pVoxelFragment);
+		//	_pRenderer->SetComputeShaderUnorderedAccess(_pContext, 0, pVoxelColor);
+		//	_pRenderer->Compute(_pContext, 32, 32, 1);
+		//	_pRenderer->UnsetComputeShaderUnorderedAccess(_pContext, 0, 1);
+		//}
 
-		_pRenderer->UpdateMipMap(_pContext, pVoxelColor);
+		//_pRenderer->UpdateMipMap(_pContext, pVoxelColor);
 
 		//// Update ConstantBuffer
 		//if(pSceneBufferSource)

@@ -392,29 +392,29 @@ namespace Gorilla { namespace Renderer
 
 	//!	@brief		CreateViewport 
 	//!	@date		2015-11-11
-	Viewport* Renderer::CreateViewport(Window* _pWindow, EFormat::Type _eFormat, uint8 _eFilter /*= 0*/)
+	Viewport* Renderer::CreateViewport(Window* _pWindow, EFormat::Type _eFormat, uint8 _eFlag /*= 0*/)
 	{
 		uint32 uiWidth = _pWindow->GetWidth();
 		uint32 uiHeight = _pWindow->GetHeight();
 		SwapChain* pSwapChain = CreateSwapChain(_pWindow, uiWidth, uiHeight, _eFormat);
 
-		return CreateViewport(pSwapChain, _eFilter);
+		return CreateViewport(pSwapChain, _eFlag);
 	}
 
 	//!	@brief		CreateViewport 
 	//!	@date		2015-11-11
-	Viewport* Renderer::CreateViewport(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat, uint8 _eFilter /*= 0*/)
+	Viewport* Renderer::CreateViewport(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat, uint8 _eFlag /*= 0*/)
 	{
 		Texture2D* pRenderTexture = CreateTexture2D(_uiWidth, _uiHeight, 1, _eFormat, EBind::ShaderResource | EBind::RenderTarget);
 		SwapChain* pSwapChain = new SwapChain();
 		pSwapChain->Initialize(pRenderTexture);
 
-		return CreateViewport(pSwapChain, _eFilter);
+		return CreateViewport(pSwapChain, _eFlag);
 	}
 
 	//!	@brief		AddViewport 
 	//!	@date		2015-11-11
-	Viewport* Renderer::CreateViewport(SwapChain* _pSwapChain, uint8 _eFilter /*= 0*/)
+	Viewport* Renderer::CreateViewport(SwapChain* _pSwapChain, uint8 _eFlag /*= 0*/)
 	{
 		// Create the render target for the render context
 		RenderTarget* pRenderTarget = CreateRenderTarget();
@@ -439,7 +439,7 @@ namespace Gorilla { namespace Renderer
 		RenderContext* pRenderContext = new RenderContext();
 		pRenderContext->Initialize(this, pD3D11DeferredContext, pViewport);
 		pViewport->SetRenderContext(pRenderContext);
-		SIGNAL_SEND(RenderContextCreated, pRenderContext, _eFilter);
+		SIGNAL_SEND(RenderContextCreated, pRenderContext, _eFlag);
 
 		m_vViewport.Add(pViewport);
 
@@ -1514,8 +1514,12 @@ namespace Gorilla { namespace Renderer
 		D3D11_UNORDERED_ACCESS_VIEW_DESC kD3D11UnorderesAccessViewDesc;
 		ZeroMemory(&kD3D11UnorderesAccessViewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		kD3D11UnorderesAccessViewDesc.Format = (DXGI_FORMAT)_eFormat;
-		kD3D11UnorderesAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-		kD3D11UnorderesAccessViewDesc.Texture2DArray.ArraySize = 6;
+		kD3D11UnorderesAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+
+		// point light
+		//kD3D11UnorderesAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+		//kD3D11UnorderesAccessViewDesc.Texture2DArray.ArraySize = 6;
+		// point light
 
 		// Create RenderTarget View
 		ID3D11UnorderedAccessView* pD3D11UnorderdAccessView = NULL;
