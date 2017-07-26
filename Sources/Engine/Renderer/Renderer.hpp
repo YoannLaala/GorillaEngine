@@ -200,6 +200,7 @@ namespace Gorilla { namespace Renderer
 	private:
 		Viewport*									CreateViewport					(SwapChain* _pSwapChain, uint8 _eFilter = 0);
 		SwapChain*									CreateSwapChain					(Window* _pWindow, uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat);
+		SwapChain*									CreateSwapChain					(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat);
 
 		void*										CreateShaderResourceView		(Texture2D* _pTexture, uint32 _uiMipCount, uint32 _uiCount, EFormat::Type _eFormat, uint32 _eFlag);
 		void*										CreateShaderResourceView		(Texture3D* _pTexture, uint32 _uiMipCount, EFormat::Type _eFormat);

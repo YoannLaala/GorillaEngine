@@ -38,16 +38,12 @@ namespace Gorilla { namespace Renderer
 	//!	@date		2015-11-11
 	void SwapChain::Release()
 	{
-		if(m_pHandle)
-		{
-			Renderer::DestroyHandle(m_pHandle);
-		}
+		if(m_pHandle) Renderer::DestroyHandle(m_pHandle);
+		m_pHandle = nullptr;
 		
-		if(m_pTexture)
-		{
-			Renderer::GetInstance()->DestroyResource(m_pTexture);
-			m_pTexture = nullptr;
-		}
+		if(m_pTexture) Renderer::GetInstance()->DestroyResource(m_pTexture);
+		m_pTexture = nullptr;
+			
 		m_pWindow = nullptr;
 	}
 }}

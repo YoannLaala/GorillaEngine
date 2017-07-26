@@ -64,22 +64,14 @@ namespace Gorilla { namespace Renderer
 		m_uiWidth = _uiWidth;
 		m_uiHeight = _uiHeight;
 
-		// Create a new SwapChain
-		Texture2D* pRenderTexture = m_pRenderTarget->GetTarget(0);
-		if(m_pSwapChain)
-		{
-			Window* pWindow = m_pSwapChain->GetWindow();
-			Renderer::GetInstance()->DestroyResource(m_pSwapChain);
-			m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(pWindow, _uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM);
-			pRenderTexture = m_pSwapChain->GetTexture();
-		}
-		else
-		{
-			Renderer::GetInstance()->DestroyResource(pRenderTexture);
-			pRenderTexture = Renderer::GetInstance()->CreateTexture2D(_uiWidth, _uiHeight, 1, EFormat::R8G8B8A8_UNORM, EBind::RenderTarget);
-		}
+		// Create a new SwapChain if needed
+		Window* pWindow = m_pSwapChain->GetWindow();
+		Renderer::GetInstance()->DestroyResource(m_pSwapChain);
+		if(pWindow) m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(pWindow, _uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM);
+		else m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(_uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM);
+		
 		m_pRenderTarget->Clear();
-		m_pRenderTarget->AddTarget(pRenderTexture);
+		m_pRenderTarget->AddTarget(m_pSwapChain->GetTexture());
 		
 		// Resize the render context and the output texture
 		//if(m_pContext) m_pContext->Resize(pRenderTexture);

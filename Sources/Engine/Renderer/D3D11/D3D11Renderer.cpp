@@ -559,6 +559,19 @@ namespace Gorilla { namespace Renderer
 		return pSwapChain;
 	}
 
+	//!	@brief		CreateSwapChain 
+	//!	@date		2015-11-11
+	SwapChain* Renderer::CreateSwapChain(uint32 _uiWidth, uint32 _uiHeight, EFormat::Type _eFormat)
+	{
+		Texture2D* pTexture = CreateTexture2D(_uiWidth, _uiHeight, 1, _eFormat, EBind::RenderTarget | EBind::ShaderResource);
+
+		// Create swap chain
+		SwapChain* pSwapChain = new SwapChain();
+		pSwapChain->Initialize(pTexture);
+
+		return pSwapChain;
+	}
+
 	//!	@brief		CreateRenderTarget
 	//!	@date		2015-11-11
 	RenderTarget* Renderer::CreateRenderTarget()
