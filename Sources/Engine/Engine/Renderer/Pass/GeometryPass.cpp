@@ -265,7 +265,7 @@ namespace Gorilla { namespace Engine
 
 		// default draw
 		{
-			MARKER_GPU(_pContext, "Geometry");
+			//MARKER_GPU(_pContext, "Geometry");
 
 			// Clear
 			Renderer::Texture2D* pColorTexture = m_pRenderTarget->GetTarget(0);

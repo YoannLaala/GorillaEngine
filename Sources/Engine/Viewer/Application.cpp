@@ -194,10 +194,10 @@ namespace Gorilla { namespace Viewer
 		// Object 
 		pGameObject = pWorld->AddGameObject("Object", pScene);	
 		pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Cube.fbx");
+		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Teapot.fbx");
 		pCpnMesh->Materials.Add(hMaterialDragon);
 		pCpnNode = pGameObject->AddComponent<Component::Node>();
-		//pCpnNode->SetScale(0.01f);
+		pCpnNode->SetScale(0.01f);
 		pCpnNode->SetPosition(-0.0f, -0.5f, 0.0f);
 
 		//Engine::Material* pMaterial = new Engine::Material();

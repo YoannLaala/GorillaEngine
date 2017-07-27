@@ -134,7 +134,11 @@ project("_SolutionPostBuild")
 	
 	--Asset required
 	cook_reflection(get_solution_source() .. "Component/", get_binaries_path() .. "Resources/Database/ComponentDescriptor.json")
+	cook_asset("Mesh", "Mesh/Cone.fbx")
 	cook_asset("Mesh", "Mesh/Cube.fbx")
+	cook_asset("Mesh", "Mesh/Cylinder.fbx")
 	cook_asset("Mesh", "Mesh/Quad.fbx")
+	cook_asset("Mesh", "Mesh/Sphere.fbx")
+	cook_asset("Mesh", "Mesh/Teapot.fbx")
 	cook_asset("Mesh", "Mesh/Torus.fbx")
 	copy_file("Resources/Template/Script/*", "Resources/Template/Script/")

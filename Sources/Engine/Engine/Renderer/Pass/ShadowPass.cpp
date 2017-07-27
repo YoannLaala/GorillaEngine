@@ -97,8 +97,6 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-11
 	void ShadowPass::Execute(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
 	{	
-		MARKER_GPU(_pContext, "Shadow");
-
 		ExecuteDirectionalLight(_pRenderer, _pContext, _pBuffer);
 		//ExecutePointLight(_pRenderer, _pContext, _pBuffer);
 	}
