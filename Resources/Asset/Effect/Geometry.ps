@@ -16,7 +16,7 @@ PS_OUTPUT PixelInstancing(VS_OUTPUT_INSTANCE _input)
 {
 	PS_OUTPUT output = (PS_OUTPUT)0;
 	output.Color = float4(1.0f, 1.0f, 1.0f, 0.0f);
-	output.Normal = float4(PackNormal(_input.Normal), 1.0f);
+	output.Normal = _input.Normal;
 	
 	return output;
 }

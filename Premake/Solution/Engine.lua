@@ -134,6 +134,8 @@ project("_SolutionPostBuild")
 	
 	--Asset required
 	cook_reflection(get_solution_source() .. "Component/", get_binaries_path() .. "Resources/Database/ComponentDescriptor.json")
+	cook_asset("Texture", "texture/noise/blue_noise_470.png");
+	cook_asset("Texture", "texture/noise/white_noise_ft.png");
 	cook_asset("Mesh", "Mesh/Cone.fbx")
 	cook_asset("Mesh", "Mesh/Cube.fbx")
 	cook_asset("Mesh", "Mesh/Cylinder.fbx")

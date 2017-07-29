@@ -19,6 +19,7 @@ Texture2D tDirectionalShadowMap							: register(t5);
 StructuredBuffer<PointLight> aPointLight 				: register(t6);
 TextureCubeArray tPointShadowMap						: register(t7);
 TextureCube tEnvironment								: register(t8);
+Texture2D tNoise										: register(t9);
 
 /******************************************************************************
 **	Structs
@@ -207,7 +208,7 @@ float3 BRDF_Diffuse(in Fragment _kFragment, in Material _kMaterial)
 	return vDiffuse * lightScatter * viewScatter ;
 	
 #else	// LAMBERT
-	return _kMaterial.Albedo;
+	return _kMaterial.Albedo / K_PI;
 #endif
 }
 
@@ -217,10 +218,10 @@ Material UnpackMaterial(in float2 _vTexcoord)
 	float4 vAlbedo = tAlbedo.Sample(sPointSampler, _vTexcoord);
 	float4 vNormalPacked = tNormal.Sample(sPointSampler, _vTexcoord);
 	
-	Material kMaterial;
+	Material kMaterial = (Material)0;
 	kMaterial.Albedo = vAlbedo.xyz;
 	kMaterial.Metallic = vAlbedo.w;
-	kMaterial.Normal = normalize(UnpackNormal(vNormalPacked.xyz));
+	kMaterial.Normal = vNormalPacked.xyz;
 	kMaterial.Roughness = max(0.025f, vNormalPacked.w);
 	kMaterial.F0 = lerp(MATERIAL_WATER, kMaterial.Albedo, kMaterial.Metallic);
 	
@@ -418,9 +419,9 @@ float3 ComputeLightReflectance(in Fragment _kFragment, in Material _kMaterial, i
 	// Compute diffuse and Specular
 	float3 vDiffuse = BRDF_Diffuse(_kFragment, _kMaterial); 
 	float3 vSpecular = BRDF_Specular(_kFragment, _kMaterial); 
-	
+
 	// Apply to reflectance
-	return (vDiffuse + vSpecular) * ((float3)1.0f + _vColor) * _kFragment.NdotL;
+	return (vDiffuse + vSpecular) * _vColor * _kFragment.NdotL;
 }
 
 float3 ComputeDirectionalLightReflectance(in Fragment _kFragment, in Material _kMaterial)
@@ -475,13 +476,21 @@ float3 ComputePointReflectance(in Fragment _kFragment, in Material _kMaterial)
 }
 
 /******************************************************************************
+**	Dithering
+******************************************************************************/
+float3 ComputeDithering(in float2 _vTexcoord)
+{
+	return (tNoise.Sample(sPointSampler, _vTexcoord).xyz / 255.0f);
+}
+
+/******************************************************************************
 **	Pixel Shader Default
 ******************************************************************************/
 PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 {
 	PS_OUTPUT output = (PS_OUTPUT)0;
 
-	// Skip if rgere is no geometry
+	// Skip if there is no geometry
 	Fragment kFragment = (Fragment)0;
 	kFragment.Depth = tDepth.Sample(sPointSampler, _input.Texcoord).r;
 	if(kFragment.Depth >= 1.0f)
@@ -489,8 +498,9 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 		return output; 
 	}
 	
+	// Upack material
 	Material kMaterial = UnpackMaterial(_input.Texcoord);
-	
+
 	
 	
 	float fDepthLinear = ComputeLinearDepth(kFragment.Depth);
@@ -510,6 +520,8 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	kFragment.Fresnel = ComputeFresnel(kFragment, kMaterial); 
 	
 	
+	
+	//kMaterial.Normal = tNormal.Sample(sPointSampler, _input.Texcoord).xyz;
 	// Compute Direct Light (Reflectance)
 	float3 vReflectance = (float3)0.0f;
 	vReflectance += ComputeDirectionalLightReflectance(kFragment, kMaterial);
@@ -523,10 +535,12 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	float ao = 0.0f;
     float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
 	output.DirectLighting = vAmbient + vReflectance;
-	
-	
-	
 
+	// Add noise only on non black color
+	if(length(output.DirectLighting) > 0.0f)
+	{
+		output.DirectLighting += ComputeDithering(_input.Texcoord);;
+	}
 	
 	// Compute Ambient Occlusion
 	// float3 vNormal = normalize(kMaterial.Normal);

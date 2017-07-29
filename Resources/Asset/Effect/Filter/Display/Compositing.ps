@@ -46,7 +46,7 @@ float3 ACESFilmRec2020( float3 x )
     return ( x * ( a * x + b ) ) / ( x * ( c * x + d ) + e );
 }
 
-static float fExposure = 0.0f;
+static float fExposure = 1.0f;
 
 /******************************************************************************
 **	Pixel Shader Default
@@ -57,7 +57,10 @@ float4 PixelDefault(VS_OUTPUT _input) : SV_Target
 	float4 vLightIndirect = tLightIndirect.Sample(sPointSampler, _input.Texcoord);
 	float4 vAmnbientOcclusion = tAmbientOcclusion.Sample(sPointSampler, _input.Texcoord);
 	
-	vLightDirect.xyz = ACESFilm(exp2(fExposure) * vLightDirect.xyz);
+	
+	// Tone Mapping
+	vLightDirect.xyz = ACESFilmRec2020(exp2(fExposure) * vLightDirect.xyz);
+	
 	return vLightDirect;
 	return vLightIndirect;
 	//return vAmnbientOcclusion;

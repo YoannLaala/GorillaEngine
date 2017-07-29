@@ -67,8 +67,8 @@ namespace Gorilla { namespace Renderer
 		// Create a new SwapChain if needed
 		Window* pWindow = m_pSwapChain->GetWindow();
 		Renderer::GetInstance()->DestroyResource(m_pSwapChain);
-		if(pWindow) m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(pWindow, _uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM);
-		else m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(_uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM);
+		if(pWindow) m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(pWindow, _uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM_SRGB);
+		else m_pSwapChain = Renderer::GetInstance()->CreateSwapChain(_uiWidth, _uiHeight, EFormat::R8G8B8A8_UNORM_SRGB);
 		
 		m_pRenderTarget->Clear();
 		m_pRenderTarget->AddTarget(m_pSwapChain->GetTexture());

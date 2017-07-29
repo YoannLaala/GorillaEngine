@@ -6,6 +6,7 @@
 ******************************************************************************/
 #include <Renderer/RenderPass.hpp>
 #include <Engine/Asset/AssetHandle.hpp>
+#include <Engine/Asset/Texture/Texture.hpp>
 #include <Engine/Asset/Effect/Effect.hpp>
 #include <Engine/Asset/Mesh/Mesh.hpp>
 #include <Engine/Common.hpp>
@@ -46,6 +47,7 @@ namespace Gorilla { namespace Engine
 		virtual void Execute		(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer) override;
 
 	private:
+		AssetHandle<Texture>	m_hNoiseTextute;
 		Renderer::RenderTarget* m_pRenderTarget;
 		RenderFilter*			m_pLightFilter;
 		Renderer::RenderTarget* m_pGeometryRenderTarget;

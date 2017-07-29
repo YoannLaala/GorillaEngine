@@ -19,6 +19,7 @@
 #define LIGHT_PASS_REGISTER_INDEX_POINT_BUFFER			LIGHT_PASS_REGISTER_INDEX_DIRECTIONAL_SHADOW + 1
 #define LIGHT_PASS_REGISTER_INDEX_POINT_SHADOW			LIGHT_PASS_REGISTER_INDEX_POINT_BUFFER + 1
 #define LIGHT_PASS_REGISTER_INDEX_ENVIRONMENT			LIGHT_PASS_REGISTER_INDEX_POINT_SHADOW + 1
+#define LIGHT_PASS_REGISTER_INDEX_NOISE					LIGHT_PASS_REGISTER_INDEX_ENVIRONMENT + 1
 
 /******************************************************************************
 **	Class Definition
@@ -43,7 +44,7 @@ namespace Gorilla { namespace Engine
 	}
 
 	//!	@brief		Initialize 
-	//!	@date		2015-11-11
+	//!	@date		2015-11-11	
 	void LightPass::Initialize(Renderer::RenderContext* _pContext)
 	{
 		Renderer::Texture2D* pRenderTexture = _pContext->GetViewport()->GetRenderTarget()->GetTarget(0);
@@ -56,6 +57,8 @@ namespace Gorilla { namespace Engine
 		Renderer::Buffer* pVoxelGrid = _pContext->GetBuffer(RENDERER_BUFFER_VOXEL_GRID);
 		//Renderer::Buffer* pVoxelFragment = _pContext->GetBuffer(RENDERER_BUFFER_VOXEL_FRAMENT);
 		Renderer::Texture3D* pVoxelVolume = _pContext->GetTexture3D(RENDERER_TEXTURE_VOXEL_VOLUME_COLOR);
+
+		m_hNoiseTextute = GetAssetManager()->Get<Texture>("@texture/noise/blue_noise_470.png");
 
 		// Output Texture
 		m_pRenderTarget = _pContext->GetRenderer()->CreateRenderTarget();
@@ -76,6 +79,7 @@ namespace Gorilla { namespace Engine
 		m_pLightFilter->SetResource(1, m_pGeometryRenderTarget->GetTarget(1));
 		m_pLightFilter->SetResource(2, m_pGeometryRenderTarget->GetDepthStencil());
 		m_pLightFilter->SetResource(3, pVoxelVolume);
+		m_pLightFilter->SetResource(LIGHT_PASS_REGISTER_INDEX_NOISE, m_hNoiseTextute->GetData());
 	}
 
 	//!	@brief		Release 
@@ -85,6 +89,7 @@ namespace Gorilla { namespace Engine
 		SAFE_DELETE(m_pLightFilter)
 		_pContext->DestroyResource(m_pRenderTarget);
 		_pContext->DestroyResource(m_pGeometryRenderTarget);
+		m_hNoiseTextute.Release();
 	}
 
 	template <class T>

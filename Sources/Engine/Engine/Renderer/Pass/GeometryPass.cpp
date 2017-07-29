@@ -104,7 +104,7 @@ namespace Gorilla { namespace Engine
 
 		// Texture
 		Renderer::Texture2D* pAlbedoTexture = _pContext->CreateTexture2D(RENDERER_TEXTURE_GEOMETRY_ALBEDO, uiWidth, uiHeight, 1, Renderer::EFormat::R8G8B8A8_UNORM, Renderer::EBind::RenderTarget | Renderer::EBind::ShaderResource);
-		Renderer::Texture2D* pNormalTexture = _pContext->CreateTexture2D(RENDERER_TEXTURE_GEOMETRY_NORMAL, uiWidth, uiHeight, 1, Renderer::EFormat::R8G8B8A8_UNORM, Renderer::EBind::RenderTarget | Renderer::EBind::ShaderResource);
+		Renderer::Texture2D* pNormalTexture = _pContext->CreateTexture2D(RENDERER_TEXTURE_GEOMETRY_NORMAL, uiWidth, uiHeight, 1, Renderer::EFormat::R11G11B10_FLOAT, Renderer::EBind::RenderTarget | Renderer::EBind::ShaderResource);
 		Renderer::Texture2D* pDepthStencilTexture = _pContext->CreateTexture2D(RENDERER_TEXTURE_GEOMETRY_DEPTH_STENCIL, uiWidth, uiHeight, 1, Renderer::EFormat::R24G8_TYPELESS, Renderer::EBind::DepthStencil | Renderer::EBind::ShaderResource);
 
 		// RenderTarget
