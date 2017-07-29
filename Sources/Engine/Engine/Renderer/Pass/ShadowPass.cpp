@@ -181,8 +181,7 @@ namespace Gorilla { namespace Engine
 
 				// Update ConstantBuffer
 				RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
-				pSceneBuffer->View = kLight.View; 
-				pSceneBuffer->Projection = kLight.Projection;
+				pSceneBuffer->ViewProjection = kLight.ViewProjection;
 				_pRenderer->Unmap(_pContext, m_pSceneBuffer);
 
 				GeometryPass::DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);

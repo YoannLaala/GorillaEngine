@@ -279,45 +279,6 @@ float3 TraceCone2(in float3 _vOrigin, in float3 _vDirection)
 	return vValue;
 }
 
-float ComputePercentageCloserSoftShadow(in float3 _vPosition, in float4x4 _mView, in float4x4 _mProjection)
-{
-	static float fShadowMapSize = 1024.0f;
-	static float fBias = 0.005f;
-	static float fSamplePerAxisCount = 1.0f;
-	static float fSampleCount = pow(fSamplePerAxisCount * 2.0f + 1.0f, 2.0f);
-	
-	float fResult = 0.0f;
-	
-	// Compute Shadow Texcoord
-	float4 vReceiver = mul(float4(_vPosition, 1.0f), _mView);
-	vReceiver = mul(vReceiver, _mProjection);
-	vReceiver.xy = vReceiver.xy * 0.5 + 0.5; 
-	vReceiver.y *= -1.0f;
-
-	float fBlockerDepth = tDirectionalShadowMap.Gather(sPointSampler, vReceiver.xy).r;
-	if(fBlockerDepth < (vReceiver.z-fBias))
-	{
-		int iPenumbra = round((vReceiver.z - fBlockerDepth) / fBlockerDepth * 128.0f);
-		int iStep = 2;
-		for (float i = -iPenumbra; i <= iPenumbra; i+=iStep)
-		{
-			for (float j = -iPenumbra; j <= iPenumbra; j+=iStep)
-			{
-				float fShadow = tDirectionalShadowMap.Gather(sPointSampler, vReceiver.xy, float2(i, j)).r;
-				if(fShadow < (vReceiver.z-fBias))
-				{
-					fResult += fShadow;
-				}
-			}
-		}
-		
-		float hello = pow(iPenumbra * 2.0f / iStep + 1.0f, 2.0f);
-		return 1.0f - (fResult / hello);
-	}
-
-	return 1.0f - (fResult / fSampleCount);
-}
-
 //	@param	dir		direction vector
 int	DirectionToCubeMapFace(float3 dir)
 {
@@ -341,7 +302,7 @@ int	DirectionToCubeMapFace(float3 dir)
 	return cubeFace;
 }
 
-void PCSS_ComputeBlockerDepth(out float _fBlockerDepth, out uint _uiBlockerCount, in float3 _vRight, in float3 _vUp, in float3 _vForward, in float _fReceiverDepth, in float _fRegionSize)
+void PCSS_BlockerDepth(out float _fBlockerDepth, out uint _uiBlockerCount, in float3 _vRight, in float3 _vUp, in float3 _vForward, in float _fReceiverDepth, in float _fRegionSize)
 {	
 	_fBlockerDepth = 0.0f; _uiBlockerCount = 0;
 	//if(tPointShadowMap.SampleLevel(sPointSampler, float4(_vForward, 0), 0).r >= _fReceiverDepth)
@@ -375,6 +336,96 @@ float PCF_Shadow(in float3 _vRight, in float3 _vUp, in float3 _vForward, in floa
 	return fShadow / SHADOW_SAMPLE_COUNT;
 }
 
+float3 ComputeTexcoord(in float3 _vPosition, in float4x4 _mViewProjection)
+{
+	// Compute Shadow Texcoord
+	float4 vReceiver = mul(float4(_vPosition, 1.0f), _mViewProjection);
+	vReceiver.xy = vReceiver.xy * 0.5 + 0.5; 
+	vReceiver.y *= -1.0f;
+
+	return vReceiver.xyz;
+}
+
+void BlockerDepth(out float _fBlockerDepth, out uint _uiBlockerCount, in float3 _vTexcoord, in float _fRegionSize)
+{	
+	_fBlockerDepth = 0.0f; _uiBlockerCount = 0;
+	//if(tPointShadowMap.SampleLevel(sPointSampler, float4(_vForward, 0), 0).r >= _fReceiverDepth)
+	{
+		//return;
+	}
+	
+	for (uint uiSample = 0; uiSample < SHADOW_SAMPLE_COUNT; ++uiSample)
+	{
+		float2 vOffset = s_aPoisson[uiSample];
+		float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, _vTexcoord.xy + vOffset * _fRegionSize, 0).r;
+		if(fDepth < _vTexcoord.z + 0.01f)
+		{
+			_fBlockerDepth += fDepth;
+			++_uiBlockerCount;
+		}
+	}
+}
+
+
+/******************************************************************************
+**	Percentage Closer Soft Shadow - Directional
+******************************************************************************/
+float PCSS_Directional(in float3 _vPosition, in float4x4 _mViewProjection)
+{
+	static float fBias = 0.05f;
+	static float fPenumbraMax = 0.125f;
+
+	float3 vTexcoord = ComputeTexcoord(_vPosition, _mViewProjection);
+
+	float fBlockerDepth; uint uiBlockerCount;
+	BlockerDepth(fBlockerDepth, uiBlockerCount, vTexcoord, 0.01f);
+	return fBlockerDepth / uiBlockerCount;
+
+
+	float fShadow = 0.0f;
+	for (uint uiSample = 0; uiSample < SHADOW_SAMPLE_COUNT; ++uiSample)
+	{
+		float2 vOffset = s_aPoisson[uiSample];
+		float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, vTexcoord.xy + vOffset * 0.01f, 0).r;
+		fShadow += fDepth;
+	}
+	
+	return fShadow / SHADOW_SAMPLE_COUNT;
+
+
+
+
+
+
+
+
+
+
+
+	// Apply bias to geometry depth
+	/*float fGeometryDepth = _fDepth - fBias;  
+	
+	// Compute axis
+	float3 vRight = normalize(cross(_vDirection, float3(0.0f, 1.0f , 0.0f)));
+	float3 vUp = normalize(cross(vRight, _vDirection));*/
+
+	// Find Blocker Depth
+	//float fBlockerDepth; uint uiBlockerCount;
+	//PCSS_BlockerDepth(fBlockerDepth, uiBlockerCount, vRight, vUp, _vDirection, fGeometryDepth, 0.1f);
+	////if(uiBlockerCount == 0)
+	//{
+	//	return fBlockerDepth;
+	//}
+	///*else if (uiBlockerCount == SHADOW_SAMPLE_COUNT)
+	//{
+	//	return 0.0f;
+	//}*/
+	//return 1.0f;
+	//fBlockerDepth /= uiBlockerCount;
+	//float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth;
+	//return PCF_Shadow(vRight, vUp, _vDirection, 0.125f, fGeometryDepth);
+}
+
 float PCSS_ShadowPoint(in float3 _vDirection, in float _fDistance)
 {
 	static float fBias = 0.05f;
@@ -389,7 +440,7 @@ float PCSS_ShadowPoint(in float3 _vDirection, in float _fDistance)
 
 	// Find Blocker Depth
 	float fBlockerDepth; uint uiBlockerCount;
-	PCSS_ComputeBlockerDepth(fBlockerDepth, uiBlockerCount, vRight, vUp, _vDirection, _fDistance, 0.1f);
+	PCSS_BlockerDepth(fBlockerDepth, uiBlockerCount, vRight, vUp, _vDirection, _fDistance, 0.1f);
 	//if(uiBlockerCount == 0)
 	{
 		return 1.0f;
@@ -404,7 +455,10 @@ float PCSS_ShadowPoint(in float3 _vDirection, in float _fDistance)
 	return PCF_Shadow(vRight, vUp, _vDirection, 0.125f, fReceiverDepth);
 }
 
-float3 ComputeLightReflectance(in Fragment _kFragment, in Material _kMaterial, in float3 _vLight, in float3 _vColor)
+/******************************************************************************
+**	ComputeLight_Direct (Reflectance)
+******************************************************************************/
+float3 ComputeLight_Direct(in Fragment _kFragment, in Material _kMaterial, in float3 _vLight, in float3 _vColor)
 {	
 	_kFragment.NdotL = dot(_kMaterial.Normal, _vLight);
 	if(_kFragment.NdotL <= 0.0f)
@@ -412,6 +466,7 @@ float3 ComputeLightReflectance(in Fragment _kFragment, in Material _kMaterial, i
 		return 0;
 	}	
 	
+	// Compute fragment vectors
 	float3 vHalf = normalize(_kFragment.View + _vLight);
 	_kFragment.NdotH = dot(_kMaterial.Normal, vHalf);
 	_kFragment.VdotH = dot(_kFragment.View, vHalf);
@@ -424,21 +479,23 @@ float3 ComputeLightReflectance(in Fragment _kFragment, in Material _kMaterial, i
 	return (vDiffuse + vSpecular) * _vColor * _kFragment.NdotL;
 }
 
-float3 ComputeDirectionalLightReflectance(in Fragment _kFragment, in Material _kMaterial)
+/******************************************************************************
+**	Direct Directional Light
+******************************************************************************/
+float3 ComputeLight_Direct_Directional(in Fragment _kFragment, in Material _kMaterial)
 {	
 	float3 vReflectance = (float3)0;
 	
 	uint uiSize, uiElementByte;
 	aDirectionalLight.GetDimensions(uiSize, uiElementByte);
-	
 	[loop]
 	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
 	{
 		DirectionalLight kLight = aDirectionalLight[uiLight]; 
-		float3 vLight = -float3(kLight.View._m02, kLight.View._m12, kLight.View._m22);
-		vReflectance += ComputeLightReflectance(_kFragment, _kMaterial, vLight, kLight.Color);
-		
-		float fShadow = ComputePercentageCloserSoftShadow(_kFragment.Position, kLight.View, kLight.Projection);
+		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, -kLight.Direction, kLight.Color);
+
+		// Add shadow for this light
+		float fShadow = PCSS_Directional(_kFragment.Position, kLight.ViewProjection);
 		vReflectance *= fShadow;
 	}
 	
@@ -466,7 +523,7 @@ float3 ComputePointReflectance(in Fragment _kFragment, in Material _kMaterial)
 		
 		// Compute reflectance
 		float3 vColor = kLight.Color * fIlluminance;
-		vReflectance += ComputeLightReflectance(_kFragment, _kMaterial, -vLight, vColor);
+		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, -vLight, vColor);
 		
 		float fShadow = PCSS_ShadowPoint(vLight, length(vLightToFragment));
 		vReflectance *= fShadow;
@@ -499,32 +556,19 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	}
 	
 	// Upack material
-	Material kMaterial = UnpackMaterial(_input.Texcoord);
+	Material kMaterial = UnpackMaterial(_input.Texcoord);	
 
-	
-	
-	float fDepthLinear = ComputeLinearDepth(kFragment.Depth);
-	float3 vPosition = float3(((2.0f * _input.Texcoord.x) - 1.0f), -((2.0f * _input.Texcoord.y) - 1.0f), 1.0f);
-	vPosition.x /= PROJECTION._m00;
-	vPosition.y /= PROJECTION._m11;
-	//vPosition *= fDepthLinear;
-	
-	// Compute View
-	float3 vPositionVS = ComputeViewPosition(_input.Texcoord, kFragment.Depth);
-	//kFragment.Position = GetCameraPosition() + vPosition;
-	kFragment.Position = GetCameraPosition() + normalize(vPosition) * fDepthLinear;
-	kFragment.View = normalize(vPosition);
+	// Compute Frapgment position & view
+	kFragment.Position = ComputeWorldPosition(_input.Texcoord, kFragment.Depth);
+	kFragment.View = normalize(kFragment.Position - POSITION);
 	kFragment.NdotV = abs(dot(kMaterial.Normal, kFragment.View));
 	
 	// Compute Fresnel
 	kFragment.Fresnel = ComputeFresnel(kFragment, kMaterial); 
 	
-	
-	
-	//kMaterial.Normal = tNormal.Sample(sPointSampler, _input.Texcoord).xyz;
 	// Compute Direct Light (Reflectance)
 	float3 vReflectance = (float3)0.0f;
-	vReflectance += ComputeDirectionalLightReflectance(kFragment, kMaterial);
+	vReflectance += ComputeLight_Direct_Directional(kFragment, kMaterial);
 	//vReflectance += ComputePointReflectance(kFragment, kMaterial);
 	
 	// Compute reflection
@@ -539,8 +583,9 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	// Add noise only on non black color
 	if(length(output.DirectLighting) > 0.0f)
 	{
-		output.DirectLighting += ComputeDithering(_input.Texcoord);;
+		//output.DirectLighting += ComputeDithering(_input.Texcoord);;
 	}
+	//output.DirectLighting = kFragment.Position;
 	
 	// Compute Ambient Occlusion
 	// float3 vNormal = normalize(kMaterial.Normal);

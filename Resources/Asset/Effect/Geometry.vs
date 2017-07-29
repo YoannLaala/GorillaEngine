@@ -48,10 +48,9 @@ VS_OUTPUT_INSTANCE VertexInstancing(VS_INPUT _input)
 	VS_OUTPUT_INSTANCE output = (VS_OUTPUT_INSTANCE)0;
 	output.Position = float4(_input.Position, 1.0f);
 	output.Position = mul(output.Position, kInstance.World);
-	output.Position = mul(output.Position, VIEW);
-	output.Position = mul(output.Position, PROJECTION);
+	output.Position = mul(output.Position, VIEW_PROJECTION);
 	output.Normal = float4(normalize(mul(_input.Normal, (float3x3)kInstance.World)), 1.0f);
 	output.Texcoord = _input.Texcoord;
 	
-	return output;
+	return output; 
 }

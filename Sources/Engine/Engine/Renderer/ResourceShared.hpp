@@ -52,9 +52,9 @@ namespace Gorilla { namespace Engine { namespace RenderBuffer
 		{
 			DECLARE_RENDER_BUFFER(Scene)
 
-			Math::Matrix44 View;
-			Math::Matrix44 Projection;
-			Math::Vector4  Viewport;
+			Math::Matrix44 ViewProjection;
+			Math::Matrix44 ViewProjectionInverse;
+			Math::Vector3  Position;
 		};
 	};
 
@@ -115,8 +115,8 @@ namespace Gorilla { namespace Engine { namespace RenderBuffer
 		{
 			DECLARE_RENDER_BUFFER(Light::Directional)
 
-			Math::Matrix44	View;
-			Math::Matrix44	Projection;
+			Math::Matrix44	ViewProjection;
+			Math::Vector3	Direction;
 			Math::Vector3	Color;
 			float32			Lux;
 		};

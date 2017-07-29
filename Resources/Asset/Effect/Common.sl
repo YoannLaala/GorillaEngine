@@ -21,9 +21,9 @@
 ******************************************************************************/
 cbuffer ConstantBufferScene : register(cb0)
 {
-	float4x4	VIEW;
-	float4x4	PROJECTION;
-	float4 		VIEWPORT;
+	float4x4	VIEW_PROJECTION;		
+	float4x4	VIEW_PROJECTION_INVERSE;
+	float3 		POSITION;
 };
 
 cbuffer ConstantBufferPointLight : register(cb1)
@@ -39,8 +39,8 @@ struct GeometryInstance
 
 struct DirectionalLight
 {
-	float4x4	View;
-	float4x4	Projection;
+	float4x4	ViewProjection;
+	float3		Direction;		
 	float3		Color;
 	float		Lux;		
 };
@@ -63,78 +63,13 @@ SamplerState sTriLinearSampler 	: register(s3);
 SamplerState sAnisotropicSampler: register(s4);
 SamplerComparisonState sShadowSampler : register(s5);
 
-//!	@brief		GetWidth 
-//!	@date		2016-07-30
-float GetWidth()
-{
-	return VIEWPORT.x; 
-}
-
-//!	@brief		GetHeight 
-//!	@date		2016-07-30
-float GetHeight()
-{
-	return VIEWPORT.y; 
-}
-
-//!	@brief		GetNear 
-//!	@date		2016-07-30
-float GetNear()
-{
-	return VIEWPORT.z; 
-}
-
-//!	@brief		GetFar 
-//!	@date		2016-07-30
-float GetFar()
-{
-	return VIEWPORT.w; 
-}
-
-//!	@brief		GetCameraPosition 
-//!	@date		2016-06-25
-float3 GetCameraPosition()
-{
-	return float3(VIEW._m30, VIEW._m31, VIEW._m32); 
-}
-
-//!	@brief		GetCameraDirection 
-//!	@date		2016-06-25
-float3 GetCameraDirection()
-{
-	return float3(VIEW._m20, VIEW._m21, VIEW._m22); 
-}
-
-//!	@brief		ComputeLinearDepth 
-//!	@date		2016-06-25
-float ComputeLinearDepth(in float _fDepth)
-{
-	return PROJECTION._m32 / (_fDepth - PROJECTION._m22);
-}
-
-//!	@brief		ComputeViewPosition
-//!	@date		2016-06-25
-float3 ComputeViewPosition(in float2 _vTexcoord, in float _fDepth)
-{
-	float fDepthLinear = ComputeLinearDepth(_fDepth);
-	float3 vPosition = float3(((2.0f * _vTexcoord.x) - 1.0f), -((2.0f * _vTexcoord.y) - 1.0f), 1.0f);
-	vPosition.x /= PROJECTION._m00;
-	vPosition.y /= PROJECTION._m11;
-	vPosition *= fDepthLinear;
-	
-	return vPosition;
-}
-
-//!	@brief		ComputeViewDirection 
-//!	@date		2016-06-25
-float3 ComputeViewDirection(in float2 _vTexcoord, in float _fDepth)
-{
-	return normalize(ComputeViewPosition(_vTexcoord, _fDepth));
-}
-
-//!	@brief		ComputeWorldPosition 
-//!	@date		2016-06-25
+/******************************************************************************
+**	Compute World position
+******************************************************************************/
 float3 ComputeWorldPosition(in float2 _vTexcoord, in float _fDepth)
-{	
-	return GetCameraPosition() + ComputeViewPosition(_vTexcoord, _fDepth);
+{
+	float4 vPositionWS = float4(((2.0f * _vTexcoord.x) - 1.0f), -((2.0f * _vTexcoord.y) - 1.0f), _fDepth, 1.0f);
+	vPositionWS = mul(vPositionWS, VIEW_PROJECTION_INVERSE);
+	vPositionWS.xyz /= vPositionWS.w;
+	return vPositionWS.xyz;
 }

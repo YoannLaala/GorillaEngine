@@ -36,6 +36,8 @@ namespace Gorilla { namespace Renderer
 		inline const Math::Matrix44&	GetProjection	() const { return m_mProjection; }
 		void							SetPerspective	(float32 _fFOV, float32 _fAspect, float32 _fZNear, float32 _fZFar);
 		void							SetOrthographic	(float32 _fWidth, float32 _fHeight, float32 _fZNear, float32 _fZFar);
+
+		inline const Math::Vector3&		GetPosition		() const { return m_vPosition;}						
 		
 		inline const Math::Matrix44&	GetView			() const { return m_mView; }
 		void							SetView			(const Math::Vector3& _vPosition, const Math::Vector3& _vRight, const Math::Vector3& _vUp, const Math::Vector3& _vForward);
@@ -51,6 +53,7 @@ namespace Gorilla { namespace Renderer
 	private:
 		Math::Matrix44		m_mView;
 		Math::Matrix44		m_mProjection;
+		Math::Vector3		m_vPosition;
 		Viewport*			m_pViewport;
 		uint32				m_uiLayer;
 	};

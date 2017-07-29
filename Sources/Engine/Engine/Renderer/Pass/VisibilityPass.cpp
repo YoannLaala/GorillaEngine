@@ -60,11 +60,12 @@ namespace Gorilla { namespace Engine
 	void VisibilityPass::Prepare(Renderer::Renderer* /*_pRenderer*/, Renderer::RenderContext* /*_pContext*/, const Renderer::Camera* _pCamera, const Renderer::Octree* _pTree, Renderer::RenderBuffer* _pBuffer)
 	{
 		RenderBuffer::Constant::Scene* pSceneBuffer = _pBuffer->Push<RenderBuffer::Constant::Scene>();
-		pSceneBuffer->View = _pCamera->GetView();
-		pSceneBuffer->Projection = _pCamera->GetProjection();
+		pSceneBuffer->ViewProjection = _pCamera->GetView() * _pCamera->GetProjection();
+		pSceneBuffer->ViewProjectionInverse = pSceneBuffer->ViewProjection.Inverse();
+		pSceneBuffer->Position = _pCamera->GetPosition();
 
 		Renderer::Frustum kFrustum;
-		kFrustum.Set(pSceneBuffer->Projection);
+		kFrustum.Set(_pCamera->GetProjection());
 
 		Vector<Renderer::Node*> vNode;
 		_pTree->FindVisible(kFrustum, vNode);

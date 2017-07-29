@@ -214,43 +214,43 @@ namespace Gorilla { namespace Engine
 		}
 		
 		// update voxel constant buffer
-		RenderBuffer::Constant::Scene* heyyyyyy; uint32 hooooo;
-		if(_pBuffer->Get(&heyyyyyy, hooooo))
-		{
-			
-			Math::Matrix44 mTest = heyyyyyy->View.Inverse();
-			Math::Vector3 vPosition(mTest[3][0], mTest[3][1], mTest[3][2]);
-			Math::Vector3 vRight(heyyyyyy->View[0][0], heyyyyyy->View[0][1], heyyyyyy->View[0][2]); vRight.Normalize();
-			Math::Vector3 vUp(heyyyyyy->View[1][0], heyyyyyy->View[1][1], heyyyyyy->View[1][2]); vUp.Normalize();
-			Math::Vector3 vForward(heyyyyyy->View[2][0], heyyyyyy->View[2][1], heyyyyyy->View[2][2]); vForward.Normalize();
+		//RenderBuffer::Constant::Scene* heyyyyyy; uint32 hooooo;
+		//if(_pBuffer->Get(&heyyyyyy, hooooo))
+		//{
+		//	
+		//	Math::Matrix44 mTest = heyyyyyy->View.Inverse();
+		//	Math::Vector3 vPosition(mTest[3][0], mTest[3][1], mTest[3][2]);
+		//	Math::Vector3 vRight(heyyyyyy->View[0][0], heyyyyyy->View[0][1], heyyyyyy->View[0][2]); vRight.Normalize();
+		//	Math::Vector3 vUp(heyyyyyy->View[1][0], heyyyyyy->View[1][1], heyyyyyy->View[1][2]); vUp.Normalize();
+		//	Math::Vector3 vForward(heyyyyyy->View[2][0], heyyyyyy->View[2][1], heyyyyyy->View[2][2]); vForward.Normalize();
 
-			Math::Vector3 vOrigin(-1.0f, 0.0f,0.0);
-			/*_pRenderer->GetGizmo()->PushLine(vOrigin, vOrigin+(vForward * -1.0f), Renderer::Color::Red);
-			_pRenderer->GetGizmo()->PushLine(vOrigin, vOrigin+(vUp), Renderer::Color::Green);
-			_pRenderer->GetGizmo()->PushLine(vOrigin, vOrigin+(vRight), Renderer::Color::Blue);*/
+		//	Math::Vector3 vOrigin(-1.0f, 0.0f,0.0);
+		//	/*_pRenderer->GetGizmo()->PushLine(vOrigin, vOrigin+(vForward * -1.0f), Renderer::Color::Red);
+		//	_pRenderer->GetGizmo()->PushLine(vOrigin, vOrigin+(vUp), Renderer::Color::Green);
+		//	_pRenderer->GetGizmo()->PushLine(vOrigin, vOrigin+(vRight), Renderer::Color::Blue);*/
 
-			static float32 aValue[4] = {2.0f, 2.0f, -1.0f, 1.0f};
-			cam.SetOrthographic(aValue[0], aValue[1], aValue[2], aValue[3]);
-			//float32 fDistanceToCenter = (aValue[2] + aValue[3]) * 0.5f;
-			//Math::Vector3 vCenter = vPosition + vForward * 0.5f;
+		//	static float32 aValue[4] = {2.0f, 2.0f, -1.0f, 1.0f};
+		//	cam.SetOrthographic(aValue[0], aValue[1], aValue[2], aValue[3]);
+		//	//float32 fDistanceToCenter = (aValue[2] + aValue[3]) * 0.5f;
+		//	//Math::Vector3 vCenter = vPosition + vForward * 0.5f;
 
-			/*_pRenderer->GetGizmo()->SetPosition(vCenter - vRight * fDistanceToCenter);
-			_pRenderer->GetGizmo()->PushCube(Renderer::Color::Green);*/
+		//	/*_pRenderer->GetGizmo()->SetPosition(vCenter - vRight * fDistanceToCenter);
+		//	_pRenderer->GetGizmo()->PushCube(Renderer::Color::Green);*/
 
-			//if(test == false)
-			{
-				test = true;
-				cbVoxel* pcbDestination = reinterpret_cast<cbVoxel*>(_pRenderer->Map(_pContext, pconstant_buffer));
-				cam.SetView(Math::Vector3::Zero, Math::Vector3::UnitX, Math::Vector3::UnitY, Math::Vector3::UnitZ);
-				pcbDestination->View = cam.GetView();
-				pcbDestination->Projection = cam.GetProjection();
-				pcbDestination->GridCenter = Math::Vector3::Zero;
-				pcbDestination->GridSize = VOXEL_GRID_SIZE;
-				pcbDestination->VoxelHalfSize =  (1.0f / VOXEL_GRID_SIZE) * 0.5;
-				pcbDestination->VoxelOctreeDepthLimit = VOXEL_OCTREE_DEPTH_LITMIT;
-				_pRenderer->Unmap(_pContext, pconstant_buffer);
-			}
-		}
+		//	//if(test == false)
+		//	{
+		//		test = true;
+		//		cbVoxel* pcbDestination = reinterpret_cast<cbVoxel*>(_pRenderer->Map(_pContext, pconstant_buffer));
+		//		cam.SetView(Math::Vector3::Zero, Math::Vector3::UnitX, Math::Vector3::UnitY, Math::Vector3::UnitZ);
+		//		pcbDestination->View = cam.GetView();
+		//		pcbDestination->Projection = cam.GetProjection();
+		//		pcbDestination->GridCenter = Math::Vector3::Zero;
+		//		pcbDestination->GridSize = VOXEL_GRID_SIZE;
+		//		pcbDestination->VoxelHalfSize =  (1.0f / VOXEL_GRID_SIZE) * 0.5;
+		//		pcbDestination->VoxelOctreeDepthLimit = VOXEL_OCTREE_DEPTH_LITMIT;
+		//		_pRenderer->Unmap(_pContext, pconstant_buffer);
+		//	}
+		//}
 	
 
 		// Update ConstantBuffer
@@ -515,13 +515,14 @@ namespace Gorilla { namespace Engine
 
 
 		// Update ConstantBuffer
-		if(pSceneBufferSource)
+		/*if(pSceneBufferSource)
 		{
 			RenderBuffer::Constant::Scene* pSceneBufferDestination = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
 			pSceneBufferDestination->View = pSceneBufferSource->View.Inverse();
 			pSceneBufferDestination->Projection = pSceneBufferSource->Projection;
+			pSceneBufferDestination->Position = pSceneBufferSource->Position;
 			_pRenderer->Unmap(_pContext, m_pSceneBuffer);
-		}
+		}*/
 
 
 		

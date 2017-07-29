@@ -42,9 +42,9 @@ namespace Gorilla { namespace Renderer
 	//!	@date		2015-11-13
 	void Camera::SetView(const Math::Vector3& _vPosition, const Math::Vector3& _vRight, const Math::Vector3& _vUp, const Math::Vector3& _vForward)
 	{
+		m_vPosition = _vPosition;
 		ComputeView(m_mView, _vPosition, _vRight, _vUp, _vForward);
 	}
-
 
 	//!	@brief		ComputePerspective
 	//!	@date		2015-11-13
