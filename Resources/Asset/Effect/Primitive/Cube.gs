@@ -25,8 +25,7 @@ VS_OUTPUT_INSTANCE AddVertex(in VS_OUTPUT_INSTANCE _input, in float _fOffsetX, i
 	output.InstanceId = _input.InstanceId;
 	output.Color = float4(kCube.Color.xyz, 1.0f);
 	output.Position = mul(float4(_input.Position.x + _fOffsetX, _input.Position.y + _fOffsetY, _input.Position.z + _fOffsetZ, 1.0f), kCube.World);
-	output.Position = mul(output.Position, VIEW);
-	output.Position = mul(output.Position, PROJECTION);
+	output.Position = mul(output.Position, VIEW_PROJECTION);
 	_kStream.Append(output);
 	
 	return output;

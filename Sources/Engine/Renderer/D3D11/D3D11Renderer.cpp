@@ -1514,11 +1514,10 @@ namespace Gorilla { namespace Renderer
 		D3D11_UNORDERED_ACCESS_VIEW_DESC kD3D11UnorderesAccessViewDesc;
 		ZeroMemory(&kD3D11UnorderesAccessViewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
 		kD3D11UnorderesAccessViewDesc.Format = (DXGI_FORMAT)_eFormat;
-		kD3D11UnorderesAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 
 		// point light
-		//kD3D11UnorderesAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
-		//kD3D11UnorderesAccessViewDesc.Texture2DArray.ArraySize = 6;
+		kD3D11UnorderesAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+		kD3D11UnorderesAccessViewDesc.Texture2DArray.ArraySize = 6;
 		// point light
 
 		// Create RenderTarget View

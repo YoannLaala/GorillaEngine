@@ -32,6 +32,40 @@
 
 using namespace Gorilla;
 
+namespace Gorilla
+{
+	class DynamicPointLight : public Gorilla::Engine::Component
+	{
+	public:
+		COMPONENT_DECLARE(DynamicPointLight);
+
+		virtual void Update() override
+		{
+			Gorilla::Component::Node* pCpnNode = GetOrCreate<Gorilla::Component::Node>();
+			float32 fTime = GetTime()->GetToltalTime();
+			pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);
+			//pCpnNode->RotateY(GetTime()->GetDeltaTime());
+
+			GetRenderer()->GetGizmo()->SetIdentity();
+			GetRenderer()->GetGizmo()->SetPosition(pCpnNode->GetPosition());
+			GetRenderer()->GetGizmo()->PushCube();
+		}
+	};
+	COMPONENT_REGISTER(DynamicPointLight);
+
+	//class GlobalIlluminationScene : public Gorilla::Engine::Component
+	//{
+	//public:
+	//	COMPONENT_DECLARE(GlobalIlluminationScene);
+
+	//	virtual void Update() override
+	//	{
+	//		//GetRenderer()->GetGizmo()->PushQuad();
+	//	}
+	//};
+	//COMPONENT_REGISTER(GlobalIlluminationScene);
+}
+
 /******************************************************************************
 **	Class Definition
 ******************************************************************************/
@@ -113,11 +147,11 @@ namespace Gorilla { namespace Viewer
 		pCpnNode->SetPosition(0.00f, 1.0f, 0.0f);
 		pCpnNode->LookAt(0.0f, 0.0, 0.0f);
 
-		//pGameObject = pWorld->AddGameObject("Light2", pScene);
-		//pGameObject->AddComponent<DynamicPointLight>();
-		//pGameObject->AddComponent<Component::PointLight>()->SetColor(Renderer::Color::Blue);
-		//pCpnNode = pGameObject->AddComponent<Component::Node>();
-		//pCpnNode->SetPosition(0.5f, -0.5f, 0.0f);
+		pGameObject = pWorld->AddGameObject("Light2", pScene);
+		pGameObject->AddComponent<DynamicPointLight>();
+		pGameObject->AddComponent<Component::PointLight>()->SetColor(Renderer::Color::Blue);
+		pCpnNode = pGameObject->AddComponent<Component::Node>();
+		pCpnNode->SetPosition(0.5f, -0.5f, 0.0f);
 
 		Engine::AssetHandle<Engine::Material> hMaterialWhite = GetAssetManager()->Create<Engine::Material>();
 		hMaterialWhite->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps"));

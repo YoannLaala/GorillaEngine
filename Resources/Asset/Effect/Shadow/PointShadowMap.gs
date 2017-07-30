@@ -25,8 +25,7 @@ void GeometryDefault(in triangle VS_OUTPUT_INSTANCE _input[3], inout TriangleStr
 		{
 			for(uint uiVertex = 0; uiVertex < 3; ++uiVertex)
 			{
-				aVertex[uiVertex].Position = mul(_input[uiVertex].Position, POINT_LIGHT_VIEW[uiView]);
-				aVertex[uiVertex].Position = mul(aVertex[uiVertex].Position, POINT_LIGHT_PROJECTION);
+				aVertex[uiVertex].Position = mul(_input[uiVertex].Position, POINT_LIGHT_VIEW_PROJECTION[uiView]);				
 				aVertex[uiVertex].PositionWorld = _input[uiVertex].Position.xyz;
 				aVertex[uiVertex].ViewIndex = uiView;
 				aVertex[uiVertex].LightIndex = uiLight;

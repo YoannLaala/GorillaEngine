@@ -28,8 +28,7 @@ cbuffer ConstantBufferScene : register(cb0)
 
 cbuffer ConstantBufferPointLight : register(cb1)
 {
-	float4x4 POINT_LIGHT_VIEW[POINT_LIGHT_VIEW_COUNT];
-	float4x4 POINT_LIGHT_PROJECTION;
+	float4x4 POINT_LIGHT_VIEW_PROJECTION[POINT_LIGHT_VIEW_COUNT];
 };
 
 struct GeometryInstance

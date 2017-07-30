@@ -28,8 +28,7 @@ namespace Gorilla { namespace Engine
 {
 	struct LightConstantBuffer
 	{
-		Math::Matrix44	View[6];
-		Math::Matrix44	Projection;
+		Math::Matrix44	ViewProjection[6];
 	};
 
 	Renderer::Buffer* SharedResource::Light::ConstantBuffer[SharedResource::Light::Count];
@@ -98,7 +97,7 @@ namespace Gorilla { namespace Engine
 	void ShadowPass::Execute(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
 	{	
 		ExecuteDirectionalLight(_pRenderer, _pContext, _pBuffer);
-		//ExecutePointLight(_pRenderer, _pContext, _pBuffer);
+		ExecutePointLight(_pRenderer, _pContext, _pBuffer);
 	}
 
 	template <class T>
@@ -245,20 +244,26 @@ namespace Gorilla { namespace Engine
 			RenderBuffer::Constant::Scene* pSceneBufferSource; uint32 uiSceneCount;
 			_pBuffer->Get(&pSceneBufferSource, uiSceneCount);
 
+			static Math::Matrix44 mView[6], mProjection;
+
 			RenderBuffer::Light::Point* pBufferSource; uint32 uiCount;
 			_pBuffer->Get(&pBufferSource, uiCount);
 			for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
 			{
 				RenderBuffer::Light::Point& kLight = pBufferSource[uiLight];
-
+				
+				Renderer::Camera::ComputeView(mView[0], kLight.Position, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY, Math::Vector3::UnitX);		// +X
+				Renderer::Camera::ComputeView(mView[1], kLight.Position, Math::Vector3::UnitZ, Math::Vector3::UnitY, Math::Vector3::UnitX * -1);		// -X
+				Renderer::Camera::ComputeView(mView[2], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY);		// +Y
+				Renderer::Camera::ComputeView(mView[3], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ, Math::Vector3::UnitY * -1);		// -Y
+				Renderer::Camera::ComputeView(mView[4], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitY, Math::Vector3::UnitZ);			// +Z
+				Renderer::Camera::ComputeView(mView[5], kLight.Position, Math::Vector3::UnitX * -1, Math::Vector3::UnitY, Math::Vector3::UnitZ * -1);// -Z
+				Renderer::Camera::ComputePerspective(mProjection, 90.0f, 1.0f, 0.1f, 10.0f);
+				for(uint32 uiView = 0; uiView < 6; ++uiView) mView[uiView] *= mProjection;
+				
+				// Synchronize buffer
 				LightConstantBuffer* pDestination = reinterpret_cast<LightConstantBuffer*>(_pRenderer->Map(_pContext, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]));
-				Renderer::Camera::ComputeView(pDestination->View[0], kLight.Position, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY, Math::Vector3::UnitX);		// +X
-				Renderer::Camera::ComputeView(pDestination->View[1], kLight.Position, Math::Vector3::UnitZ, Math::Vector3::UnitY, Math::Vector3::UnitX * -1);		// -X
-				Renderer::Camera::ComputeView(pDestination->View[2], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY);		// +Y
-				Renderer::Camera::ComputeView(pDestination->View[3], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ, Math::Vector3::UnitY * -1);		// -Y
-				Renderer::Camera::ComputeView(pDestination->View[4], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitY, Math::Vector3::UnitZ);			// +Z
-				Renderer::Camera::ComputeView(pDestination->View[5], kLight.Position, Math::Vector3::UnitX * -1, Math::Vector3::UnitY, Math::Vector3::UnitZ * -1);	// -Z
-				Renderer::Camera::ComputePerspective(pDestination->Projection, 90.0f, 1.0f, 0.1f, 10.0f);													// -Z
+				memcpy_s(pDestination, sizeof(LightConstantBuffer), mView, sizeof(LightConstantBuffer));
 				_pRenderer->Unmap(_pContext, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
 
 				GeometryPass::DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
