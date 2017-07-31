@@ -205,7 +205,7 @@ namespace Gorilla { namespace Renderer
 		void*										CreateShaderResourceView		(Texture2D* _pTexture, uint32 _uiMipCount, uint32 _uiCount, EFormat::Type _eFormat, uint32 _eFlag);
 		void*										CreateShaderResourceView		(Texture3D* _pTexture, uint32 _uiMipCount, EFormat::Type _eFormat);
 		void*										CreateShaderResourceView		(Buffer* _pBuffer, EFormat::Type _eFormat);
-		void*										CreateRenderTargetView			(void* _pHandle);
+		void*										CreateRenderTargetView			(Texture2D* _pTexture, EFormat::Type _eFormat);
 		void*										CreateDepthStenciltView			(Texture2D* _pTexture);
 		void*										CreateUnorderedAccessView		(Buffer* _pBuffer, EFormat::Type _eFormat);
 		void*										CreateUnorderedAccessView		(Texture2D* _pTexture, EFormat::Type _eFormat);

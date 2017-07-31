@@ -547,7 +547,7 @@ namespace Gorilla { namespace Renderer
 		// Create Texture2D and view
 		Texture2D* pTexture = new Texture2D();
 		pTexture->Initialize(_uiWidth, _uiHeight, pD3D11BackBufferTexture);
-		ID3D11RenderTargetView* pD3D11RenderTargetView = static_cast<ID3D11RenderTargetView*>(CreateRenderTargetView(pD3D11BackBufferTexture));
+		ID3D11RenderTargetView* pD3D11RenderTargetView = static_cast<ID3D11RenderTargetView*>(CreateRenderTargetView(pTexture, _eFormat));
 		pTexture->SetView(Texture2D::EView::RenderTarget, pD3D11RenderTargetView);
 
 		// Create swap chain
@@ -686,7 +686,7 @@ namespace Gorilla { namespace Renderer
 
 		if((_eBindFlag & EBind::RenderTarget) != 0)
 		{
-			ID3D11RenderTargetView* pD3D11RenderTargetView = static_cast<ID3D11RenderTargetView*>(CreateRenderTargetView(pD3D11Texture));
+			ID3D11RenderTargetView* pD3D11RenderTargetView = static_cast<ID3D11RenderTargetView*>(CreateRenderTargetView(pTexture, _eFormat));
 			pTexture->SetView(Texture2D::EView::RenderTarget, pD3D11RenderTargetView);
 		}
 
@@ -792,11 +792,11 @@ namespace Gorilla { namespace Renderer
 			pTexture->SetView(Texture3D::EView::ShaderResource, pD3D11ShaderResourceView);
 		}
 
-		if((_eBindFlag & EBind::RenderTarget) != 0)
+		/*if((_eBindFlag & EBind::RenderTarget) != 0)
 		{
-			ID3D11RenderTargetView* pD3D11RenderTargetView = static_cast<ID3D11RenderTargetView*>(CreateRenderTargetView(pD3D11Texture));
+			ID3D11RenderTargetView* pD3D11RenderTargetView = static_cast<ID3D11RenderTargetView*>(CreateRenderTargetView(pTexture, _eFormat));
 			pTexture->SetView(Texture3D::EView::RenderTarget, pD3D11RenderTargetView);
-		}
+		}*/
 
 		if((_eBindFlag & EBind::UnorderedAccess) != 0)
 		{
@@ -1418,14 +1418,20 @@ namespace Gorilla { namespace Renderer
 
 	//!	@brief		CreateRenderTargetView 
 	//!	@date		2016-06-18
-	void* Renderer::CreateRenderTargetView(void* _pHandle)
+	void* Renderer::CreateRenderTargetView(Texture2D* _pTexture, EFormat::Type _eFormat)
 	{
 		ID3D11Device* pD3D11Device = static_cast<ID3D11Device*>(m_pDevice);
-		ID3D11Resource* pD3D11Resource = static_cast<ID3D11Texture2D*>(_pHandle);
+		ID3D11Resource* pD3D11Resource = static_cast<ID3D11Texture2D*>(_pTexture->GetHandle());
+
+		// Create Render Target Resource view Desc
+		D3D11_RENDER_TARGET_VIEW_DESC kD3D11RenderTargetViewDesc;
+		ZeroMemory(&kD3D11RenderTargetViewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
+		kD3D11RenderTargetViewDesc.Format = (DXGI_FORMAT)_eFormat;
+		kD3D11RenderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
 		// Create RenderTarget View
-		ID3D11RenderTargetView* pD3D11RenderTargetView = NULL;
-		HRESULT hResult = pD3D11Device->CreateRenderTargetView(pD3D11Resource, NULL, &pD3D11RenderTargetView);
+		ID3D11RenderTargetView* pD3D11RenderTargetView = nullptr;
+		HRESULT hResult = pD3D11Device->CreateRenderTargetView(pD3D11Resource, &kD3D11RenderTargetViewDesc, &pD3D11RenderTargetView);
 		if(FAILED(hResult))
 		{
 			LOG_INTERNAL_ERROR("[Renderer] CreateRenderTargetView failed (HRESULT = 0x%0X)", hResult);

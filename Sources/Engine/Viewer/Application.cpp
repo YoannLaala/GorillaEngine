@@ -39,11 +39,17 @@ namespace Gorilla
 	public:
 		COMPONENT_DECLARE(DynamicPointLight);
 
+		virtual void Start() override
+		{
+			Gorilla::Component::Node* pCpnNode = GetOrCreate<Gorilla::Component::Node>();
+			pCpnNode->SetPosition(Math::Cos(0.0f) * 0.7f, Math::Sin(0.0f) * 0.7f, Math::Sin(0.0f) * 0.7f);
+		}
+
 		virtual void Update() override
 		{
 			Gorilla::Component::Node* pCpnNode = GetOrCreate<Gorilla::Component::Node>();
-			float32 fTime = GetTime()->GetToltalTime();
-			pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);
+			//float32 fTime = GetTime()->GetToltalTime();
+			//pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);
 			//pCpnNode->RotateY(GetTime()->GetDeltaTime());
 
 			GetRenderer()->GetGizmo()->SetIdentity();
@@ -149,7 +155,7 @@ namespace Gorilla { namespace Viewer
 
 		pGameObject = pWorld->AddGameObject("Light2", pScene);
 		pGameObject->AddComponent<DynamicPointLight>();
-		pGameObject->AddComponent<Component::PointLight>()->SetColor(Renderer::Color::Blue);
+		pGameObject->AddComponent<Component::PointLight>();
 		pCpnNode = pGameObject->AddComponent<Component::Node>();
 		pCpnNode->SetPosition(0.5f, -0.5f, 0.0f);
 
