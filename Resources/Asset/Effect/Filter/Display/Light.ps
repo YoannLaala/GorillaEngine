@@ -284,7 +284,31 @@ float3 TraceCone2(in float3 _vOrigin, in float3 _vDirection)
 ******************************************************************************/
 float PCSS_BlockerDepth_Directional(in float2 _vTexcoord, in float _fGeometryDepth)
 {	
-	static float fTexelFactor = 8.0f;
+	static uint uiSamleCount = 8;
+	
+	float fWidth = 1.0f;
+	float fTexelFactor = 1.0f/1024.0f;
+	float fOffset =  2.0f * fTexelFactor / (uiSamleCount-1);
+	float2 vSample = float2(_vTexcoord.x - fTexelFactor, _vTexcoord.y - fTexelFactor);
+
+	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
+	for (uint uiRow = 0; uiRow < uiSamleCount; ++uiRow)
+	{
+		for (uint uiColumn = 0; uiColumn < uiSamleCount; ++uiColumn)
+		{
+			float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, vSample + float2(uiRow * fOffset, uiColumn * fOffset), 0).r;
+			if(fDepth < _fGeometryDepth)
+			{
+				fBlockerDepth += fDepth;
+				++uiBlockerCount;
+			}
+		}
+	}
+
+	//if(uiBlockerCount == 0) return 1.0f;
+	return fBlockerDepth / uiBlockerCount;
+
+	/*static float fTexelFactor = 8.0f;
 	static float fTexelSize = fTexelFactor/1024.0f;
 	static int iKernelSize = 4;
 	static int iKernelHalfSize = iKernelSize * 0.5f;
@@ -305,7 +329,7 @@ float PCSS_BlockerDepth_Directional(in float2 _vTexcoord, in float _fGeometryDep
 	}
 
 	if(uiBlockerCount == 0) return 0.0f;
-	return fBlockerDepth / uiBlockerCount;
+	return fBlockerDepth / uiBlockerCount;*/
 }
 
 /******************************************************************************
@@ -314,10 +338,14 @@ float PCSS_BlockerDepth_Directional(in float2 _vTexcoord, in float _fGeometryDep
 float PCSS_Directional(in float3 _vPosition, in float4x4 _mViewProjection)
 {
 	static float fBias = 0.05f;
-	static float fTexelFactor = 2.0f;
+	/*static float fTexelFactor = 2.0f;
 	static float fTexelSize = fTexelFactor/1024.0f;
 	static int iKernelSize = 8;
-	static int iKernelHalfSize = iKernelSize * 0.5f;
+	static int iKernelHalfSize = iKernelSize * 0.5f;*/
+	static uint uiSamleCount = 8;
+	
+	
+	
 
 	// Compute Shadow Texcoord
 	float4 vPositionCS = mul(float4(_vPosition, 1.0f), _mViewProjection);
@@ -325,13 +353,16 @@ float PCSS_Directional(in float3 _vPosition, in float4x4 _mViewProjection)
 	vPositionCS.y *= -1.0f;
 	
 	// Compute Blocker Depth
-	float fGeometryDepth = vPositionCS.z - fBias;
+	float fGeometryDepth = vPositionCS.z + fBias;
 	float fBlockerDepth = PCSS_BlockerDepth_Directional(vPositionCS.xy, fGeometryDepth);
-	if(fBlockerDepth == 0) return 1.0f;
+	float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth;
+
+	float fWidth = 1.0f;
+	float fTexelFactor = 64.0f/1024.0f * fPenumbra;
 
 	// Perform filtering
 	float fShadow = 0.0f;
-	for (int iRow = -iKernelHalfSize+1; iRow < iKernelHalfSize; ++iRow)
+	/*for (int iRow = -iKernelHalfSize+1; iRow < iKernelHalfSize; ++iRow)
 	{
 		for (int iColumn = -iKernelHalfSize+1; iColumn < iKernelHalfSize; ++iColumn)
 		{
@@ -340,7 +371,20 @@ float PCSS_Directional(in float3 _vPosition, in float4x4 _mViewProjection)
 		}
 	}
 	
-	return fShadow / (iKernelSize * iKernelSize);
+	return fShadow / (iKernelSize * iKernelSize);*/
+
+	float fOffset =  2.0f * fTexelFactor / (uiSamleCount-1);
+	float2 vSample = float2(vPositionCS.x - fTexelFactor, vPositionCS.y - fTexelFactor);
+
+	for (uint uiRow = 0; uiRow < uiSamleCount; ++uiRow)
+	{
+		for (uint uiColumn = 0; uiColumn < uiSamleCount; ++uiColumn)
+		{
+			fShadow += tDirectionalShadowMap.SampleCmpLevelZero(sShadowSampler, vSample + float2(uiRow * fOffset, uiColumn * fOffset), vPositionCS.z - fBias).r;
+		}
+	}
+
+	return fShadow / (uiSamleCount * uiSamleCount);
 }
 
 /******************************************************************************
@@ -390,62 +434,25 @@ float3 ComputeLight_Direct_Directional(in Fragment _kFragment, in Material _kMat
 	return vReflectance;
 }
 
-
-
-
-
-//	@param	dir		direction vector
-int	DirectionToCubeMapFace(float3 dir)
-{
-	float3	absDir = abs(dir);
-	float	a = max(absDir.x, max(absDir.y, absDir.z));
-	int		cubeFace = 0;
-	
-	if(a == absDir.x)
-	{
-		cubeFace = absDir.x == dir.x ? 0 : 1;
-	}
-	else if(a == absDir.y)
-	{
-		cubeFace = absDir.y == dir.y ? 2 : 3;
-	}
-	else if(a == absDir.z)
-	{
-		cubeFace = absDir.z == dir.z ? 4 : 5;
-	}
-	
-	return cubeFace;
-}
-
-float PCF_Shadow(in float3 _vRight, in float3 _vUp, in float3 _vForward, in float _fRegionSize, in float _fReceiverDepth)
-{
-	float fShadow = 0.0f;
-	for (uint iSample = 0; iSample < SHADOW_SAMPLE_COUNT; ++iSample)
-	{
-		float2 vOffset = s_aPoisson[iSample];
-		float4 vSample = float4(_vForward + _vRight * vOffset.x * _fRegionSize + _vUp * vOffset.y * _fRegionSize, 0);
-		fShadow += tPointShadowMap.SampleCmpLevelZero(sShadowSampler, vSample, _fReceiverDepth).r;
-	}
-	
-	return fShadow / SHADOW_SAMPLE_COUNT;
-}
-
 /******************************************************************************
 **	Percentage Closer Soft Shadow - Approximate Depth Blocker for Point light
 ******************************************************************************/
 float PCSS_BlockerDepth_Point(in float3 _vDirection, in float _fGeometryDepth)
 {	
-	static float fTexelSize = 1.0f/256.0f;
-	static int iKernelSize = 2;
-	static int iKernelHalfSize = iKernelSize * 0.5f;
+	static uint uiSamleCount = 2;
+	
+	float fWidth = 1.0f;
+	float fTexelFactor = 1.0f/256.0f;
+	float fOffset =  2.0f * fTexelFactor / uiSamleCount;
+	float4 vSample = float4(_vDirection.x - fTexelFactor, _vDirection.y - fTexelFactor, _vDirection.z, 0.0f);
 
 	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
-	for (int iRow = -iKernelHalfSize+1; iRow < iKernelHalfSize; ++iRow)
+	for (uint uiRow = 0; uiRow < uiSamleCount; ++uiRow)
 	{
-		for (int iColumn = -iKernelHalfSize+1; iColumn < iKernelHalfSize; ++iColumn)
+		for (uint uiColumn = 0; uiColumn < uiSamleCount; ++uiColumn)
 		{
-			float4 vOffset = float4(iRow * fTexelSize, iColumn * fTexelSize, 0.0f, 0.0f);
-			float fDepth = tPointShadowMap.SampleLevel(sPointSampler, float4(_vDirection, 0.0f) + vOffset, 0).r;
+			vSample.xy += fOffset; 
+			float fDepth = tPointShadowMap.SampleLevel(sPointSampler, vSample, 0).r;
 			if(fDepth < _fGeometryDepth)
 			{
 				fBlockerDepth += fDepth;
@@ -454,7 +461,7 @@ float PCSS_BlockerDepth_Point(in float3 _vDirection, in float _fGeometryDepth)
 		}
 	}
 
-	if(uiBlockerCount == 0) return 0.0f;
+	if(uiBlockerCount == 0) return 1.0f;
 	return fBlockerDepth / uiBlockerCount;
 }
 
@@ -464,31 +471,29 @@ float PCSS_BlockerDepth_Point(in float3 _vDirection, in float _fGeometryDepth)
 float PCSS_Point(in float3 _vDirection, in float _fDistance)
 {
 	static float fBias = 0.05f;
-	static float fTexelFactor = 1.0f;
-	static float fTexelSize = fTexelFactor/256.0f;
-	static int iKernelSize = 4;
-	static int iKernelHalfSize = iKernelSize * 0.5f;
+	static uint uiSamleCount = 4;
 	
 	// Compute Blocker Depth
-	float fGeometryDepth = _fDistance - fBias;
-	float fBlockerDepth = PCSS_BlockerDepth_Point(_vDirection, fGeometryDepth);
-	if(fBlockerDepth == 0) return 1.0f;
-	
+	float fGeometryDepth = _fDistance + fBias;
+	float fBlockerDepth = PCSS_BlockerDepth_Point(_vDirection, _fDistance + fBias);
 	float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth;
+
+	float fTexelFactor = 5.0f/256.0f;
+	float fOffset =  2.0f * fTexelFactor / uiSamleCount;
+	float4 vSample = float4(_vDirection.x - fTexelFactor, _vDirection.y - fTexelFactor, _vDirection.z, 0.0f);
 
 	// Perform filtering
 	float fShadow = 0.0f;
-	for (int iRow = -iKernelHalfSize+1; iRow < iKernelHalfSize; ++iRow)
+	for (uint uiRow = 0; uiRow < uiSamleCount; ++uiRow)
 	{
-		for (int iColumn = -iKernelHalfSize+1; iColumn < iKernelHalfSize; ++iColumn)
+		for (uint uiColumn = 0; uiColumn < uiSamleCount; ++uiColumn)
 		{
-			float4 vOffset = float4(iRow * fTexelSize, iColumn * fTexelSize, 0.0f, 0.0f);
-			fShadow += tPointShadowMap.SampleCmpLevelZero(sShadowSampler, float4(_vDirection, 0.0f) + vOffset, fGeometryDepth).r;
+			vSample.xy += fOffset; 
+			fShadow += tPointShadowMap.SampleCmpLevelZero(sShadowSampler, vSample, _fDistance - fBias).r;
 		}
 	}
 
-	return fShadow / (iKernelSize * iKernelSize) / fPenumbra;
-	return fShadow * fPenumbra;// / (iKernelSize * iKernelSize);
+	return fShadow / (uiSamleCount * uiSamleCount);
 }
 
 /******************************************************************************
