@@ -48,8 +48,8 @@ namespace Gorilla
 		virtual void Update() override
 		{
 			Gorilla::Component::Node* pCpnNode = GetOrCreate<Gorilla::Component::Node>();
-			//float32 fTime = GetTime()->GetToltalTime();
-			//pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);
+			float32 fTime = GetTime()->GetToltalTime();
+			pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);
 			//pCpnNode->RotateY(GetTime()->GetDeltaTime());
 
 			GetRenderer()->GetGizmo()->SetIdentity();

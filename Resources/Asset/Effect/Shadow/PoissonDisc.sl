@@ -1,6 +1,50 @@
-#if defined(SHADOW_QUALITY_1)
-#define SHADOW_SAMPLE_COUNT 32
-static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] = 
+#define GET_POISSON_DISK_FAST(_index_)		s_aPoissonFast[_index_]
+#define POISSON_DISK_FAST_SIZE				7
+static float2 s_aPoissonFast[] = 
+{
+	{-0.1705299f, -0.02532191f},
+	{0.8443f, -0.14501f},
+	{0.322769f, -0.8867877f},
+	{0.3793779f, 0.4271973f},
+	{-0.7826293f, 0.4499342f},
+	{-0.6461163f, -0.6159819f},
+	{-0.2531648f, 0.8298409f}
+};
+
+#define GET_POISSON_DISK_LOWEST(_index_)	s_aPoissonLowest[_index_]
+#define POISSON_DISK_LOWEST_SIZE			25
+static float2 s_aPoissonLowest[] = 
+{
+	{-0.978698, -0.0884121},
+	{-0.841121, 0.521165},
+	{-0.71746, -0.50322},
+	{-0.702933, 0.903134},
+	{-0.663198, 0.15482},
+	{-0.495102, -0.232887},
+	{-0.364238, -0.961791},
+	{-0.345866, -0.564379},
+	{-0.325663, 0.64037},
+	{-0.182714, 0.321329},
+	{-0.142613, -0.0227363},
+	{-0.0564287, -0.36729},
+	{-0.0185858, 0.918882},
+	{0.0381787, -0.728996},
+	{0.16599, 0.093112},
+	{0.253639, 0.719535},
+	{0.369549, -0.655019},
+	{0.423627, 0.429975},
+	{0.530747, -0.364971},
+	{0.566027, -0.940489},
+	{0.639332, 0.0284127},
+	{0.652089, 0.669668},
+	{0.773797, 0.345012},
+	{0.968871, 0.840449},
+	{0.991882, -0.657338},
+};
+
+#define GET_POISSON_DISK_LOW(_index_)		s_aPoissonLow[_index_]
+#define POISSON_DISK_LOW_SIZE				32
+static float2 s_aPoissonLow[] = 
 {
 	{-0.975402, -0.0711386},
 	{-0.920347, -0.41142},
@@ -35,9 +79,10 @@ static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] =
 	{0.865413, 0.763726},
 	{0.872005, -0.927},
 };
-#elif defined(SHADOW_QUALITY_2)
-#define SHADOW_SAMPLE_COUNT 64
-static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] = 
+
+#define GET_POISSON_DISK_NORMAL(_index_)		s_aPoissonNormal[_index_]
+#define POISSON_DISK_NORMAL_SIZE				64
+static float2 s_aPoissonNormal[] = 
 {
 	{-0.934812, 0.366741},
 	{-0.918943, -0.0941496},
@@ -104,9 +149,10 @@ static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] =
 	{0.933348, -0.62981},
 	{0.95294, 0.156896},
 };
-#elif defined(SHADOW_QUALITY_3)
-#define SHADOW_SAMPLE_COUNT 100
-static float2 s_aPoisson[] = 
+
+#define GET_POISSON_DISK_HIGH(_index_)			s_aPoissonHigh[_index_]
+#define POISSON_DISK_HIGH_SIZE					100
+static float2 s_aPoissonHigh[] = 
 {
 	{-0.9891574, -0.1059512},
 	{-0.9822294, 0.05140843},
@@ -209,9 +255,10 @@ static float2 s_aPoisson[] =
 	{0.9578334, -0.1584408},
 	{0.9898114, 0.1029227},
 };
-#elif defined(SHADOW_QUALITY_4)
-#define SHADOW_SAMPLE_COUNT 128
-static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] = 
+
+#define GET_POISSON_DISK_HIGHEST(_index_)			s_aPoissonHighest[_index_]
+#define POISSON_DISK_HIGHEST_SIZE					128
+static float2 s_aPoissonHighest[] = 
 {
 	{-0.9406119, 0.2160107},
 	{-0.920003, 0.03135762},
@@ -342,34 +389,3 @@ static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] =
 	{0.9608918, -0.03495717},
 	{0.972032, 0.2271516}
 };
-#else
-#define SHADOW_SAMPLE_COUNT 25
-static float2 s_aPoisson[SHADOW_SAMPLE_COUNT] = 
-{
-	{-0.978698, -0.0884121},
-	{-0.841121, 0.521165},
-	{-0.71746, -0.50322},
-	{-0.702933, 0.903134},
-	{-0.663198, 0.15482},
-	{-0.495102, -0.232887},
-	{-0.364238, -0.961791},
-	{-0.345866, -0.564379},
-	{-0.325663, 0.64037},
-	{-0.182714, 0.321329},
-	{-0.142613, -0.0227363},
-	{-0.0564287, -0.36729},
-	{-0.0185858, 0.918882},
-	{0.0381787, -0.728996},
-	{0.16599, 0.093112},
-	{0.253639, 0.719535},
-	{0.369549, -0.655019},
-	{0.423627, 0.429975},
-	{0.530747, -0.364971},
-	{0.566027, -0.940489},
-	{0.639332, 0.0284127},
-	{0.652089, 0.669668},
-	{0.773797, 0.345012},
-	{0.968871, 0.840449},
-	{0.991882, -0.657338},
-};
-#endif
