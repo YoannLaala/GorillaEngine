@@ -41,7 +41,16 @@ struct DirectionalLight
 	float4x4	ViewProjection;
 	float3		Direction;		
 	float3		Color;
-	float		Lux;		
+	float		Power;		// Lux	
+};
+
+struct SpotlLight
+{
+	float4x4	ViewProjection;
+	float3		Direction;		
+	float3		Color;
+	float		Size;
+	float		Power;		// Lumen
 };
 
 struct PointLight
@@ -49,7 +58,7 @@ struct PointLight
 	float3 		Position;
 	float3		Color;
 	float		Radius;
-	float		Lumen;
+	float		Power;		// Lumen
 };
 
 /******************************************************************************

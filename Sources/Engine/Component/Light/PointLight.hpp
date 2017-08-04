@@ -6,7 +6,6 @@
 ******************************************************************************/
 #include <Component/RenderableNode.hpp>
 #include <Renderer/Color.hpp>
-#include <Renderer/Light/PointLight.hpp>
 
 /******************************************************************************
 **	Class Declaration
@@ -20,15 +19,13 @@ namespace Gorilla { namespace Component
 		~PointLight();
 		COMPONENT_DECLARE(Gorilla::Component::PointLight);
 
-		inline void SetColor(Renderer::Color _kColor) { m_pLight->SetColor(_kColor.GetRed() / 255.0f, _kColor.GetGreen() / 255.0f, _kColor.GetBlue() / 255.0f); }
-
 	protected:
-		//virtual bool Serialize		(FileWriter& /*_kStream*/) override { return true; }
-		//virtual bool Deserialize	(FileReader& /*_kStream*/) override { return true; }
 		virtual void PushCommand(Renderer::RenderBuffer* _pBuffer) override;
 
-	private:
-		Renderer::PointLight* m_pLight;
+	public:
+		Renderer::Color	Color;
+		float32			Radius;
+		float32			Power;
 	};
 }}
 

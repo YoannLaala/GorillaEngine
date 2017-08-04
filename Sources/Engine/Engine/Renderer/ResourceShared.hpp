@@ -32,8 +32,8 @@ namespace Gorilla { namespace Engine { namespace SharedResource
 		enum Type
 		{
 			Directional = 0,
-			Point,
 			Spot,
+			Point,
 
 			Count,
 		};
@@ -111,26 +111,6 @@ namespace Gorilla { namespace Engine { namespace RenderBuffer
 
 	namespace Light
 	{
-		struct Directional
-		{
-			DECLARE_RENDER_BUFFER(Light::Directional)
-
-			Math::Matrix44	ViewProjection;
-			Math::Vector3	Direction;
-			Math::Vector3	Color;
-			float32			Lux;
-		};
-
-		struct Point
-		{
-			DECLARE_RENDER_BUFFER(Light::Point)
-
-			Math::Vector3	Position;
-			Math::Vector3	Color;
-			float32			Radius;
-			float32			Lumen;
-		};
-
 		struct Environment
 		{
 			DECLARE_RENDER_BUFFER(Light::Environment)

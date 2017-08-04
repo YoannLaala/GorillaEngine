@@ -34,10 +34,10 @@ using namespace Gorilla;
 
 namespace Gorilla
 {
-	class DynamicPointLight : public Gorilla::Engine::Component
+	class DynamicObject : public Gorilla::Engine::Component
 	{
 	public:
-		COMPONENT_DECLARE(DynamicPointLight);
+		COMPONENT_DECLARE(DynamicObject);
 
 		virtual void Start() override
 		{
@@ -57,7 +57,7 @@ namespace Gorilla
 			GetRenderer()->GetGizmo()->PushCube();
 		}
 	};
-	COMPONENT_REGISTER(DynamicPointLight);
+	COMPONENT_REGISTER(DynamicObject);
 
 	//class GlobalIlluminationScene : public Gorilla::Engine::Component
 	//{
@@ -148,13 +148,13 @@ namespace Gorilla { namespace Viewer
 	
 		// Light
 		pGameObject = pWorld->AddGameObject("Light", pScene);
-		pGameObject->AddComponent<Component::DirectionalLight>();
 		pCpnNode = pGameObject->AddComponent<Component::Node>();
+		pGameObject->AddComponent<Component::DirectionalLight>();
 		pCpnNode->SetPosition(0.00f, 1.0f, 0.0f);
 		pCpnNode->LookAt(0.0f, 0.0, 0.0f);
-
+		
 		pGameObject = pWorld->AddGameObject("Light2", pScene);
-		pGameObject->AddComponent<DynamicPointLight>();
+		pGameObject->AddComponent<DynamicObject>();
 		pGameObject->AddComponent<Component::PointLight>();
 		pCpnNode = pGameObject->AddComponent<Component::Node>();
 		pCpnNode->SetPosition(0.5f, -0.5f, 0.0f);
@@ -203,13 +203,13 @@ namespace Gorilla { namespace Viewer
 		pCpnNode->SetScale(2.0f);
 		pCpnNode->SetPosition(1.0f, 0.0f, 0.0f);
 		pCpnNode->RotateForward(-90.0f);
-		/*pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
+		pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
 		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("Mesh/Quad.fbx");
+		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
 		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
 		pCpnNode->SetScale(2.0f);
 		pCpnNode->SetPosition(0.0f, 1.0f, 0.0f);
-		pCpnNode->RotateRight(180.0f);*/
+		pCpnNode->RotateRight(180.0f);
 		pGameObjectChild = pWorld->AddGameObject("Bottom", pGameObject);
 		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
 		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");

@@ -8,6 +8,11 @@
 #include "../../Shadow/PoissonDisc.sl"
 
 /******************************************************************************
+**	Defines
+******************************************************************************/
+ #define LIGHT_POWER_RATIO 1.0f / 64000.0f // Keep sun to 1.0f value
+
+/******************************************************************************
 **	Resources
 ******************************************************************************/
 Texture2D tAlbedo										: register(t0);
@@ -77,6 +82,24 @@ struct PS_OUTPUT
 	float4 IndirectLighting		: SV_Target1;
 	float4 AmbientOcclusion		: SV_Target2;
 };
+
+
+/******************************************************************************
+**	Area
+******************************************************************************/
+float ComputeSphereArea(in float _fRadius)
+{
+	return 4.0f * K_PI * _fRadius * _fRadius;
+}
+
+/******************************************************************************
+**	ConvertLumenToLux
+**	Compute lumen/m² (lux)
+******************************************************************************/
+float ConvertLumenToLux(in float _fLumen, in float _fArea)
+{
+	return _fLumen / _fArea;
+}
 
 /******************************************************************************
 **	ComputeFresnel
@@ -280,134 +303,44 @@ float3 TraceCone2(in float3 _vOrigin, in float3 _vDirection)
 }
 
 /******************************************************************************
-**	Percentage Closer Soft Shadow - Approximate Depth Blocker
-******************************************************************************/
-float PCSS_BlockerDepth_Directional(in float2 _vTexcoord, in float _fGeometryDepth)
-{	
-	float fWidth = 1.0f;
-	float fTexelFactor = 128.0f/1024.0f;
-
-	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
-	for (uint uiSample = 0; uiSample < POISSON_DISK_FAST_SIZE; ++uiSample)
-	{
-		float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, _vTexcoord + GET_POISSON_DISK_FAST(uiSample) * fTexelFactor, 0).r;
-		if(fDepth < _fGeometryDepth)
-		{
-			fBlockerDepth += fDepth;
-			++uiBlockerCount; 
-		}
-	}
-
-	return fBlockerDepth / uiBlockerCount;
-}
-
-/******************************************************************************
 **	Percentage Closer Soft Shadow - Directional
 ******************************************************************************/
 float PCSS_Directional(in float3 _vPosition, in float4x4 _mViewProjection)
 {
 	static float fBias = 0.05f;
-	static uint uiSamleCount = 11;
+	static float fTexelFactor = 64.0f/1024.0f;
+	static float fPenumbraFactor = 4.0f * fTexelFactor;
 	
 	// Compute Shadow Texcoord
 	float4 vPositionCS = mul(float4(_vPosition, 1.0f), _mViewProjection);
 	vPositionCS.xy = vPositionCS.xy * 0.5 + 0.5; 
 	vPositionCS.y *= -1.0f;
 	
-	// Compute Blocker Depth
+	// Compute Penumbra from Blocker depth avg
 	float fGeometryDepth = vPositionCS.z - fBias;
-	float fBlockerDepth = PCSS_BlockerDepth_Directional(vPositionCS.xy, fGeometryDepth);
-	float fPenumbra = (fGeometryDepth - fBlockerDepth) * 1.0f / fBlockerDepth;
-	float fWidth = 1.0f;
-	float fTexelFactor = 8.0f / 1024.0f;
-
+	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
+	for (uint uiSample = 0; uiSample < POISSON_DISK_FAST_SIZE; ++uiSample)
+	{
+		float2 vOffset = GET_POISSON_DISK_FAST(uiSample) * fTexelFactor; 
+		float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, vPositionCS.xy + vOffset, 0).r;
+		if(fDepth < fGeometryDepth)
+		{
+			fBlockerDepth += fDepth;
+			++uiBlockerCount; 
+		}
+	}
+	if(uiBlockerCount == 0) return 1.0f;
+	fBlockerDepth /= uiBlockerCount;
+	float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth * fPenumbraFactor;
+	
 	// Perform filtering
 	float fShadow = 0.0f;
-	float2 vSample = float2(vPositionCS.x - fTexelFactor, vPositionCS.y - fTexelFactor);
-	for (uint uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
+	for (uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
 	{
-		fShadow += tDirectionalShadowMap.SampleCmpLevelZero(sShadowSampler, vPositionCS.xy + GET_POISSON_DISK_HIGHEST(uiSample) * fTexelFactor, fGeometryDepth).r;
+		fShadow += tDirectionalShadowMap.SampleCmpLevelZero(sShadowSampler, vPositionCS.xy + GET_POISSON_DISK_HIGHEST(uiSample) * fPenumbra, fGeometryDepth).r;
 	}
 
 	return fShadow / POISSON_DISK_HIGHEST_SIZE;
-}
-
-/******************************************************************************
-**	ComputeLight_Direct (Reflectance)
-******************************************************************************/
-float3 ComputeLight_Direct(in Fragment _kFragment, in Material _kMaterial, in float3 _vLight, in float3 _vColor)
-{	
-	_kFragment.NdotL = dot(_kMaterial.Normal, _vLight);
-	if(_kFragment.NdotL <= 0.0f)
-	{
-		return 0.0f;
-	}	
-
-	// Compute fragment vectors
-	float3 vHalf = normalize(_kFragment.View + _vLight);
-	_kFragment.NdotH = dot(_kMaterial.Normal, vHalf);
-	_kFragment.VdotH = dot(_kFragment.View, vHalf);
-	
-	// Compute diffuse and Specular
-	float3 vDiffuse = BRDF_Diffuse(_kFragment, _kMaterial); 
-	float3 vSpecular = BRDF_Specular(_kFragment, _kMaterial); 
-
-	// Apply to reflectance
-	return (vDiffuse + vSpecular) * _vColor * _kFragment.NdotL;
-}
-
-/******************************************************************************
-**	Direct Directional Light
-******************************************************************************/
-float3 ComputeLight_Direct_Directional(in Fragment _kFragment, in Material _kMaterial)
-{	
-	float3 vReflectance = (float3)0;
-	
-	uint uiSize, uiElementByte;
-	aDirectionalLight.GetDimensions(uiSize, uiElementByte);
-	[loop]
-	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
-	{
-		DirectionalLight kLight = aDirectionalLight[uiLight]; 
-		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, -kLight.Direction, kLight.Color);
-
-		// Add shadow for this light
-		float fShadow = PCSS_Directional(_kFragment.Position, kLight.ViewProjection);
-		vReflectance *= fShadow;
-	}
-	
-	return vReflectance;
-}
-
-/******************************************************************************
-**	Percentage Closer Soft Shadow - Approximate Depth Blocker for Point light
-******************************************************************************/
-float PCSS_BlockerDepth_Point(in float3 _vDirection, in float _fGeometryDepth)
-{	
-	static uint uiSamleCount = 2;
-	
-	float fWidth = 1.0f;
-	float fTexelFactor = 1.0f/256.0f;
-	float fOffset =  2.0f * fTexelFactor / uiSamleCount;
-	float4 vSample = float4(_vDirection.x - fTexelFactor, _vDirection.y - fTexelFactor, _vDirection.z, 0.0f);
-
-	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
-	for (uint uiRow = 0; uiRow < uiSamleCount; ++uiRow)
-	{
-		for (uint uiColumn = 0; uiColumn < uiSamleCount; ++uiColumn)
-		{
-			vSample.xy += fOffset; 
-			float fDepth = tPointShadowMap.SampleLevel(sPointSampler, vSample, 0).r;
-			if(fDepth < _fGeometryDepth)
-			{
-				fBlockerDepth += fDepth;
-				++uiBlockerCount;
-			}
-		}
-	}
-
-	if(uiBlockerCount == 0) return 1.0f;
-	return fBlockerDepth / uiBlockerCount;
 }
 
 /******************************************************************************
@@ -433,14 +366,16 @@ float PCSS_Point(in float3 _vDirection, in float _fDistance)
 			++uiBlockerCount; 
 		}
 	}
+	if(uiBlockerCount == 0) return 1.0f;
 	fBlockerDepth /= uiBlockerCount;
+	
 	float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth;
-
-	float fTexelFactor2 = 64.0f/256.0f;
+	 
+	float fTexelFactor2 = 64.0f/256.0f * fPenumbra;
 
 	// Perform filtering
 	float fShadow = 0.0f;
-	for (uint uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
+	for (uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
 	{
 		float4 vOffset = float4(GET_POISSON_DISK_HIGHEST(uiSample) * fTexelFactor2, 0.0f, 0.0f); 
 		fShadow += tPointShadowMap.SampleCmpLevelZero(sShadowSampler, vSample + vOffset, fGeometryDepth).r;
@@ -450,12 +385,57 @@ float PCSS_Point(in float3 _vDirection, in float _fDistance)
 }
 
 /******************************************************************************
+**	ComputeLight_Direct (Reflectance)
+******************************************************************************/
+float3 ComputeLight_Direct(in Fragment _kFragment, in Material _kMaterial, in float3 _vLight, in float3 _vColor, in float _fPower)
+{	
+	_kFragment.NdotL = dot(_kMaterial.Normal, _vLight);
+	if(_kFragment.NdotL <= 0.0f)
+	{
+		return 0.0f;
+	}	
+
+	// Compute fragment vectors
+	float3 vHalf = normalize(_kFragment.View + _vLight);
+	_kFragment.NdotH = dot(_kMaterial.Normal, vHalf);
+	_kFragment.VdotH = dot(_kFragment.View, vHalf);
+	
+	// Compute diffuse and Specular
+	float3 vDiffuse = BRDF_Diffuse(_kFragment, _kMaterial); 
+	float3 vSpecular = BRDF_Specular(_kFragment, _kMaterial); 
+
+	// Apply to reflectance
+	return (vDiffuse + vSpecular) * _vColor * _kFragment.NdotL * _fPower * LIGHT_POWER_RATIO; 
+}
+
+/******************************************************************************
+**	Direct Directional Light
+******************************************************************************/
+float3 ComputeLight_Direct_Directional(in Fragment _kFragment, in Material _kMaterial)
+{	
+	float3 vReflectance = (float3)0;
+	
+	uint uiSize, uiElementByte;
+	aDirectionalLight.GetDimensions(uiSize, uiElementByte);
+	[loop]
+	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
+	{
+		DirectionalLight kLight = aDirectionalLight[uiLight]; 
+		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, -kLight.Direction, kLight.Color, kLight.Power);
+
+		// Add shadow for this light
+		float fShadow = PCSS_Directional(_kFragment.Position, kLight.ViewProjection);
+		vReflectance *= fShadow;
+	}
+	
+	return vReflectance;
+}
+
+/******************************************************************************
 **	Direct Point Light
 ******************************************************************************/
 float3 ComputeLight_Direct_Point(in Fragment _kFragment, in Material _kMaterial)
 {	
-	static float fLumenFactor = 0.0001f;
-
 	float3 vReflectance = (float3)0;
 	
 	uint uiSize, uiElementByte;
@@ -470,14 +450,17 @@ float3 ComputeLight_Direct_Point(in Fragment _kFragment, in Material _kMaterial)
 		float3 vLightToFragment = kLight.Position - _kFragment.Position;
 		float3 vLight = normalize(vLightToFragment);
 		float fDistance = length(vLightToFragment);
-		float fAttenuation = pow(max(fDistance, 0.01), 2.0f);
-		float fIlluminance = kLight.Lumen * fLumenFactor / fAttenuation; 
+		float fAttenuation = 1.0f / pow(max(fDistance, 0.01), 2.0f);
 
+		// Compute lux for this point light
+		float fArea = ComputeSphereArea(kLight.Radius);
+		float fPower = ConvertLumenToLux(kLight.Power, fArea);
+		
 		// Compute reflectance
-		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, vLight, kLight.Color) * fIlluminance;
+		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, vLight, kLight.Color, fPower) * fAttenuation;
 		
 		float fShadow = PCSS_Point(-vLight, fDistance);
-		vReflectance *= fShadow;
+		//vReflectance *= fShadow;
 	}
 	
 	return vReflectance;

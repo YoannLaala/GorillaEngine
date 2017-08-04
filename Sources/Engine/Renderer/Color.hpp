@@ -7,6 +7,11 @@
 #include <Core/Core.hpp>
 
 /******************************************************************************
+**	Defines
+******************************************************************************/
+#define  COLOR_FACTOR (1.0f / 255.0f)
+
+/******************************************************************************
 **	Class Declaration
 ******************************************************************************/
 namespace Gorilla { namespace Renderer
@@ -28,6 +33,8 @@ namespace Gorilla { namespace Renderer
 		inline bool operator==(Color _kColor) { return m_uiValue == _kColor.m_uiValue; }
 		inline bool operator!=(Color _kColor) { return m_uiValue != _kColor.m_uiValue; }
 		inline operator uint32() const { return *(uint32*)this; }
+		inline operator Math::Vector3() const { return Math::Vector3(GetRed() * COLOR_FACTOR, GetGreen() * COLOR_FACTOR, GetBlue() * COLOR_FACTOR); }
+		inline operator Math::Vector4() const { return Math::Vector4(GetRed() * COLOR_FACTOR, GetGreen() * COLOR_FACTOR, GetBlue() * COLOR_FACTOR, GetAlpha() * COLOR_FACTOR); }
 
 		static Color Black;
 		static Color White;

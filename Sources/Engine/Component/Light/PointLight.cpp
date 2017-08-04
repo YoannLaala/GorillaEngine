@@ -2,10 +2,7 @@
 **	Includes
 ******************************************************************************/
 #include "PointLight.hpp"
-#include <Engine/Renderer/ResourceShared.hpp>
 #include <Engine/Renderer/Pass/LightPass.hpp>	
-#include <Renderer/RenderContext.hpp>	
-#include <Renderer/Light/PointLight.hpp>	
 #include <Component/Node.hpp>
 
 /******************************************************************************
@@ -18,27 +15,30 @@ namespace Gorilla { namespace Component
 	//!	@brief		Constructor
 	//!	@date		2015-04-04
 	PointLight::PointLight()
+		: Color(255, 255, 255)
+		, Radius(0.15f)
+		, Power(1200.0f)
 	{
-		m_pLight = new Renderer::PointLight();
+		// Nothing to do
 	}
 
 	//!	@brief		Destructor
 	//!	@date		2015-04-04
 	PointLight::~PointLight()
 	{
-		SAFE_DELETE(m_pLight);
+		// Nothing to do
 	}
 
 	//!	@brief		PushCommand
 	//!	@date		2015-04-04
 	void PointLight::PushCommand(Renderer::RenderBuffer* _pBuffer)
 	{
-		Engine::RenderBuffer::Light::Point* pLightBuffer = _pBuffer->Push<Engine::RenderBuffer::Light::Point>();
+		Engine::LightPass::PointBuffer* pCommand = _pBuffer->Push<Engine::LightPass::PointBuffer>();
 
 		Node* pCpnNode = GetOrCreate<Node>();
-		pLightBuffer->Position = pCpnNode->GetPosition();
-		pLightBuffer->Color = m_pLight->GetColor();
-		pLightBuffer->Radius = m_pLight->GetRadius();
-		pLightBuffer->Lumen = m_pLight->GetPower();
+		pCommand->Position = pCpnNode->GetPosition();
+		pCommand->Color = Color;
+		pCommand->Radius = Radius;
+		pCommand->Power = Power;
 	}
 }}

@@ -10,7 +10,6 @@
 #include <Engine/Asset/Effect/Effect.hpp>
 #include <Engine/Asset/Mesh/Mesh.hpp>
 #include <Engine/Common.hpp>
-#include <Renderer/Light/Light.hpp>
 
 /******************************************************************************
 **	Forward Declarations
@@ -45,6 +44,40 @@ namespace Gorilla { namespace Engine
 		virtual void Release		(Renderer::RenderContext* _pRenderContext) override;
 
 		virtual void Execute		(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer) override;
+
+	public:
+
+		struct DirectionalBuffer
+		{
+			DECLARE_RENDER_BUFFER(LightPass::DirectionalBuffer)
+
+			Math::Matrix44	ViewProjection;
+			Math::Vector3	Direction;
+			Math::Vector3	Color;
+			float32			Power;
+		};
+		
+		struct SpotBuffer
+		{
+			DECLARE_RENDER_BUFFER(LightPass::SpotBuffer)
+
+			Math::Matrix44	ViewProjection;
+			Math::Vector3	Position;
+			Math::Vector3	Direction;
+			Math::Vector3	Color;
+			float32			Size;
+			float32			Power;
+		};
+
+		struct PointBuffer
+		{
+			DECLARE_RENDER_BUFFER(LightPass::PointBuffer)
+
+			Math::Vector3	Position;
+			Math::Vector3	Color;
+			float32			Radius;
+			float32			Power;
+		};
 
 	private:
 		AssetHandle<Texture>	m_hNoiseTextute;

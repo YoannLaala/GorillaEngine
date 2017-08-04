@@ -23,6 +23,12 @@ namespace Gorilla { namespace Renderer
 	class Buffer;
 }}
 
+namespace Gorilla { namespace RenderBuffer { namespace Geometry
+{
+	struct Batch;
+}}}
+
+
 /******************************************************************************
 **	Class Declaration
 ******************************************************************************/
@@ -41,8 +47,9 @@ namespace Gorilla { namespace Engine
 		virtual void Execute(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer) override;
 
 	private:
-		void ExecuteDirectionalLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer);
-		void ExecutePointLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer);
+		void ExecuteDirectionalLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer, RenderBuffer::Geometry::Batch* _pGeometryArray, uint32 _uiGeometryCount);
+		void ExecuteSpotLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer, RenderBuffer::Geometry::Batch* _pGeometryArray, uint32 _uiGeometryCount);
+		void ExecutePointLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer, RenderBuffer::Geometry::Batch* _pGeometryArray, uint32 _uiGeometryCount);
 
 	private:
 		AssetHandle<Effect>			m_aEffect[SharedResource::Light::Count];
