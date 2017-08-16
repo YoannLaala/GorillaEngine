@@ -39,15 +39,13 @@ namespace Gorilla { namespace Component
 			pBatch->Material = Asset->GetData();
 
 			Node* pCpnNode = GetOrCreate<Node>();
-			pBatch->Transform.SetRotation(pCpnNode->GetOrientation());
-			pBatch->Transform.SetTranslation(pCpnNode->GetPosition());
-			pBatch->Transform.ApplyScale(pCpnNode->GetScale());
+			pBatch->Transform = pCpnNode->GetTransform();
 
-			GetRenderer()->GetGizmo()->SetIdentity();
+			/*GetRenderer()->GetGizmo()->SetIdentity();
 			GetRenderer()->GetGizmo()->SetOrientation(pCpnNode->GetOrientation());
 			GetRenderer()->GetGizmo()->SetPosition(pCpnNode->GetPosition());
 			GetRenderer()->GetGizmo()->SetScale(pCpnNode->GetScale());
-			GetRenderer()->GetGizmo()->PushCube();
+			GetRenderer()->GetGizmo()->PushCube();*/
 		}
 	}
 }}

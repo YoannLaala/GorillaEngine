@@ -11,8 +11,7 @@ namespace Gorilla { namespace Renderer
 	//!	@brief		Constructor
 	//!	@date		2015-11-07
 	Node::Node()
-		: m_vScale(1.0f, 1.0f, 1.0f)
-		, m_uiLayer(0)
+		: m_uiLayer(0)
 	{
 		// Nothing to do
 	}

@@ -61,7 +61,7 @@ namespace Gorilla { namespace Renderer
 	//!	@date		2015-11-07
 	bool OctreeBlock::Contains(const Node* _pNode) const
 	{
-		return Contains(_pNode->GetPosition());
+		return Contains(_pNode->GetTransform().GetTranslation());
 	}
 
 	//!	@brief		IsInside

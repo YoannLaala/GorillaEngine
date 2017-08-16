@@ -33,7 +33,8 @@
 // Component
 #include <Component/Node.hpp>
 #include <Component/Camera/Camera.hpp>
-#include <Component/Script/CameraFree.hpp>
+#include <Component/Script/Camera/CameraFree.hpp>
+#include <Component/Script/Camera/CameraOrbital.hpp>
 #include <Component/Light/DirectionalLight.hpp>
 #include <Component/Mesh/Mesh.hpp>
 #include <Component/Gui/WebView.hpp>
@@ -41,7 +42,7 @@
 /******************************************************************************
 **	Define
 ******************************************************************************/
-#define GORILLA_EDITOR_VERSION	"1.0.1-alpha"
+#define GORILLA_EDITOR_VERSION	"1.0.2-alpha"
 #define GORILLA_EDITOR_TITLE	"Gorilla Editor"
 
 /******************************************************************************

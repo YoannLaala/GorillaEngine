@@ -60,6 +60,7 @@ namespace Gorilla { namespace Component
 	{
 		if(Asset.IsLoaded())
 		{
+			Node* pCpnNode = GetOrCreate<Node>();
 			Renderer::Geometry* pGeometry = Asset->GetData();
 
 			// Prepare Materials
@@ -72,23 +73,7 @@ namespace Gorilla { namespace Component
 				Engine::RenderBuffer::Geometry::Batch* pBatch = _pBuffer->Push<Engine::RenderBuffer::Geometry::Batch>();
 				pBatch->Geometry = pGeometry;
 				pBatch->Section = uiSection;
-
-				Node* pCpnNode = GetOrCreate<Node>();
-				pBatch->Transform.SetRotation(pCpnNode->GetOrientation());
-				pBatch->Transform.SetTranslation(pCpnNode->GetPosition());
-				pBatch->Transform.ApplyScale(pCpnNode->GetScale());
-
-
-				Math::Matrix44 test;
-				test.SetRotation(pCpnNode->GetOrientation());
-				test.SetTranslation(pCpnNode->GetPosition());
-
-				Math::Matrix44 scale;
-				scale.SetScale(pCpnNode->GetScale());
-				
-				pBatch->Transform = test * scale;
-				pBatch->Transform.SetTranslation(pCpnNode->GetPosition());
-
+				pBatch->Transform = pCpnNode->GetTransform();
 				pBatch->Material = nullptr; 
 			}
 		}

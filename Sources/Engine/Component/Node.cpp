@@ -24,9 +24,6 @@ namespace Gorilla { namespace Component
 		: m_vRight(1.0f, 0.0f, 0.0f)
 		, m_vUp(0.0f, 1.0f, 0.0f)
 		, m_vForward(0.0f, 0.0f, 1.0f)
-		, m_vPosition(0.0f, 0.0f, 0.0f)
-		, m_vRotation(0.0f, 0.0f, 0.0f)
-		, m_vScale(1.0f, 1.0f, 1.0f)
 		, m_pNode(NULL)
 	{
 		SetFlag(EFlag::Changed);
@@ -65,17 +62,51 @@ namespace Gorilla { namespace Component
 		GetGameObject()->GetWorld()->GetScene()->RemoveNode(m_pNode);
 	}
 
+	//!	@brief		SetOrientation
+	//!	@date		2015-04-04
+	void Node::SetOrientation(const Math::Quaternion& _qOrientation) 
+	{
+		m_vUp = _qOrientation * Math::Vector3::UnitY;
+		m_vRight = _qOrientation * Math::Vector3::UnitX;
+		m_vForward = _qOrientation * Math::Vector3::UnitZ;
+
+		m_pNode->GetTransform().SetOrientation(_qOrientation); 
+		SetFlag(EFlag::Changed); 
+	}
+
+	//!	@brief		LookAt
+	//!	@date		2015-04-04
+	void Node::Rotate(const Math::Vector3& _vAxis, float32 _fAngle)
+	{
+		if(_fAngle == 0.0f) return;
+
+		// Compute Rotation
+		Math::Quaternion qOrientation;
+		qOrientation.Rotate(_vAxis, Math::ToRadian(-_fAngle));
+		m_pNode->GetTransform().Rotate(qOrientation); 
+
+		// Apply rotation
+		m_vUp = qOrientation * m_vUp;	
+		m_vRight = qOrientation * m_vRight;	
+		m_vForward = qOrientation * m_vForward;
+
+		SetFlag(EFlag::Changed);
+	}
+
 	//!	@brief		LookAt
 	//!	@date		2015-04-04
 	void Node::LookAt(const Math::Vector3& _vTarget)
 	{
-		Math::Vector3 vForwardNew = (_vTarget - m_pNode->GetPosition()); vForwardNew.Normalize();
-		m_vRight = m_vForward.Cross(vForwardNew);
-		m_vForward = vForwardNew;
-		m_vUp = m_vForward.Cross(m_vRight);
+		Math::Vector3 vNewForward(_vTarget - GetPosition()); vNewForward.Normalize();
+		if(vNewForward == m_vForward) return;		
+		if(Math::Abs(vNewForward.Dot(m_vUp)) > 0.999999f) m_vUp = m_vRight;
+		
+		m_vRight = m_vUp.Cross(vNewForward); m_vRight.Normalize();
+		m_vUp = vNewForward.Cross(m_vRight); m_vUp.Normalize();
+		m_vForward = vNewForward;
 
-		Math::Quaternion qRotation(m_vRight.GetX(), m_vUp.GetY(), m_vForward.GetZ(), 1.0f);
-		m_pNode->SetOrientation(qRotation);
+		Math::Quaternion qOrientation(m_vRight.GetX(), m_vUp.GetY(), m_vForward.GetZ(), 1.0f);
+		m_pNode->GetTransform().SetOrientation(qOrientation);
 
 		SetFlag(EFlag::Changed);
 	}
@@ -86,22 +117,5 @@ namespace Gorilla { namespace Component
 	{
 		Math::Vector3 vTarget(_fX, _fY, _fZ);
 		LookAt(vTarget);
-	}
-
-	//!	@brief		LookAt
-	//!	@date		2015-04-04
-	void Node::Rotate(const Math::Vector3& _vAxis, float32 _fAngle)
-	{
-		// Compute Rotation
-		Math::Quaternion qRotation;
-		qRotation.Rotate(_vAxis, Math::ToRadian(-_fAngle));
-		m_pNode->SetOrientation(qRotation);
-
-		// Apply rotation
-		m_vUp = qRotation * m_vUp;	
-		m_vRight = qRotation * m_vRight;	
-		m_vForward = qRotation * m_vForward;
-
-		SetFlag(EFlag::Changed);
 	}
 }}	

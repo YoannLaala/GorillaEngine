@@ -33,7 +33,7 @@ namespace Gorilla { namespace Renderer
 		inline void						SetPosition		(const Math::Vector3& _vPosition) { m_mTransform.SetTranslation(_vPosition); }
 
 		// Orientaion
-		void							SetOrientation	(const Math::Quaternion& _qOrientation) { m_mTransform.SetRotation(_qOrientation); }
+		void							SetOrientation	(const Math::Quaternion& _qOrientation) { m_mTransform.SetOrientation(_qOrientation); }
 
 		// Scale
 		inline void						SetScale		(const Math::Vector3& _vScale) { m_mTransform.SetScale(_vScale); }

@@ -21,7 +21,8 @@
 #include <Component/Light/DirectionalLight.hpp>
 #include <Component/Light/PointLight.hpp>
 #include <Component/Gui/Sprite.hpp>
-#include <Component/Script/CameraFree.hpp>
+#include <Component/Script/Camera/CameraFree.hpp>
+#include <Component/Script/Camera/CameraOrbital.hpp>
 #include <Component/Environment/EnvironmentMap.hpp>
 #include <Component/Environment/Decal.hpp>
 
@@ -114,7 +115,8 @@ namespace Gorilla { namespace Viewer
 		Component::Camera* pCpnCamera = pGameObject->AddComponent<Component::Camera>();
 		pCpnCamera->Viewport = pView->GetViewport();
 		pCpnCamera->SetLayer(LAYER_CAMERA1);
-		pGameObject->AddComponent<Component::CameraFree>();
+		//pGameObject->AddComponent<Component::CameraFree>();
+		Component::CameraOrbital* pCpnOrbitalCamera = pGameObject->AddComponent<Component::CameraOrbital>();
 		pGameObject->AddComponent<Component::Node>()->SetPosition(0.0f, 0.0f, -3.0f);
 		//pGameObject->AddComponent<GlobalIlluminationScene>();
 
@@ -185,24 +187,24 @@ namespace Gorilla { namespace Viewer
 		pCpnMesh->Materials.Add(hMaterialWhite);
 		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
 		pCpnNode->SetScale(2.0f);
-		pCpnNode->SetPosition(0.0f, 0.0f, 1.0f);
 		pCpnNode->RotateRight(90.0f);
+		pCpnNode->SetPosition(0.0f, 0.0f, 1.0f);
 		pGameObjectChild = pWorld->AddGameObject("Left", pGameObject);
 		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
 		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
 		pCpnMesh->Materials.Add(hMaterialRed);
 		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
 		pCpnNode->SetScale(2.0f);
-		pCpnNode->SetPosition(-1.0f, 0.0f, 0.0f);
 		pCpnNode->RotateForward(90.0f);
+		pCpnNode->SetPosition(-1.0f, 0.0f, 0.0f);
 		pGameObjectChild = pWorld->AddGameObject("Right", pGameObject);
 		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
 		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
 		pCpnMesh->Materials.Add(hMaterialGreen);
 		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
 		pCpnNode->SetScale(2.0f);
-		pCpnNode->SetPosition(1.0f, 0.0f, 0.0f);
 		pCpnNode->RotateForward(-90.0f);
+		pCpnNode->SetPosition(1.0f, 0.0f, 0.0f);
 		/*pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
 		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
 		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("Mesh/Quad.fbx");
@@ -239,6 +241,8 @@ namespace Gorilla { namespace Viewer
 		pCpnNode = pGameObject->AddComponent<Component::Node>();
 		pCpnNode->SetScale(0.5f);
 		pCpnNode->SetPosition(-0.0f, -0.5f, 0.0f);
+
+		pCpnOrbitalCamera->Target = pGameObject;
 
 		//Engine::Material* pMaterial = new Engine::Material();
 		//pMaterial->SetShader(GetAssetManager()->Get<Engine::Shader>("Effect/FakeGenerated.ps"));

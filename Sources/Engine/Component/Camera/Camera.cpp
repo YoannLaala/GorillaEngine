@@ -101,7 +101,7 @@ namespace Gorilla { namespace Component
 		if(Viewport) m_pCamera->SetViewport(Viewport);
 		
 		GetRenderer()->GetGizmo()->SetPosition(pCpnNode->GetPosition());
-		GetRenderer()->GetGizmo()->SetOrientation(pCpnNode->GetOrientation());
+		//GetRenderer()->GetGizmo()->SetOrientation(pCpnNode->GetOrientation());
 		//GetRenderer()->GetGizmo()->PushFrustum(m_fFOV, m_fZNear, m_fZFar, 1280.0f / 720.0f);
 
 		if(Viewport && HasFlag(EFlag::Changed))

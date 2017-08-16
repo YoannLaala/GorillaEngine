@@ -49,18 +49,26 @@ namespace Gorilla { namespace Component
 		inline uint32					GetLayer	() const {  m_pNode->GetLayer();}
 		inline void						SetLayer	(uint32 _uiLayer) {  m_pNode->SetLayer(_uiLayer);}
 
-		// Translation
-		inline void						MoveRight		(float32 _fSpeed = 1.0f) { Move(m_vRight * _fSpeed); }
-		inline void						MoveUp			(float32 _fSpeed = 1.0f) { Move(m_vUp * _fSpeed); }
-		inline void						MoveForward		(float32 _fSpeed = 1.0f) { Move(m_vForward * _fSpeed); }
-		inline void						Move			(const Math::Vector3& _vTranslation) { m_pNode->Move(_vTranslation); SetFlag(EFlag::Changed); }
-		inline const Math::Vector3&		GetPosition		() const { return m_pNode->GetPosition(); }
-		inline void						SetPosition		(const Math::Vector3& _vPosition) { m_pNode->SetPosition(_vPosition); SetFlag(EFlag::Changed); }
-		inline void						SetPosition		(float32 _fX, float32 _fY, float32 _fZ) { m_pNode->SetPosition(_fX, _fY, _fZ); SetFlag(EFlag::Changed); }
+		Math::Matrix44& 				GetTransform	() { return m_pNode->GetTransform(); }
+		const Math::Matrix44& 			GetTransform	() const { return m_pNode->GetTransform(); }
+
+		// Position
+		inline const Math::Vector3&		GetPosition		() const { return m_pNode->GetTransform().GetTranslation(); }
+		inline void						SetPosition		(const Math::Vector3& _vPosition) { SetPosition(_vPosition.GetX(), _vPosition.GetY(), _vPosition.GetZ()); }
+		inline void						SetPosition		(float32 _fX, float32 _fY, float32 _fZ) { m_pNode->GetTransform().SetTranslation(_fX, _fY, _fZ); SetFlag(EFlag::Changed); }
+
+		// Move
+		inline void						MoveRight		(float32 _fDistance = 1.0f) { Move(m_vRight * _fDistance); }
+		inline void						MoveUp			(float32 _fDistance = 1.0f) { Move(m_vUp * _fDistance); }
+		inline void						MoveForward		(float32 _fDistance = 1.0f) { Move(m_vForward * _fDistance); }
+		inline void						Move			(const Math::Vector3& _vTranslation) { m_pNode->GetTransform().Translate(_vTranslation); SetFlag(EFlag::Changed); }
+		
+		// Orientation
+		void							SetOrientation	(const Math::Vector3& _vEuler) { SetOrientation(_vEuler.GetX(), _vEuler.GetY(), _vEuler.GetZ()); }
+		inline void						SetOrientation	(float32 _fEulerX, float32 _fEulerY, float32 _fEulerZ) { Math::Quaternion qOrientation; qOrientation.Rotate(_fEulerX, _fEulerY, _fEulerZ); SetOrientation(qOrientation); }
+		void							SetOrientation	(const Math::Quaternion& _qOrientation);
 
 		// Rotation
-		void							LookAt			(const Math::Vector3& _vTarget);
-		void							LookAt			(float32 _fX, float32 _fY, float32 _fZ);
 		inline void						RotateRight		(float32 _fAngle) { Rotate(m_vRight, _fAngle); }
 		inline void						RotateUp		(float32 _fAngle) { Rotate(m_vUp, _fAngle); }
 		inline void						RotateForward	(float32 _fAngle) { Rotate(m_vForward, _fAngle); }
@@ -69,17 +77,15 @@ namespace Gorilla { namespace Component
 		inline void						RotateZ			(float32 _fAngle) { Rotate(Math::Vector3::UnitZ, _fAngle); }
 		void							Rotate			(const Math::Vector3& _vAxis, float32 _fAngle);
 
-		// Orientaion
-		inline const Math::Quaternion&	GetOrientation	() const { return m_pNode->GetOrientation(); }
-		inline void						SetOrientation	(float32 _fX, float32 _fY, float32 _fZ) { m_pNode->SetOrientation(_fX, _fY, _fZ); SetFlag(EFlag::Changed); }
-		void							SetOrientation	(const Math::Vector3& _vEulerOrientation) { m_pNode->SetOrientation(_vEulerOrientation); SetFlag(EFlag::Changed); }
-		inline void						SetOrientation	(const Math::Quaternion& _qOrientation) { m_pNode->SetOrientation(_qOrientation); SetFlag(EFlag::Changed); }
-
 		// Scale
-		inline const Math::Vector3&		GetScale		() const { return m_pNode->GetScale(); }
-		inline void						SetScale		(float32 _fScale) { m_pNode->SetScale(_fScale); SetFlag(EFlag::Changed); }
-		inline void						SetScale		(float32 _fX, float32 _fY, float32 _fZ) { m_pNode->SetScale(_fX, _fY, _fZ); SetFlag(EFlag::Changed); }
-		inline void						SetScale		(const Math::Vector3& _vScale) { m_pNode->SetScale(_vScale); SetFlag(EFlag::Changed); }
+		inline const Math::Vector3&		GetScale		() const { return m_pNode->GetTransform().GetScale(); }
+		inline void						SetScale		(float32 _fScale) { m_pNode->GetTransform().SetScale(_fScale, _fScale, _fScale); SetFlag(EFlag::Changed); }
+		inline void						SetScale		(float32 _fX, float32 _fY, float32 _fZ) { m_pNode->GetTransform().SetScale(_fX, _fY, _fZ); SetFlag(EFlag::Changed); }
+		inline void						SetScale		(const Math::Vector3& _vScale) { m_pNode->GetTransform().SetScale(_vScale); SetFlag(EFlag::Changed); }
+
+		// Look
+		void							LookAt			(const Math::Vector3& _vTarget);
+		void							LookAt			(float32 _fX, float32 _fY, float32 _fZ);
 
 		// Axis
 		inline const Math::Vector3&		GetRight		() const { return m_vRight; }
@@ -90,16 +96,12 @@ namespace Gorilla { namespace Component
 		inline void						AddRendeable(Renderer::IRenderable* _pObject) { m_pNode->AddRenderable(_pObject); }
 		inline void						RemoveRenderable(Renderer::IRenderable* _pObject) { m_pNode->RemoveRenderable(_pObject); }
 
-	public:
-		Math::Vector3		m_vPosition;
-		Math::Vector3		m_vRotation;
-		Math::Vector3		m_vScale;
-
 	private:
 		Math::Vector3		m_vUp;
 		Math::Vector3		m_vRight;
 		Math::Vector3		m_vForward;
 
+	private:
 		Renderer::Node*		m_pNode;
 	};
 }}
