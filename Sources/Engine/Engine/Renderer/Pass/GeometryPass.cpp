@@ -622,8 +622,8 @@ namespace Gorilla { namespace Engine
 		}
 		
 		// Draw the section
-		uint32 uiIndexOffset = pGeometry->GetIndexOffset(_pBatchArray->Section);
-		uint32 uiIndexCount = pGeometry->GetIndexCount(_pBatchArray->Section);
+		uint32 uiIndexOffset = pGeometry->GetIndexOffset(_pBatchArray->Group);
+		uint32 uiIndexCount = pGeometry->GetIndexCount(_pBatchArray->Group);
 		_pRenderer->Draw(_pContext, uiIndexOffset, uiIndexCount, _uiInstanceCount);
 	}
 }}

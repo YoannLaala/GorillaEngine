@@ -75,7 +75,7 @@ namespace Gorilla { namespace Engine
 		}
 
 		// BoundingBox
-//		Renderer::BoundingBox* pBBox = reinterpret_cast<Renderer::BoundingBox*>(pBuffer);
+		m_kBoundingBox = *reinterpret_cast<Renderer::BoundingBox*>(pBuffer);
 
 		// Create Geometry
 		m_pGeometry = GetRenderer()->CreateGeometry(pVertices, sizeof(RenderBuffer::Vertex::PositionNormalTexcoord), uiVertexCount, pIndices, uiIndexCount, pSections, uiSectionCount);

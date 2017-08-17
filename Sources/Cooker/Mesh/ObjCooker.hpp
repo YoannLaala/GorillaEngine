@@ -1,11 +1,10 @@
-#ifndef _COOKER_FBX_COOKER_HPP_
-#define _COOKER_FBX_COOKER_HPP_
+#ifndef _COOKER_OBJ_COOKER_HPP_
+#define _COOKER_OBJ_COOKER_HPP_
 
 /******************************************************************************
 **	Includes
 ******************************************************************************/
 #include <Helper/AssetCooker.hpp>
-#include <fbx/include/fbxsdk.h>
 
 /******************************************************************************
 **	Forward Declarations
@@ -20,13 +19,10 @@ namespace Gorilla
 ******************************************************************************/
 namespace Gorilla
 {
-	class FbxCooker : public AssetCooker
+	class ObjCooker : public AssetCooker
 	{
 	private:
 		virtual bool	Serialize			(const char* _szInputPath, FileWriter& _kOutputStream) override;
-
-		void			GenerateGeometry	(FbxNode* _pNode, Geometry* _pGeometry);
-		void			GenerateVertices	(FbxNode* _pNode, FbxMesh* _pMesh, Geometry* _pGeometry);
 	};
 }
 

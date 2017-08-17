@@ -39,7 +39,7 @@ namespace Gorilla { namespace Engine
 	{
 		m_pApplication = _pApplication;
 		m_pWindow = _pWindow;
-		m_pViewport = GetRenderer()->CreateViewport(m_pWindow, Renderer::EFormat::R8G8B8A8_UNORM, _eFlag);
+		m_pViewport = GetRenderer()->CreateViewport(m_pWindow, Renderer::EFormat::R8G8B8A8_UNORM_SRGB, _eFlag);
 	}
 
 	//!	@brief		Release

@@ -20,6 +20,8 @@ namespace Gorilla
 	{
 	protected:
 		AssetCooker();
+
+	public:
 		~AssetCooker();
 
 	public:

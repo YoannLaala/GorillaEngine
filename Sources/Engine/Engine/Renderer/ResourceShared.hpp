@@ -83,7 +83,7 @@ namespace Gorilla { namespace Engine { namespace RenderBuffer
 			Renderer::Material*		Material;
 			Renderer::Geometry*		Geometry;
 			Math::Matrix44			Transform;
-			uint8					Section;
+			uint8					Group;
 		};
 		
 		struct Instance

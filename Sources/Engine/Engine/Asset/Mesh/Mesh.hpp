@@ -5,6 +5,7 @@
 **	Includes
 ******************************************************************************/
 #include <Engine/Asset/Asset.hpp>
+#include <Renderer/Geometry/BoundingBox.hpp>
 
 /******************************************************************************
 **	Forward Declaration
@@ -31,10 +32,12 @@ namespace Gorilla { namespace Engine
 		virtual void Release	() override;
 		
 	public:
-		inline Renderer::Geometry* GetData() { return m_pGeometry; }
+		inline Renderer::Geometry*			GetGeometry() { return m_pGeometry; }
+		inline const Renderer::BoundingBox&	GetBoundingBox() const { return m_kBoundingBox; }
 
 	private:
-		Renderer::Geometry* m_pGeometry;
+		Renderer::BoundingBox	m_kBoundingBox;
+		Renderer::Geometry*		m_pGeometry;
 	};
 }}
 

@@ -4,18 +4,21 @@
 #include <Core/Process/Process.hpp>
 
 #include "FbxCooker.hpp"
+#include "ObjCooker.hpp"
 
 #define VERSION				"1.0.0"
 #define ARGUMENT_INPUT		"-input"
 #define ARGUMENT_OUTPUT		"-output"
 
+using namespace Gorilla;
+
 int main(int argc, const char** argv)
 {
-	Gorilla::ArgumentParser kParser("Mesh Cooker", "Serialize a geometry file", VERSION);
+	ArgumentParser kParser("Mesh Cooker", "Serialize a geometry file", VERSION);
 	kParser.Add(ARGUMENT_INPUT, "Define which geometry will be serialized", true);
 	kParser.Add(ARGUMENT_OUTPUT, "Define where the asset file will be serialized", true);
 
-	Gorilla::String sUsage;
+	String sUsage;
 	if(!kParser.Parse(argc, argv, &sUsage))
 	{
 		printf(sUsage.GetBuffer());
@@ -23,16 +26,27 @@ int main(int argc, const char** argv)
 	}
 
 	// Retrieve main information
-	Gorilla::String sInput = kParser.Get<Gorilla::String>(ARGUMENT_INPUT);
-	Gorilla::String sOutput = kParser.Get<Gorilla::String>(ARGUMENT_OUTPUT);
+	Path sInput = kParser.Get<String>(ARGUMENT_INPUT);
+	String sOutput = kParser.Get<String>(ARGUMENT_OUTPUT);
+
+	AssetCooker* pCooker = nullptr;
+	if(sInput.GetExtension() == "fbx") pCooker = new FbxCooker();
+	else if (sInput.GetExtension() == "obj") pCooker = new ObjCooker();
+	
+	// Format not supported
+	if(!pCooker)
+	{
+		printf("Format not supported");
+		return -1;
+	}
 
 	// Serialize the file
-	Gorilla::FbxCooker kCooker;
-	if(!kCooker.Execute(sInput.GetBuffer(), sOutput.GetBuffer()))
+	if(!pCooker->Execute(sInput.GetFull().GetBuffer(), sOutput.GetBuffer()))
 	{
 		printf("Failed to serialize geometry");
 		return -1;
 	}
+	delete pCooker;	
 
 	return 0;
 }

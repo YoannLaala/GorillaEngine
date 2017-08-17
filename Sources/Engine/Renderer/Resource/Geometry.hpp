@@ -26,6 +26,12 @@ namespace Gorilla { namespace Renderer
 		friend class Renderer;
 		friend class RenderContext;
 
+		struct Group
+		{
+			uint32 IndexOffset;
+			uint32 IndexCount;
+		};
+
 	public:
 		DECLARE_RESOURCE(EResource::Geometry);
 
@@ -33,20 +39,20 @@ namespace Gorilla { namespace Renderer
 		Geometry();
 		~Geometry();
 
-		void Initialize	(Buffer* _pVertexBuffer, Buffer* _pIndexBuffer, const uint32* _pSectionBuffer, uint32 _uiSectionCount);
+		void Initialize	(Buffer* _pVertexBuffer, Buffer* _pIndexBuffer, const uint32* _pGroupBuffer, uint32 _uiGroupCount);
 		virtual void Release () override;
 	
 	public:
 		inline Buffer*	GetVertexBuffer() { return m_pVertexBuffer; }
 		inline Buffer*	GetIndexBuffer() { return m_pIndexBuffer; }
-		inline uint8	GetSectionCount() const { return (uint8)m_vSection.GetSize(); }
-		inline uint32	GetIndexOffset(uint8 _uiSection = 0) const { return _uiSection ? m_vSection[_uiSection-1] : 0; }
-		inline uint32	GetIndexCount(uint8 _uiSection = 0) const { return m_vSection[_uiSection]; }
+		inline uint8	GetGroupCount() const { return (uint8)m_vGroup.GetSize(); }
+		inline uint32	GetIndexOffset(uint8 _uiGroup = 0) const { return m_vGroup[_uiGroup].IndexOffset; }
+		inline uint32	GetIndexCount(uint8 _uiGroup = 0) const { return m_vGroup[_uiGroup].IndexCount; }
 
 	private:
-		Buffer* m_pVertexBuffer;
-		Buffer* m_pIndexBuffer;
-		Vector<uint32> m_vSection;
+		Buffer*			m_pVertexBuffer;
+		Buffer*			m_pIndexBuffer;
+		Vector<Group>	m_vGroup;
 	};
 }}
 

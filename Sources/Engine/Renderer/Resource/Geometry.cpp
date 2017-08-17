@@ -26,12 +26,20 @@ namespace Gorilla { namespace Renderer
 
 	//!	@brief		Initialize
 	//!	@date		2015-10-18
-	void Geometry::Initialize(Buffer* _pVertexBuffer, Buffer* _pIndexBuffer, const uint32* _pSectionBuffer, uint32 _uiSectionCount)
+	void Geometry::Initialize(Buffer* _pVertexBuffer, Buffer* _pIndexBuffer, const uint32* _pGroupBuffer, uint32 _uiGroupCount)
 	{
 		m_pVertexBuffer = _pVertexBuffer;
 		m_pIndexBuffer = _pIndexBuffer;
-		m_vSection.Resize(_uiSectionCount);
-		memcpy_s(&m_vSection[0], _uiSectionCount * sizeof(uint32), _pSectionBuffer, _uiSectionCount * sizeof(uint32));
+		m_vGroup.Resize(_uiGroupCount);
+
+		uint32 uiIndexOffset = 0;
+		for(uint32 uiGroup = 0; uiGroup < _uiGroupCount; ++uiGroup)
+		{
+			Group& kGroup = m_vGroup[uiGroup];
+			kGroup.IndexOffset = uiIndexOffset;
+			kGroup.IndexCount = _pGroupBuffer[uiGroup];
+			uiIndexOffset += kGroup.IndexCount;
+		}
 	}
 
 	//!	@brief		Release 
