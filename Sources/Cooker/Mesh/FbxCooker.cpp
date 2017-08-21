@@ -168,17 +168,29 @@ namespace Gorilla
 				kVertex.Normal.Set((float32)kFbxNormal[0],  (float32)kFbxNormal[1], (float32)kFbxNormal[2]);
 
 				// Texcoord
-				const uint32 uiUVCount = (uint32)_pMesh->GetElementUVCount();
-				for(uint32 uiUV = 0; uiUV < uiUVCount; ++uiUV)
+				FbxVector2 kFbxUV = FbxVector2(0.0, 0.0);
+				FbxLayerElementUV* pFbxLayerUV = _pMesh->GetLayer(0)->GetUVs();
+				if (pFbxLayerUV) 
 				{
-					const FbxGeometryElementUV* pUVElement = _pMesh->GetElementUV(uiUV);
+					uint32 uiUVIndex = 0;
+					switch (pFbxLayerUV->GetMappingMode()) 
+					{
+						case FbxLayerElement::eByControlPoint:
+						{
+							uiUVIndex = uiControlPoint;
+							break;
+						}
 
-					// Get the proper UV index
-					uint32 uiUVIndex =  pUVElement->GetIndexArray().GetAt(uiVertexIndex);
-					FbxVector2 kFbxUV = pUVElement->GetDirectArray().GetAt(uiUVIndex);
-					kVertex.Texcoord.Set((float32)kFbxUV[0], (float32)kFbxUV[1]);
+						case FbxLayerElement::eByPolygonVertex:
+						{
+							uiUVIndex = _pMesh->GetTextureUVIndex(uiPolygon, uiVertex, FbxLayerElement::eTextureDiffuse);
+							break;
+						}
+					}
+					kFbxUV = pFbxLayerUV->GetDirectArray().GetAt(uiUVIndex);
 				}
-				
+				kVertex.Texcoord.Set((float32)kFbxUV[0], (float32)kFbxUV[1]);
+
 				// Increment index for each vertex processed
 				_pGeometry->Indices[uiVertexIndex] = uiVertexIndex;
 				++uiVertexIndex;	
