@@ -38,7 +38,7 @@ namespace Gorilla { namespace Component
 			
 			Engine::RenderBuffer::Light::Environment* pEnvironment = _pBuffer->Push<Engine::RenderBuffer::Light::Environment>();
 			pEnvironment->Texture = pTexture;
-			pEnvironment->Position = GetOrCreate<Node>()->GetPosition();
+			//pEnvironment->Position = GetOrCreate<Node>()->GetPosition();
 		}
 	}
 }}

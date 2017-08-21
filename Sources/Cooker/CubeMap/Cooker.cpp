@@ -12,6 +12,7 @@
 #define ARGUMENT_Y_POSITIVE	"-yp"
 #define ARGUMENT_Z_NEGATIVE	"-zn"
 #define ARGUMENT_Z_POSITIVE	"-zp"
+#define ARGUMENT_INPUT		"-input"
 #define ARGUMENT_OUTPUT		"-output"
 
 //!	@brief		Entry
@@ -19,12 +20,7 @@
 int main(int argc, const char** argv) 
 {
 	Gorilla::ArgumentParser kParser("Texture2Asset", "Serialize a texture file", VERSION);
-	kParser.Add(ARGUMENT_X_NEGATIVE, "Texture X Negative", true);
-	kParser.Add(ARGUMENT_X_POSITIVE, "Texture X Positive", true);
-	kParser.Add(ARGUMENT_Y_NEGATIVE, "Texture Y Negative", true);
-	kParser.Add(ARGUMENT_Y_POSITIVE, "Texture Y Positive", true);
-	kParser.Add(ARGUMENT_Z_NEGATIVE, "Texture Z Negative", true);
-	kParser.Add(ARGUMENT_Z_POSITIVE, "Texture Z Positive", true);
+	kParser.Add(ARGUMENT_INPUT, "Define which texture will be serialized", true);
 	kParser.Add(ARGUMENT_OUTPUT, "Define where the asset file will be serialized", true);
 
 	Gorilla::String sUsage;
@@ -38,7 +34,7 @@ int main(int argc, const char** argv)
 	Gorilla::FileManager::CreateTemporaryDirectory(sTemporaryPath);
 
 	// Retrieve main information
-	Gorilla::Path sInput = kParser.Get<Gorilla::String>(ARGUMENT_X_NEGATIVE);
+	Gorilla::Path sInput = kParser.Get<Gorilla::String>(ARGUMENT_INPUT);
 
 	Gorilla::String sInputConverted;
 	sInputConverted.Append(sTemporaryPath).Append(sInput.GetFileName()).Append(".dds");
@@ -46,7 +42,7 @@ int main(int argc, const char** argv)
 
 	// Build parameters for nvtxt
 	Gorilla::String sArgument;
-	sArgument.Append("-file ").Append(sInput.GetFull()).Append(" -output ").Append(sInputConverted).Append(" -overwrite");
+	sArgument.Append("-cubeMap -file ").Append(sInput.GetFull()).Append(" -output ").Append(sInputConverted).Append(" -overwrite");
 
 	// Launch process
 	Gorilla::String sError;

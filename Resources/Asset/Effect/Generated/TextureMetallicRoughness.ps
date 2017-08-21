@@ -9,17 +9,16 @@
 ******************************************************************************/
 StructuredBuffer<float> aNumber : register(t0);
 Texture2D tAlbedo : register(t1);
+Texture2D tNormal : register(t2);
 
 /******************************************************************************
 **	Pixel Shader Default
 ******************************************************************************/
-PS_OUTPUT PixelDefault(VS_OUTPUT_INSTANCE _input)
+PS_OUTPUT PixelInstancing(VS_OUTPUT_INSTANCE _input)
 {	
-	float3 vColor = tAlbedo.Sample(sLinearSampler, _input.Texcoord).rgb;
-
 	PS_OUTPUT output = (PS_OUTPUT)0;
-	output.Color = float4(vColor, aNumber[0]);
-	output.Normal = float4(PackNormal(_input.Normal), aNumber[1]);
+	output.Color = float4(tAlbedo.Sample(sLinearSampler, _input.Texcoord).rgb, aNumber[3]);
+	output.Normal = float4(tNormal.Sample(sLinearSampler, _input.Texcoord).rgb, aNumber[4]);
 	
 	return output;
 }

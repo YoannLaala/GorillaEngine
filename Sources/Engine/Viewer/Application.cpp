@@ -3,6 +3,8 @@
 ******************************************************************************/
 #include "Application.hpp"
 
+#include <Core/File/FileManager.hpp>
+
 #include <Engine/Engine.hpp>
 #include <Engine/Asset/AssetManager.hpp>
 #include <Engine/World.hpp>
@@ -97,8 +99,13 @@ namespace Gorilla { namespace Viewer
 	void Application::Run()
 	{
 		Engine::View* pView = CreateView("Viewer", 1280, 720);
-		GetAssetManager()->SetPath(nullptr);
 		uint32 LAYER_CAMERA1 = GetEngine()->AddLayer("camera1");
+
+		// Get the document path
+		String sDocument;
+		FileManager::GetDirectory(FileManager::Directory::User, sDocument);
+		sDocument.Append("GorillaEngine").Append(REPERTORY_SEPARATOR).Append("Viewer\\");
+		GetAssetManager()->SetPath(sDocument.GetBuffer());
 
 		// Create world and objects
 		Engine::World* pWorld = GetEngine()->CreateWorld();		
@@ -120,9 +127,8 @@ namespace Gorilla { namespace Viewer
 		pGameObject->AddComponent<Component::Node>()->SetPosition(0.0f, 0.0f, -3.0f);
 		//pGameObject->AddComponent<GlobalIlluminationScene>();
 
-		/*pGameObject = pWorld->AddGameObject("EnvironmentMap");
-		pGameObject->AddComponent<Component::Node>()->SetPosition(0.0f, 0.35f, -3.0f);
-		pGameObject->AddComponent<Component::EnvironmentMap>()->Asset = GetAssetManager()->Get<Engine::CubeMap>("CubeMap/Lycksele/test.dds");*/
+		pGameObject = pWorld->AddGameObject("EnvironmentMap");
+		pGameObject->AddComponent<Component::EnvironmentMap>()->Asset = GetAssetManager()->Get<Engine::CubeMap>("skyboxes/outdoor.dds");
 
 		// Top Camera
 		/*pGameObject = pWorld->AddGameObject("Camera2");
@@ -179,70 +185,130 @@ namespace Gorilla { namespace Viewer
 		hMaterialGreen->SetNumber(3, 0.0f);	// Metallic
 		hMaterialGreen->SetNumber(4, 1.0f);	// Roughness
 
-		// Walls
-		pGameObject = pWorld->AddGameObject("Walls", pScene);
-		pGameObjectChild = pWorld->AddGameObject("Far", pGameObject);
-		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
-		pCpnMesh->Materials.Add(hMaterialWhite);
-		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
-		pCpnNode->SetScale(2.0f);
-		pCpnNode->RotateRight(90.0f);
-		pCpnNode->SetPosition(0.0f, 0.0f, 1.0f);
-		pGameObjectChild = pWorld->AddGameObject("Left", pGameObject);
-		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
-		pCpnMesh->Materials.Add(hMaterialRed);
-		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
-		pCpnNode->SetScale(2.0f);
-		pCpnNode->RotateForward(90.0f);
-		pCpnNode->SetPosition(-1.0f, 0.0f, 0.0f);
-		pGameObjectChild = pWorld->AddGameObject("Right", pGameObject);
-		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
-		pCpnMesh->Materials.Add(hMaterialGreen);
-		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
-		pCpnNode->SetScale(2.0f);
-		pCpnNode->RotateForward(-90.0f);
-		pCpnNode->SetPosition(1.0f, 0.0f, 0.0f);
-		/*pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
-		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("Mesh/Quad.fbx");
-		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
-		pCpnNode->SetScale(2.0f);
-		pCpnNode->SetPosition(0.0f, 1.0f, 0.0f);
-		pCpnNode->RotateRight(180.0f);*/
-		pGameObjectChild = pWorld->AddGameObject("Bottom", pGameObject);
-		pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
-		//pCpnMesh->Materials.Add(hMaterialWhite);
-		pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
-		pCpnNode->SetScale(2.0f);
-		pCpnNode->SetPosition(0.0f, -1.0f, 0.0f);
-
-		Engine::AssetHandle<Engine::Material> hMaterialDragon = GetAssetManager()->Create<Engine::Material>();
-		hMaterialDragon->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps"));
-		hMaterialDragon->SetNumber(0, Math::Vector3(0.5f, 0.5f, 0.5f));
-		hMaterialDragon->SetNumber(3, 0.0f);	// Metallic
-		hMaterialDragon->SetNumber(4, 1.0f);	// Roughness
-
-		/*Engine::AssetHandle<Engine::Texture> hTexture = GetAssetManager()->Get<Engine::Texture>("Texture/Sadface.png");
-		pGameObject = pWorld->AddGameObject("Decal", pScene);	
-		Component::Decal* pCpnDecal = pGameObject->AddComponent<Component::Decal>();
-		pCpnDecal->Asset = GetAssetManager()->Create<Engine::Material>();
-		pCpnDecal->Asset->SetShader(GetAssetManager()->Get<Engine::Shader>("Decal.ps"));
-		pCpnDecal->Asset->SetTexture(0, hTexture);*/
-
-		// Object 
-		pGameObject = pWorld->AddGameObject("Object", pScene);	
+		// Car
+		/*pGameObject = pWorld->AddGameObject("Car", pScene);
 		pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Sphere.fbx");
-		pCpnMesh->Materials.Add(hMaterialDragon);
-		pCpnNode = pGameObject->AddComponent<Component::Node>();
-		pCpnNode->SetScale(0.5f);
-		pCpnNode->SetPosition(-0.0f, -0.5f, 0.0f);
+		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("meshes/characters/altair/altair.obj");
+		//pCpnMesh->Materials.Add(hMaterialWhite);
+		pGameObject->AddComponent<Component::Node>();*/
+
+		Engine::AssetHandle<Engine::Material> hMaterialPlate = GetAssetManager()->Create<Engine::Material>();
+		hMaterialPlate->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		hMaterialPlate->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/plate_d.png"));
+		hMaterialPlate->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/plate_n.png"));
+		hMaterialPlate->SetNumber(3, 0.0f);	// Metallic
+		hMaterialPlate->SetNumber(4, 1.0f);	// Roughness
+
+		Engine::AssetHandle<Engine::Material> hMaterialCrosGuard = GetAssetManager()->Create<Engine::Material>();
+		hMaterialCrosGuard->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		hMaterialCrosGuard->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/cross_guard_d.png"));
+		hMaterialCrosGuard->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/cross_guard_n.png"));
+		hMaterialCrosGuard->SetNumber(3, 0.0f);	// Metallic
+		hMaterialCrosGuard->SetNumber(4, 1.0f);	// Roughness
+
+		Engine::AssetHandle<Engine::Material> hMaterialBlade = GetAssetManager()->Create<Engine::Material>();
+		hMaterialBlade->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		hMaterialBlade->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/blade_d.png"));
+		hMaterialBlade->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/blade_n.png"));
+		//hMaterialBlade->SetNumber(0, Math::Vector3(0.0f, 1.0f, 0.0f));
+		hMaterialBlade->SetNumber(3, 1.0f);	// Metallic
+		hMaterialBlade->SetNumber(4, 0.3f);	// Roughness
+
+		Engine::AssetHandle<Engine::Material> hMaterialPommel = GetAssetManager()->Create<Engine::Material>();
+		hMaterialPommel->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		hMaterialPommel->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_d.png"));
+		hMaterialPommel->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_n.png"));
+		hMaterialPommel->SetNumber(3, 0.0f);	// Metallic
+		hMaterialPommel->SetNumber(4, 1.0f);	// Roughness
+
+		Engine::AssetHandle<Engine::Material> hMaterialGripLeather = GetAssetManager()->Create<Engine::Material>();
+		hMaterialGripLeather->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps"));
+		/*hMaterialGrip->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_d.png"));
+		hMaterialGrip->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_n.png"));*/
+		hMaterialGripLeather->SetNumber(0, Math::Vector3(0.0f, 1.0f, 0.0f));
+		hMaterialGripLeather->SetNumber(3, 0.0f);	// Metallic
+		hMaterialGripLeather->SetNumber(4, 1.0f);	// Roughness
+
+		pGameObject = pWorld->AddGameObject("Sword", pScene);
+		pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
+		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("meshes/weapons/zelda/sword.fbx");
+		pCpnMesh->Materials.Add(hMaterialPlate);
+		pCpnMesh->Materials.Add(hMaterialPlate);
+		pCpnMesh->Materials.Add(hMaterialCrosGuard);
+		pCpnMesh->Materials.Add(hMaterialBlade);
+		pCpnMesh->Materials.Add(hMaterialPommel);
+		pCpnMesh->Materials.Add(hMaterialPlate);
+		pCpnMesh->Materials.Add(hMaterialGripLeather);
+		pGameObject->AddComponent<Component::Node>();
+
+		
 
 		pCpnOrbitalCamera->Target = pGameObject;
+
+		// Walls
+		//pGameObject = pWorld->AddGameObject("Walls", pScene);
+		//pGameObjectChild = pWorld->AddGameObject("Far", pGameObject);
+		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
+		//pCpnMesh->Materials.Add(hMaterialWhite);
+		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
+		//pCpnNode->SetScale(2.0f);
+		//pCpnNode->RotateRight(90.0f);
+		//pCpnNode->SetPosition(0.0f, 0.0f, 1.0f);
+		//pGameObjectChild = pWorld->AddGameObject("Left", pGameObject);
+		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
+		//pCpnMesh->Materials.Add(hMaterialRed);
+		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
+		//pCpnNode->SetScale(2.0f);
+		//pCpnNode->RotateForward(90.0f);
+		//pCpnNode->SetPosition(-1.0f, 0.0f, 0.0f);
+		//pGameObjectChild = pWorld->AddGameObject("Right", pGameObject);
+		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
+		//pCpnMesh->Materials.Add(hMaterialGreen);
+		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
+		//pCpnNode->SetScale(2.0f);
+		//pCpnNode->RotateForward(-90.0f);
+		//pCpnNode->SetPosition(1.0f, 0.0f, 0.0f);
+		///*pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
+		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("Mesh/Quad.fbx");
+		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
+		//pCpnNode->SetScale(2.0f);
+		//pCpnNode->SetPosition(0.0f, 1.0f, 0.0f);
+		//pCpnNode->RotateRight(180.0f);*/
+		//pGameObjectChild = pWorld->AddGameObject("Bottom", pGameObject);
+		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
+		////pCpnMesh->Materials.Add(hMaterialWhite);
+		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
+		//pCpnNode->SetScale(2.0f);
+		//pCpnNode->SetPosition(0.0f, -1.0f, 0.0f);
+
+		//Engine::AssetHandle<Engine::Material> hMaterialDragon = GetAssetManager()->Create<Engine::Material>();
+		//hMaterialDragon->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps"));
+		//hMaterialDragon->SetNumber(0, Math::Vector3(0.5f, 0.5f, 0.5f));
+		//hMaterialDragon->SetNumber(3, 0.0f);	// Metallic
+		//hMaterialDragon->SetNumber(4, 1.0f);	// Roughness
+
+		///*Engine::AssetHandle<Engine::Texture> hTexture = GetAssetManager()->Get<Engine::Texture>("Texture/Sadface.png");
+		//pGameObject = pWorld->AddGameObject("Decal", pScene);	
+		//Component::Decal* pCpnDecal = pGameObject->AddComponent<Component::Decal>();
+		//pCpnDecal->Asset = GetAssetManager()->Create<Engine::Material>();
+		//pCpnDecal->Asset->SetShader(GetAssetManager()->Get<Engine::Shader>("Decal.ps"));
+		//pCpnDecal->Asset->SetTexture(0, hTexture);*/
+
+		//// Object 
+		//pGameObject = pWorld->AddGameObject("Object", pScene);	
+		//pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Sphere.fbx");
+		//pCpnMesh->Materials.Add(hMaterialDragon);
+		//pCpnNode = pGameObject->AddComponent<Component::Node>();
+		//pCpnNode->SetScale(0.5f);
+		//pCpnNode->SetPosition(-0.0f, -0.5f, 0.0f);
+
+		//pCpnOrbitalCamera->Target = pGameObject;
 
 		//Engine::Material* pMaterial = new Engine::Material();
 		//pMaterial->SetShader(GetAssetManager()->Get<Engine::Shader>("Effect/FakeGenerated.ps"));

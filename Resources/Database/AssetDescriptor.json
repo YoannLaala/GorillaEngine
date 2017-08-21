@@ -1,10 +1,10 @@
 {
 	"Gorilla::Engine::CubeMap" :
 	{
-		"Inputs" : ["dds"],
+		"Inputs" : ["jpg"],
 		"Cooker" : 
 		{
-			"Path" : "Cooker/Texture/Texture.exe",
+			"Path" : "Cooker/Texture/CubeMap.exe",
 			"Parameters" : "-input $[INPUT] -output $[OUTPUT] $[PARAMETER]"
 		}
 	},

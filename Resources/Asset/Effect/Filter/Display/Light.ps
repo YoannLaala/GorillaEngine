@@ -440,7 +440,7 @@ float PCSS_Point(in float3 _vDirection, in float _fDistance)
 
 	// Perform filtering
 	float fShadow = 0.0f;
-	for (uint uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
+	for (uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
 	{
 		float4 vOffset = float4(GET_POISSON_DISK_HIGHEST(uiSample) * fTexelFactor2, 0.0f, 0.0f); 
 		fShadow += tPointShadowMap.SampleCmpLevelZero(sShadowSampler, vSample + vOffset, fGeometryDepth).r;
@@ -500,18 +500,19 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 
 	// Skip if there is no geometry
 	Fragment kFragment = (Fragment)0;
+	
+	// Compute fragment position, view & depth
+	kFragment.Position = ComputeWorldPosition(_input.Texcoord, kFragment.Depth);
+	kFragment.View = normalize(kFragment.Position - POSITION);
 	kFragment.Depth = tDepth.Sample(sPointSampler, _input.Texcoord).r;
 	if(kFragment.Depth >= 1.0f)
 	{
+		output.DirectLighting = tEnvironment.Sample(sLinearSampler, kFragment.View).xyz;
 		return output; 
 	}
 	
 	// Upack material
 	Material kMaterial = UnpackMaterial(_input.Texcoord);	
-
-	// Compute Frapgment position & view
-	kFragment.Position = ComputeWorldPosition(_input.Texcoord, kFragment.Depth);
-	kFragment.View = normalize(kFragment.Position - POSITION);
 	kFragment.NdotV = abs(dot(kMaterial.Normal, kFragment.View));
 	
 	// Compute Fresnel
@@ -519,17 +520,18 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	
 	// Compute Direct Light (Reflectance)
 	float3 vReflectance = (float3)0.0f;
-	//vReflectance += ComputeLight_Direct_Directional(kFragment, kMaterial);
+	vReflectance += ComputeLight_Direct_Directional(kFragment, kMaterial);
 	vReflectance += ComputeLight_Direct_Point(kFragment, kMaterial); 
 	
 	// Compute reflection
-	float3 vReflection = reflect(kFragment.View, kMaterial.Normal);
-	float3 vTest = (float3)0.0f;//tEnvironment.Sample(sLinearSampler, vReflection).xyz;// * kFragment.NdotL;
+	float3 vViewOut = reflect(kFragment.View, kMaterial.Normal);
+	float3 vReflection = tEnvironment.Sample(sLinearSampler, vViewOut).xyz * kMaterial.Metallic; 
 	
 	// Compute final color
 	float ao = 0.0f;
-    float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
-	output.DirectLighting = vAmbient + vReflectance;
+    // float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
+	//float3 vAmbient = kMaterial.Albedo * ((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
+	output.DirectLighting = vReflection * vReflectance;  
 
 	// Add noise only on non black color
 	if(length(output.DirectLighting) > 0.0f)

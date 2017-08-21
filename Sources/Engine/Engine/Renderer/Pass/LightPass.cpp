@@ -124,13 +124,10 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		Execute 
 	//!	@date		2016-06-25
-	void LightPass::Execute(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* /*_pBuffer*/)
+	void LightPass::Execute(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
 	{
 		Renderer::RenderBuffer* pFrameBuffer = _pRenderer->GetFrameBuffer();
 		pFrameBuffer;
-
-		// Update all buffer needed
-		//UpdateBuffer<RenderBuffer::Light::Environment>(_pContext, _pBuffer, m_pLightFilter, &m_aBuffer[EBuffer::Environment], LIGHT_PASS_REGISTER_INDEX_ENVIRONMENT);
 		
 		Renderer::Buffer* pBuffer = SharedResource::Light::Buffer[SharedResource::Light::Directional];
 		if(pBuffer)
@@ -149,48 +146,13 @@ namespace Gorilla { namespace Engine
 			m_pLightFilter->SetConstantBuffer(1, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
 		}
 
-		//if(GetInput()->IsKeyPressed(Keyboard::Space))
+		// Apply environment map
+		RenderBuffer::Light::Environment* pCommand; uint32 uiCount;
+		if(_pBuffer->Get(&pCommand, uiCount))
 		{
-			m_pLightFilter->Execute(_pContext);
-		}	
+			m_pLightFilter->SetResource(LIGHT_PASS_REGISTER_INDEX_ENVIRONMENT, pCommand->Texture);
+		}
 
-		// Set RenderState
-		/*Renderer::Effect* pEffect = m_hEffect->GetData();
-		_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
-		_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
-		_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());		
-
-		// Set Vertex Shader and resources
-		Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex);
-		_pRenderer->SetVertexShader(_pContext, pVertexShader);
-		
-		// Set Shader resources
-		Renderer::Shader* pPixelShader = pEffect->GetShader(Renderer::EShader::Pixel);
-		Renderer::Texture2D* pColorTexture = m_pGeometryRenderTarget->GetTexture(0);
-		Renderer::Texture2D* pNormalTexture = m_pGeometryRenderTarget->GetTexture(1);
-		Renderer::Texture2D* pDepthStencilTexture = m_pGeometryRenderTarget->GetDepthStencil();
-		_pRenderer->SetPixelShader(_pContext, pPixelShader);
-		_pRenderer->SetPixelShaderResource(_pContext, 0, pColorTexture);
-		_pRenderer->SetPixelShaderResource(_pContext, 1, pNormalTexture);
-		_pRenderer->SetPixelShaderResource(_pContext, 2, pDepthStencilTexture);*/
-
-		// Update ConstantBuffer
-		/*ConstantBuffer::Scene* pScene = reinterpret_cast<ConstantBuffer::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
-		pScene->Projection = Math::Matrix44::Identity;
-		pScene->Viewport.Set(+0.0f, +0.0f, (float32)pRenderTexture->GetWidth(), (float32)pRenderTexture->GetHeight());
-		_pRenderer->Unmap(_pContext, m_pSceneBuffer);
-		_pRenderer->SetPixelShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);*/
-
-		/*Command* pArray = static_cast<Command*>(_pCommandArray);
-		for(uint32 uiCommand = 0; uiCommand < _uiCommandCount; ++uiCommand)
-		{
-			Command& kCommand = pArray[uiCommand];
-			kCommand;
-		}*/
-
-		// Draw
-		/*_pRenderer->SetVertexBuffer(_pContext, m_pQuad->GetVertexBuffer());
-		_pRenderer->SetIndexBuffer(_pContext, m_pQuad->GetIndexBuffer());
-		_pRenderer->Draw(_pContext, 0, m_pQuad->GetIndexCount());*/
+		m_pLightFilter->Execute(_pContext);
 	}
 }}
