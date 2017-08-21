@@ -6,6 +6,7 @@
 #include <Core/Input/Input.hpp>
 #include <Engine/Engine.hpp>
 #include <Component/Node.hpp>
+#include <Component/Mesh/Mesh.hpp>
 
 /******************************************************************************
 **	Define
@@ -46,11 +47,18 @@ namespace Gorilla { namespace Component
 		{
 			Node* pCpnNodeTarget = Target->GetComponent<Node>();
 			if(pCpnNodeTarget) vTarget = pCpnNodeTarget->GetPosition();
+
+			Mesh* pCpnMeshTarget = Target->GetComponent<Mesh>();
+			if(pCpnMeshTarget && pCpnMeshTarget->Asset.IsLoaded())
+			{
+				const Renderer::BoundingBox& kBoudingBox = pCpnMeshTarget->Asset->GetBoundingBox();
+				vTarget += (kBoudingBox.Min + kBoudingBox.Max) * 0.5f;
+			}
 		}
 
 		// Target To Camera Vector
 		Node* pCpnNode = GetOrCreate<Node>();
-		Math::Vector3 vTargetToCamera = pCpnNode->GetPosition() - vTarget; 
+		Math::Vector3 vTargetToCamera = pCpnNode->GetPosition() - (vTarget + m_vOffset); 
 		float32 fDistance = vTargetToCamera.Length();
 		vTargetToCamera.Normalize();
 
@@ -62,13 +70,13 @@ namespace Gorilla { namespace Component
 			const Mouse* pMouse = pInput->GetMouse();
 			if(pMouse->IsPressed(Mouse::Left))
 			{
-				float32 fRotationFactor = Speed * pTime->GetDeltaTime();
+				float32 fSpeedFactor = Speed * pTime->GetDeltaTime();
 				
-				float32 fPitch = -pMouse->GetRelative().GetY() * fRotationFactor;
+				float32 fPitch = -pMouse->GetRelative().GetY() * fSpeedFactor;
 				Math::Quaternion qRotationPitch;
 				qRotationPitch.Rotate(pCpnNode->GetRight(), fPitch);
 
-				float32 fYaw = -pMouse->GetRelative().GetX() * fRotationFactor;
+				float32 fYaw = -pMouse->GetRelative().GetX() * fSpeedFactor;
 				Math::Quaternion qRotationYaw;
 				qRotationYaw.Rotate(pCpnNode->GetUp(), fYaw);
 				
@@ -77,11 +85,18 @@ namespace Gorilla { namespace Component
 			}
 			else if(pMouse->IsPressed(Mouse::Right))
 			{
-				fDistance += pMouse->GetRelative().GetY() * Speed * pTime->GetDeltaTime(); 
+				float32 fSpeedFactor = Speed * pTime->GetDeltaTime();
+				fDistance += pMouse->GetRelative().GetY() * fSpeedFactor; 
 			}
+			/*else if(pMouse->IsPressed(Mouse::Middle))
+			{
+				float32 fSpeedFactor = Speed * pTime->GetDeltaTime();
+				m_vOffset += pCpnNode->GetRight() * pMouse->GetRelative().GetX() * fSpeedFactor;
+				m_vOffset += pCpnNode->GetUp() * pMouse->GetRelative().GetY() * fSpeedFactor;
+			}*/
 		}		
 
-		// Set new position & look at target
+		// Look at target
 		fDistance = Math::Clamp(fDistance, MinimumDistance, MaximumDistance);
 		pCpnNode->SetPosition(vTarget + vTargetToCamera * fDistance);
 		pCpnNode->LookAt(vTarget);

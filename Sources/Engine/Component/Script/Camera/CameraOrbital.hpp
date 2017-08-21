@@ -34,6 +34,9 @@ namespace Gorilla { namespace Component
 		float32				MinimumDistance;
 		float32				MaximumDistance;
 		float32				Speed;
+
+	private:
+		Math::Vector3		m_vOffset;
 	};
 }}
 
