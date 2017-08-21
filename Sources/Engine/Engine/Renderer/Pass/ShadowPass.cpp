@@ -96,8 +96,13 @@ namespace Gorilla { namespace Engine
 	//!	@date		2015-11-11
 	void ShadowPass::Execute(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
 	{	
-		ExecuteDirectionalLight(_pRenderer, _pContext, _pBuffer);
-		ExecutePointLight(_pRenderer, _pContext, _pBuffer);
+		RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
+		if(_pBuffer->Get(&pBatchArray, uiBatchCount))
+		{
+			ExecuteDirectionalLight(_pRenderer, _pContext, _pBuffer, pBatchArray, uiBatchCount);
+			//ExecuteSpotLight(_pRenderer, _pContext, _pBuffer, pBatchArray, uiBatchCount);
+			ExecutePointLight(_pRenderer, _pContext, _pBuffer, pBatchArray, uiBatchCount);
+		}
 	}
 
 	template <class T>
@@ -135,141 +140,180 @@ namespace Gorilla { namespace Engine
 
 	//!	@brief		ExecuteDirectionalLight 
 	//!	@date		2015-11-11
-	void ShadowPass::ExecuteDirectionalLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
+	void ShadowPass::ExecuteDirectionalLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer, RenderBuffer::Geometry::Batch* _pGeometryArray, uint32 _uiGeometryCount)
 	{	
 		MARKER_GPU(_pContext, "Directional");
-		Renderer::RenderBuffer* pFrameBuffer = _pRenderer->GetFrameBuffer();
-		pFrameBuffer;
 
-		RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
-		if(_pBuffer->Get(&pBatchArray, uiBatchCount))
+		UpdateBuffer<LightPass::DirectionalBuffer>(_pContext, _pBuffer, &SharedResource::Light::Buffer[SharedResource::Light::Directional]);
+
+		Renderer::RenderTarget* pRenderTarget = m_aRenderTarget[SharedResource::Light::Directional];
+		Renderer::Texture2D*& pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Directional];
+		if(!pShadowMap)
 		{
-			UpdateBuffer<RenderBuffer::Light::Directional>(_pContext, _pBuffer, &SharedResource::Light::Buffer[SharedResource::Light::Directional]);
+			pShadowMap = _pRenderer->CreateTexture2D(LIGHT_DIRECTIONAL_RESOLUTION, LIGHT_DIRECTIONAL_RESOLUTION, 1, Renderer::EFormat::R24G8_TYPELESS, Renderer::EBind::DepthStencil | Renderer::EBind::ShaderResource);
+			pRenderTarget->SetDepthStencil(pShadowMap);
+		}
 
-			Renderer::RenderTarget* pRenderTarget = m_aRenderTarget[SharedResource::Light::Directional];
-			Renderer::Texture2D*& pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Directional];
-			if(!pShadowMap)
-			{
-				pShadowMap = _pRenderer->CreateTexture2D(LIGHT_DIRECTIONAL_RESOLUTION, LIGHT_DIRECTIONAL_RESOLUTION, 1, Renderer::EFormat::R24G8_TYPELESS, Renderer::EBind::DepthStencil | Renderer::EBind::ShaderResource);
-				pRenderTarget->SetDepthStencil(pShadowMap);
-			}
+		// Clear
+		Renderer::Texture2D* pDepthStencilTexture = pRenderTarget->GetDepthStencil();
+		_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
+		_pRenderer->SetViewport(_pContext, 0, 0, pDepthStencilTexture->GetWidth(), pDepthStencilTexture->GetHeight());
+		_pRenderer->Clear(_pContext, pRenderTarget);
 
-			// Clear
-			Renderer::Texture2D* pDepthStencilTexture = pRenderTarget->GetDepthStencil();
-			_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
-			_pRenderer->SetViewport(_pContext, 0, 0, pDepthStencilTexture->GetWidth(), pDepthStencilTexture->GetHeight());
-			_pRenderer->Clear(_pContext, pRenderTarget);
+		// Set RenderState
+		Renderer::Effect* pEffect = m_aEffect[SharedResource::Light::Directional]->GetData();
+		_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
+		_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
 
-			// Set RenderState
-			Renderer::Effect* pEffect = m_aEffect[SharedResource::Light::Directional]->GetData();
-			_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
-			_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
+		// Set Vertex Shader and resources
+		Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
+		_pRenderer->SetVertexShader(_pContext, pVertexShader);
+		_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
+		_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
 
-			// Set Vertex Shader and resources
-			Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
-			_pRenderer->SetVertexShader(_pContext, pVertexShader);
-			_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
-			_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
+		// Draw shadow for all lights
+		LightPass::DirectionalBuffer* pBufferSource; uint32 uiCount;
+		_pBuffer->Get(&pBufferSource, uiCount);
+		for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
+		{
+			LightPass::DirectionalBuffer& kLight = pBufferSource[uiLight];
 
-			// Draw shadow for all lights
-			RenderBuffer::Light::Directional* pBufferSource; uint32 uiCount;
-			_pBuffer->Get(&pBufferSource, uiCount);
-			for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
-			{
-				RenderBuffer::Light::Directional& kLight = pBufferSource[uiLight];
+			// Update ConstantBuffer
+			RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
+			pSceneBuffer->ViewProjection = kLight.ViewProjection;
+			_pRenderer->Unmap(_pContext, m_pSceneBuffer);
 
-				// Update ConstantBuffer
-				RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
-				pSceneBuffer->ViewProjection = kLight.ViewProjection;
-				_pRenderer->Unmap(_pContext, m_pSceneBuffer);
+			GeometryPass::DrawAllGeometry(_pRenderer, _pContext, _pGeometryArray, _uiGeometryCount, &m_pInstanceBuffer);
+		}
+	}
 
-				GeometryPass::DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
-			}
+	//!	@brief		ExecuteSpotLight 
+	//!	@date		2015-11-11
+	void ShadowPass::ExecuteSpotLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer, RenderBuffer::Geometry::Batch* _pGeometryArray, uint32 _uiGeometryCount)
+	{	
+		MARKER_GPU(_pContext, "Spot");
+
+		UpdateBuffer<LightPass::SpotBuffer>(_pContext, _pBuffer, &SharedResource::Light::Buffer[SharedResource::Light::Directional]);
+
+		Renderer::RenderTarget* pRenderTarget = m_aRenderTarget[SharedResource::Light::Directional];
+		Renderer::Texture2D*& pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Directional];
+		if(!pShadowMap)
+		{
+			pShadowMap = _pRenderer->CreateTexture2D(LIGHT_DIRECTIONAL_RESOLUTION, LIGHT_DIRECTIONAL_RESOLUTION, 1, Renderer::EFormat::R24G8_TYPELESS, Renderer::EBind::DepthStencil | Renderer::EBind::ShaderResource);
+			pRenderTarget->SetDepthStencil(pShadowMap);
+		}
+
+		// Clear
+		Renderer::Texture2D* pDepthStencilTexture = pRenderTarget->GetDepthStencil();
+		_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
+		_pRenderer->SetViewport(_pContext, 0, 0, pDepthStencilTexture->GetWidth(), pDepthStencilTexture->GetHeight());
+		_pRenderer->Clear(_pContext, pRenderTarget);
+
+		// Set RenderState
+		Renderer::Effect* pEffect = m_aEffect[SharedResource::Light::Directional]->GetData();
+		_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
+		_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
+
+		// Set Vertex Shader and resources
+		Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
+		_pRenderer->SetVertexShader(_pContext, pVertexShader);
+		_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
+		_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
+
+		// Draw shadow for all lights
+		LightPass::SpotBuffer* pBufferSource; uint32 uiCount;
+		_pBuffer->Get(&pBufferSource, uiCount);
+		for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
+		{
+			LightPass::SpotBuffer& kLight = pBufferSource[uiLight];
+
+			// Update ConstantBuffer
+			RenderBuffer::Constant::Scene* pSceneBuffer = reinterpret_cast<RenderBuffer::Constant::Scene*>(_pRenderer->Map(_pContext, m_pSceneBuffer));
+			pSceneBuffer->ViewProjection = kLight.ViewProjection;
+			_pRenderer->Unmap(_pContext, m_pSceneBuffer);
+
+			GeometryPass::DrawAllGeometry(_pRenderer, _pContext, _pGeometryArray, _uiGeometryCount, &m_pInstanceBuffer);
 		}
 	}
 
 	//!	@brief		ExecutePointLight 
 	//!	@date		2015-11-11
-	void ShadowPass::ExecutePointLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer)
+	void ShadowPass::ExecutePointLight(Renderer::Renderer* _pRenderer, Renderer::RenderContext* _pContext, Renderer::RenderBuffer* _pBuffer, RenderBuffer::Geometry::Batch* _pGeometryArray, uint32 _uiGeometryCount)
 	{	
 		MARKER_GPU(_pContext, "Point");
 
-		RenderBuffer::Geometry::Batch* pBatchArray; uint32 uiBatchCount;
-		if(_pBuffer->Get(&pBatchArray, uiBatchCount))
+		// Synchronize light buffer and texture array for shadows
+		Renderer::RenderTarget* pRenderTarget = m_aRenderTarget[SharedResource::Light::Point];
+		if(UpdateBuffer<LightPass::PointBuffer>(_pContext, _pBuffer, &SharedResource::Light::Buffer[SharedResource::Light::Point]))
 		{
-			// Synchronize light buffer and texture array for shadows
-			Renderer::RenderTarget* pRenderTarget = m_aRenderTarget[SharedResource::Light::Point];
-			if(UpdateBuffer<RenderBuffer::Light::Point>(_pContext, _pBuffer, &SharedResource::Light::Buffer[SharedResource::Light::Point]))
+			Renderer::Texture2D*& pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Point];
+			if(pShadowMap)
 			{
-				Renderer::Texture2D*& pShadowMap = SharedResource::Light::ShadowMap[SharedResource::Light::Point];
-				if(pShadowMap)
-				{
-					_pRenderer->DestroyResource(pShadowMap);
-					pRenderTarget->Clear();
-				}
-
-				pShadowMap = _pRenderer->CreateTextureCube(LIGHT_POINT_RESOLUTION, LIGHT_POINT_RESOLUTION, 1, Renderer::EFormat::R32_FLOAT, Renderer::EBind::ShaderResource | Renderer::EBind::UnorderedAccess);
-				pRenderTarget->AddOutput(pShadowMap);
+				_pRenderer->DestroyResource(pShadowMap);
+				pRenderTarget->Clear();
 			}
 
-			if(!SharedResource::Light::Buffer[SharedResource::Light::Point]) return;
-
-			// Set RenderTarget
-			Renderer::Texture2D* pTextureArray = static_cast<Renderer::Texture2D*>(pRenderTarget->GetOutput(0));
-			_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
-			_pRenderer->SetViewport(_pContext, 0, 0, pTextureArray->GetWidth(), pTextureArray->GetHeight());
-			_pRenderer->Clear(_pContext, pRenderTarget);
-
-			// Set RenderState
-			Renderer::Effect* pEffect = m_aEffect[SharedResource::Light::Point]->GetData();
-			_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
-			_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
-
-			// Set Vertex Shader and resources
-			Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
-			_pRenderer->SetVertexShader(_pContext, pVertexShader);
-			_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
-			_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
-
-			Renderer::Shader* pGeometryShader = pEffect->GetShader(Renderer::EShader::Geometry);
-			_pRenderer->SetGeometryShader(_pContext, pGeometryShader);
-			_pRenderer->SetGeometryShaderConstantBuffer(_pContext, 0, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
-			_pRenderer->SetGeometryShaderResource(_pContext, 1, SharedResource::Light::Buffer[SharedResource::Light::Point]);		// index 1 since 0 is used for Material Number buffer
-
-			Renderer::Shader* pPixelShader = pEffect->GetShader(Renderer::EShader::Pixel);
-			_pRenderer->SetPixelShader(_pContext, pPixelShader);
-			_pRenderer->SetPixelShaderConstantBuffer(_pContext, 0, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
-			_pRenderer->SetPixelShaderResource(_pContext, 1, SharedResource::Light::Buffer[SharedResource::Light::Point]);		// index 1 since 0 is used for Material Number buffer
-
-			RenderBuffer::Constant::Scene* pSceneBufferSource; uint32 uiSceneCount;
-			_pBuffer->Get(&pSceneBufferSource, uiSceneCount);
-
-			static Math::Matrix44 mView[6], mProjection;
-
-			RenderBuffer::Light::Point* pBufferSource; uint32 uiCount;
-			_pBuffer->Get(&pBufferSource, uiCount);
-			for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
-			{
-				RenderBuffer::Light::Point& kLight = pBufferSource[uiLight];
-				
-				Renderer::Camera::ComputeView(mView[0], kLight.Position, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY, Math::Vector3::UnitX);		// +X
-				Renderer::Camera::ComputeView(mView[1], kLight.Position, Math::Vector3::UnitZ, Math::Vector3::UnitY, Math::Vector3::UnitX * -1);		// -X
-				Renderer::Camera::ComputeView(mView[2], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY);		// +Y
-				Renderer::Camera::ComputeView(mView[3], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ, Math::Vector3::UnitY * -1);		// -Y
-				Renderer::Camera::ComputeView(mView[4], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitY, Math::Vector3::UnitZ);			// +Z
-				Renderer::Camera::ComputeView(mView[5], kLight.Position, Math::Vector3::UnitX * -1, Math::Vector3::UnitY, Math::Vector3::UnitZ * -1);// -Z
-				Renderer::Camera::ComputePerspective(mProjection, 90.0f, 1.0f, 0.1f, 10.0f);
-				for(uint32 uiView = 0; uiView < 6; ++uiView) mView[uiView] *= mProjection;
-				
-				// Synchronize buffer
-				LightConstantBuffer* pDestination = reinterpret_cast<LightConstantBuffer*>(_pRenderer->Map(_pContext, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]));
-				memcpy_s(pDestination, sizeof(LightConstantBuffer), mView, sizeof(LightConstantBuffer));
-				_pRenderer->Unmap(_pContext, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
-
-				GeometryPass::DrawAllGeometry(_pRenderer, _pContext, pBatchArray, uiBatchCount, &m_pInstanceBuffer);
-			}
-
-			_pRenderer->SetGeometryShader(_pContext, NULL);
+			pShadowMap = _pRenderer->CreateTextureCube(LIGHT_POINT_RESOLUTION, LIGHT_POINT_RESOLUTION, 1, Renderer::EFormat::R32_FLOAT, Renderer::EBind::ShaderResource | Renderer::EBind::UnorderedAccess);
+			pRenderTarget->AddOutput(pShadowMap);
 		}
+
+		if(!SharedResource::Light::Buffer[SharedResource::Light::Point]) return;
+
+		// Set RenderTarget
+		Renderer::Texture2D* pTextureArray = static_cast<Renderer::Texture2D*>(pRenderTarget->GetOutput(0));
+		_pRenderer->SetRenderTarget(_pContext, pRenderTarget);
+		_pRenderer->SetViewport(_pContext, 0, 0, pTextureArray->GetWidth(), pTextureArray->GetHeight());
+		_pRenderer->Clear(_pContext, pRenderTarget);
+
+		// Set RenderState
+		Renderer::Effect* pEffect = m_aEffect[SharedResource::Light::Point]->GetData();
+		_pRenderer->SetRenderState(_pContext, pEffect->GetRenderState());
+		_pRenderer->SetTopology(_pContext, pEffect->GetTopology());
+
+		// Set Vertex Shader and resources
+		Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex, Renderer::ETechnique::Instancing);
+		_pRenderer->SetVertexShader(_pContext, pVertexShader);
+		_pRenderer->SetVertexShaderConstantBuffer(_pContext, 0, m_pSceneBuffer);
+		_pRenderer->SetVertexShaderResource(_pContext, 0, m_pInstanceBuffer);
+
+		Renderer::Shader* pGeometryShader = pEffect->GetShader(Renderer::EShader::Geometry);
+		_pRenderer->SetGeometryShader(_pContext, pGeometryShader);
+		_pRenderer->SetGeometryShaderConstantBuffer(_pContext, 0, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
+		_pRenderer->SetGeometryShaderResource(_pContext, 1, SharedResource::Light::Buffer[SharedResource::Light::Point]);		// index 1 since 0 is used for Material Number buffer
+
+		Renderer::Shader* pPixelShader = pEffect->GetShader(Renderer::EShader::Pixel);
+		_pRenderer->SetPixelShader(_pContext, pPixelShader);
+		_pRenderer->SetPixelShaderConstantBuffer(_pContext, 0, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
+		_pRenderer->SetPixelShaderResource(_pContext, 1, SharedResource::Light::Buffer[SharedResource::Light::Point]);		// index 1 since 0 is used for Material Number buffer
+
+		RenderBuffer::Constant::Scene* pSceneBufferSource; uint32 uiSceneCount;
+		_pBuffer->Get(&pSceneBufferSource, uiSceneCount);
+
+		static Math::Matrix44 mView[6], mProjection;
+
+		LightPass::PointBuffer* pBufferSource; uint32 uiCount;
+		_pBuffer->Get(&pBufferSource, uiCount);
+		for(uint32 uiLight = 0; uiLight < uiCount; ++uiLight)
+		{
+			LightPass::PointBuffer& kLight = pBufferSource[uiLight];
+				
+			Renderer::Camera::ComputeView(mView[0], kLight.Position, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY, Math::Vector3::UnitX);		// +X
+			Renderer::Camera::ComputeView(mView[1], kLight.Position, Math::Vector3::UnitZ, Math::Vector3::UnitY, Math::Vector3::UnitX * -1);		// -X
+			Renderer::Camera::ComputeView(mView[2], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ * -1, Math::Vector3::UnitY);		// +Y
+			Renderer::Camera::ComputeView(mView[3], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitZ, Math::Vector3::UnitY * -1);		// -Y
+			Renderer::Camera::ComputeView(mView[4], kLight.Position, Math::Vector3::UnitX, Math::Vector3::UnitY, Math::Vector3::UnitZ);			// +Z
+			Renderer::Camera::ComputeView(mView[5], kLight.Position, Math::Vector3::UnitX * -1, Math::Vector3::UnitY, Math::Vector3::UnitZ * -1);// -Z
+			Renderer::Camera::ComputePerspective(mProjection, 90.0f, 1.0f, 0.1f, 10.0f);
+			for(uint32 uiView = 0; uiView < 6; ++uiView) mView[uiView] *= mProjection;
+				
+			// Synchronize buffer
+			LightConstantBuffer* pDestination = reinterpret_cast<LightConstantBuffer*>(_pRenderer->Map(_pContext, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]));
+			memcpy_s(pDestination, sizeof(LightConstantBuffer), mView, sizeof(LightConstantBuffer));
+			_pRenderer->Unmap(_pContext, SharedResource::Light::ConstantBuffer[SharedResource::Light::Point]);
+
+			GeometryPass::DrawAllGeometry(_pRenderer, _pContext, _pGeometryArray, _uiGeometryCount, &m_pInstanceBuffer);
+		}
+
+		_pRenderer->SetGeometryShader(_pContext, NULL);
 	}
 }}
