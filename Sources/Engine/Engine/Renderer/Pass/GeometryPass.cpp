@@ -586,13 +586,10 @@ namespace Gorilla { namespace Engine
 
 		// Retrieve proper Pixel shader
 		Renderer::Material* pMaterial = _pBatchArray->Material;
-		if(pMaterial)
+		if(_pPixelShader && pMaterial)
 		{
 			// Replace Default Shader
-			if(_pPixelShader)
-			{
-				_pPixelShader = pMaterial->GetShader();
-			}
+			_pPixelShader = pMaterial->GetShader();
 
 			// Synchronize Material if needed
 			if(pMaterial->HasChanged())
