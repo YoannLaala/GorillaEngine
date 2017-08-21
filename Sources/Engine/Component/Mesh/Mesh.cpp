@@ -63,18 +63,15 @@ namespace Gorilla { namespace Component
 			Node* pCpnNode = GetOrCreate<Node>();
 			Renderer::Geometry* pGeometry = Asset->GetGeometry();
 
-			// Prepare Materials
-			const uint8 uiGroupCount = pGeometry->GetGroupCount();
-			//Materials.ExpandTo(uiSectionCount);
-
 			// Push all section to rendering with proper material
+			const uint8 uiGroupCount = pGeometry->GetGroupCount();
 			for(uint8 uiGroup = 0; uiGroup < uiGroupCount; ++uiGroup)
 			{
 				Engine::RenderBuffer::Geometry::Batch* pBatch = _pBuffer->Push<Engine::RenderBuffer::Geometry::Batch>();
 				pBatch->Geometry = pGeometry;
 				pBatch->Group = uiGroup;
 				pBatch->Transform = pCpnNode->GetTransform();
-				pBatch->Material = nullptr; 
+				pBatch->Material = uiGroup < Materials.GetSize() ? Materials[uiGroup]->GetData() : nullptr; 
 			}
 		}
 	}
