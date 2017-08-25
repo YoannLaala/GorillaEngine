@@ -9,7 +9,6 @@ project_list =
 	Helper = "StaticLib",
 
 	AssetCooker = "ConsoleApp",
-	CubeMap = "ConsoleApp",
 	Effect = "ConsoleApp",
 	Json2Binary = "ConsoleApp",
 	Mesh = "ConsoleApp",
@@ -32,14 +31,6 @@ project "AssetCooker"
 	links({ "d3d11.lib" , "Shlwapi.lib" })
 
 	declare_output( get_third_party_binaries_path() .. "premake/")
-
--- CubeMap
-project "CubeMap"
-	declare_dependency( "Engine", { "Core", "Renderer" })
-	declare_link({ "Helper" })
-	links({ "d3d11.lib", "Shlwapi.lib" })
-	
-	declare_output(get_binaries_path() .. "/Cooker/Texture/")
 
 -- Effect
 project "Effect"
