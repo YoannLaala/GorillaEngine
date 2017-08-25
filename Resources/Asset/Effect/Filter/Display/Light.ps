@@ -8,6 +8,11 @@
 #include "../../Shadow/PoissonDisc.sl"
 
 /******************************************************************************
+**	Defines
+******************************************************************************/
+ #define LIGHT_POWER_RATIO 1.0f / 64000.0f // Keep sun to 1.0f value
+
+/******************************************************************************
 **	Resources
 ******************************************************************************/
 Texture2D tAlbedo										: register(t0);
@@ -26,23 +31,23 @@ Texture2D tNoise										: register(t9);
 ******************************************************************************/
 struct Fragment
 {	
-	float3  Position;
+	float3 	Albedo;
+	float3 	Normal;
+	float3  Position; 
 	float3	View;
 	float3	Fresnel;
-	float 	Depth;
-	float 	NdotL; 
+	
 	float 	NdotV;
-	float 	NdotH;
-	float 	VdotH;
-};
-
-struct Material
-{
-	float3 	Normal;
-	float3 	F0;
-	float3 	Albedo;
+	float 	Depth;
 	float  	Metallic;
 	float  	Roughness;
+};
+
+struct LightParameter
+{
+	float 	NdotL; 
+	float 	NdotH;
+	float 	VdotH;
 };
 
 /******************************************************************************
@@ -78,17 +83,35 @@ struct PS_OUTPUT
 	float4 AmbientOcclusion		: SV_Target2;
 };
 
+
+/******************************************************************************
+**	Area
+******************************************************************************/
+float ComputeSphereArea(in float _fRadius)
+{
+	return 4.0f * K_PI * _fRadius * _fRadius;
+}
+
+/******************************************************************************
+**	ConvertLumenToLux
+**	Compute lumen/m² (lux)
+******************************************************************************/
+float ConvertLumenToLux(in float _fLumen, in float _fArea)
+{
+	return _fLumen / _fArea;
+}
+
 /******************************************************************************
 **	ComputeFresnel
 ******************************************************************************/
 #define FRESNEL_SCHLICK
-float3 ComputeFresnel(in Fragment _kFragment, in Material _kMaterial)
+float3 ComputeFresnel(in float3 _vF0, in float _fRoughness, in float _fNdotV)
 {
 #ifdef FRESNEL_SCHLICK
-	return _kMaterial.F0 + (max((float3)1.0f - _kMaterial.Roughness, _kMaterial.F0) - _kMaterial.F0) * pow(1.0f - _kFragment.NdotV, 5.0f);
+	return _vF0 + (max((float3)1.0f - _fRoughness, _vF0) - _vF0) * pow(1.0f - _fNdotV, 5.0f);
 
 #else	// Default
-	return _kMaterial.F0;
+	return _vF0;
 #endif
 }
 
@@ -101,39 +124,39 @@ float3 ComputeFresnel(in Fragment _kFragment, in Material _kMaterial)
 //#define GEOMETRIC_ATTENUATION_KELEMEN
 #define GEOMETRIC_ATTENUATION_GGX_SCHLICK
 //#define GEOMETRIC_ATTENUATION_SMITH_HEIGHT_CORRELATED
-float ComputeGeometricAttenuation(in Fragment _kFragment, in Material _kMaterial)
+float ComputeGeometricAttenuation(in Fragment _kFragment, in LightParameter _kLightParameter)
 {
 #if defined(GEOMETRIC_ATTENUATION_NEUMANN)
-	float fNumerator = _kFragment.NdotL * _kFragment.NdotV;
-	float fDenumerator = max(_kFragment.NdotL, _kFragment.NdotV);
+	float fNumerator = _kLightParameter.NdotL * _kFragment.NdotV;
+	float fDenumerator = max(_kLightParameter.NdotL, _kFragment.NdotV);
 	return fNumerator / fDenumerator;
 	
 #elif defined(GEOMETRIC_ATTENUATION_COOK)
-	float fFactor1 = (2.0f * _kFragment.NdotH * _kFragment.NdotV) / _kFragment.VdotH;
-	float fFactor2 = (2.0f * _kFragment.NdotH * _kFragment.NdotL) / _kFragment.VdotH;
+	float fFactor1 = (2.0f * _kLightParameter.NdotH * _kFragment.NdotV) / _kLightParameter.VdotH;
+	float fFactor2 = (2.0f * _kLightParameter.NdotH * _kLightParameter.NdotL) / _kLightParameter.VdotH;
 	return min(1.0f, min(fFactor1, fFactor2));
 	
 #elif defined(GEOMETRIC_ATTENUATION_KELEMEN)
-	float fNumerator = _kFragment.NdotL * _kFragment.NdotV;
-	float fDenumerator = _kFragment.VdotH * _kFragment.VdotH;
+	float fNumerator = _kLightParameter.NdotL * _kFragment.NdotV;
+	float fDenumerator = _kLightParameter.VdotH * _kLightParameter.VdotH;
 	return fNumerator / fDenumerator;
 	
 #elif defined(GEOMETRIC_ATTENUATION_GGX_SCHLICK)
-	float fK = pow(_kMaterial.Roughness + 1.0f, 2.0f) / 8.0f;
+	float fK = pow(_kFragment.Roughness + 1.0f, 2.0f) / 8.0f;
     float fFactor1 = _kFragment.NdotV / (_kFragment.NdotV * (1.0f - fK) + fK);
-	float fFactor2 = _kFragment.NdotL / (_kFragment.NdotL * (1.0f - fK) + fK);
+	float fFactor2 = _kLightParameter.NdotL / (_kLightParameter.NdotL * (1.0f - fK) + fK);
 	return fFactor1 * fFactor2;
 	
 #elif defined(GEOMETRIC_ATTENUATION_SMITH_HEIGHT_CORRELATED)
 	// http://www.frostbite.com/wp-content/uploads/2014/11/course_notes_moving_frostbite_to_pbr_v2.pdf
 	// Caution : the " _fNdotL *" and " _fNdotV *" are explicitely inversed , this is not a mistake .
-	float fRoughnessSquared = _kMaterial.Roughness * _kMaterial.Roughness;
-	float fLambdaV = _kFragment.NdotL * sqrt((-_kFragment.NdotV * fRoughnessSquared + _kFragment.NdotV) * _kFragment.NdotV + fRoughnessSquared);
-	float fLambdaL = _kFragment.NdotV * sqrt((-_kFragment.NdotL * fRoughnessSquared + _kFragment.NdotL) * _kFragment.NdotL + fRoughnessSquared); 
+	float fRoughnessSquared = _kFragment.Roughness * _kFragment.Roughness;
+	float fLambdaV = _kLightParameter.NdotL * sqrt((-_kFragment.NdotV * fRoughnessSquared + _kFragment.NdotV) * _kFragment.NdotV + fRoughnessSquared);
+	float fLambdaL = _kFragment.NdotV * sqrt((-_kLightParameter.NdotL * fRoughnessSquared + _kLightParameter.NdotL) * _kLightParameter.NdotL + fRoughnessSquared); 
 	return 0.5f / (fLambdaV + fLambdaL);
 	
 #else	// Default
-	return _kFragment.NdotL * _kFragment.NdotV;
+	return _kLightParameter.NdotL * _kFragment.NdotV;
 #endif	
 }
 
@@ -144,19 +167,19 @@ float ComputeGeometricAttenuation(in Fragment _kFragment, in Material _kMaterial
 //#define NORMAL_DISTRIBUTION_BECKMAN
 //#define NORMAL_DISTRIBUTION_GGX
 #define NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ
-float ComputeNormalDistribution(in Fragment _kFragment, in Material _kMaterial)
+float ComputeNormalDistribution(in Fragment _kFragment, in LightParameter _kLightParameter)
 {	
-	float fRoughnessFactor = pow(_kMaterial.Roughness, 4);
+	float fRoughnessFactor = pow(_kFragment.Roughness, 4);
 	
 #if defined(NORMAL_DISTRIBUTION_BECKMAN)
-	float fNdotH_2 = _kFragment.NdotH * _kFragment.NdotH;
+	float fNdotH_2 = _kLightParameter.NdotH * _kLightParameter.NdotH;
 	float fNdotH_4 = fNdotH_2 * fNdotH_2;
 	float fFactor1 = 1.0f / (K_PI * fRoughnessFactor * fNdotH_4);
 	float fFactor2 = (fNdotH_2 - 1.0f) / (fRoughnessFactor * fNdotH_2);
     return fFactor1 * exp(fFactor2);
 	
 #elif defined(NORMAL_DISTRIBUTION_GGX)
-    float NdotH  = max(_kFragment.NdotH, 0.0f);
+    float NdotH  = max(_kLightParameter.NdotH, 0.0f);
     float NdotH2 = NdotH*NdotH;
     float nom   = fRoughnessFactor;
     float denom = (NdotH2 * (fRoughnessFactor - 1.0) + 1.0);
@@ -164,12 +187,12 @@ float ComputeNormalDistribution(in Fragment _kFragment, in Material _kMaterial)
     return nom / denom;
 	
 #elif defined(NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ)
-	float fFactor = (_kFragment.NdotH * _kFragment.NdotH) * (fRoughnessFactor - 1.0f) + 1.0f;
+	float fFactor = (_kLightParameter.NdotH * _kLightParameter.NdotH) * (fRoughnessFactor - 1.0f) + 1.0f;
 	return fRoughnessFactor / (fFactor * fFactor * K_PI);
 	
 #else // BLING-PHONG
 	float fFactor1 = 1.0f / (K_PI * fRoughnessFactor);
-	float fFactor2 = pow(_kFragment.NdotH, (2.0f / fRoughnessFactor) - 2.0f);
+	float fFactor2 = pow(_kLightParameter.NdotH, (2.0f / fRoughnessFactor) - 2.0f);
 	return fFactor1 * fFactor2;
 #endif	
 }
@@ -179,13 +202,13 @@ float ComputeNormalDistribution(in Fragment _kFragment, in Material _kMaterial)
 **	fs = F(v,h,f0)G(v,l,h)D(h,a)
 **			4(n.v)(n.l)
 ******************************************************************************/
-float3 BRDF_Specular(in Fragment _kFragment, in Material _kMaterial)
+float3 BRDF_Specular(in Fragment _kFragment, in LightParameter _kLightParameter)
 {		
 	float3 F = _kFragment.Fresnel;
-	float G = ComputeGeometricAttenuation(_kFragment, _kMaterial);
-	float D = ComputeNormalDistribution(_kFragment, _kMaterial);
+	float G = ComputeGeometricAttenuation(_kFragment, _kLightParameter);
+	float D = ComputeNormalDistribution(_kFragment, _kLightParameter);
 	
-	return (F * G * D) / (4.0f * _kFragment.NdotL * _kFragment.NdotV); 
+	return (F * G * D) / (4.0f * _kLightParameter.NdotL * _kFragment.NdotV); 
 }
 
 float test(in float _fF90, in float costheta)
@@ -198,34 +221,18 @@ float test(in float _fF90, in float costheta)
 **	Diffuse BRDF
 ******************************************************************************/
 //#define DIFFUSE_DISNEY
-float3 BRDF_Diffuse(in Fragment _kFragment, in Material _kMaterial)
+float3 BRDF_Diffuse(in Fragment _kFragment, in LightParameter _kLightParameter)
 {
 #if defined(DIFFUSE_DISNEY) 
-	float3 vDiffuse = _kMaterial.Albedo / K_PI;
-	float fF90 = 0.5f + 2.0 * _kFragment.VdotH * _kFragment.VdotH * _kMaterial.Roughness;
-	float lightScatter = test(fF90, _kFragment.NdotL);
+	float3 vDiffuse = _kFragment.Albedo / K_PI;
+	float fF90 = 0.5f + 2.0 * _kLightParameter.VdotH * _kLightParameter.VdotH * _kFragment.Roughness;
+	float lightScatter = test(fF90, _kLightParameter.NdotL);
 	float viewScatter = test(fF90, _kFragment.NdotV);
-	return vDiffuse * lightScatter * viewScatter ;
+	return vDiffuse * lightScatter * viewScatter;
 	
 #else	// LAMBERT
-	return _kMaterial.Albedo / K_PI;
+	return _kFragment.Albedo / K_PI;
 #endif
-}
-
-// Unpack Material from GBuffer
-Material UnpackMaterial(in float2 _vTexcoord)
-{
-	float4 vAlbedo = tAlbedo.Sample(sPointSampler, _vTexcoord);
-	float4 vNormalPacked = tNormal.Sample(sPointSampler, _vTexcoord);
-	
-	Material kMaterial = (Material)0;
-	kMaterial.Albedo = vAlbedo.xyz;
-	kMaterial.Metallic = vAlbedo.w;
-	kMaterial.Normal = vNormalPacked.xyz;
-	kMaterial.Roughness = max(0.025f, vNormalPacked.w);
-	kMaterial.F0 = lerp(MATERIAL_WATER, kMaterial.Albedo, kMaterial.Metallic);
-	
-	return kMaterial;
 }
 
 float TraceCone(in float3 _vOrigin, in float3 _vDirection, in float _fAperture)
@@ -280,134 +287,44 @@ float3 TraceCone2(in float3 _vOrigin, in float3 _vDirection)
 }
 
 /******************************************************************************
-**	Percentage Closer Soft Shadow - Approximate Depth Blocker
-******************************************************************************/
-float PCSS_BlockerDepth_Directional(in float2 _vTexcoord, in float _fGeometryDepth)
-{	
-	float fWidth = 1.0f;
-	float fTexelFactor = 128.0f/1024.0f;
-
-	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
-	for (uint uiSample = 0; uiSample < POISSON_DISK_FAST_SIZE; ++uiSample)
-	{
-		float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, _vTexcoord + GET_POISSON_DISK_FAST(uiSample) * fTexelFactor, 0).r;
-		if(fDepth < _fGeometryDepth)
-		{
-			fBlockerDepth += fDepth;
-			++uiBlockerCount; 
-		}
-	}
-
-	return fBlockerDepth / uiBlockerCount;
-}
-
-/******************************************************************************
 **	Percentage Closer Soft Shadow - Directional
 ******************************************************************************/
 float PCSS_Directional(in float3 _vPosition, in float4x4 _mViewProjection)
 {
 	static float fBias = 0.05f;
-	static uint uiSamleCount = 11;
+	static float fTexelFactor = 64.0f/1024.0f;
+	static float fPenumbraFactor = 4.0f * fTexelFactor;
 	
 	// Compute Shadow Texcoord
 	float4 vPositionCS = mul(float4(_vPosition, 1.0f), _mViewProjection);
 	vPositionCS.xy = vPositionCS.xy * 0.5 + 0.5; 
 	vPositionCS.y *= -1.0f;
 	
-	// Compute Blocker Depth
+	// Compute Penumbra from Blocker depth avg
 	float fGeometryDepth = vPositionCS.z - fBias;
-	float fBlockerDepth = PCSS_BlockerDepth_Directional(vPositionCS.xy, fGeometryDepth);
-	float fPenumbra = (fGeometryDepth - fBlockerDepth) * 1.0f / fBlockerDepth;
-	float fWidth = 1.0f;
-	float fTexelFactor = 8.0f / 1024.0f;
-
+	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
+	for (uint uiSample = 0; uiSample < POISSON_DISK_FAST_SIZE; ++uiSample)
+	{
+		float2 vOffset = GET_POISSON_DISK_FAST(uiSample) * fTexelFactor; 
+		float fDepth = tDirectionalShadowMap.SampleLevel(sPointSampler, vPositionCS.xy + vOffset, 0).r;
+		if(fDepth < fGeometryDepth)
+		{
+			fBlockerDepth += fDepth;
+			++uiBlockerCount; 
+		}
+	}
+	if(uiBlockerCount == 0) return 1.0f;
+	fBlockerDepth /= uiBlockerCount;
+	float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth * fPenumbraFactor;
+	
 	// Perform filtering
 	float fShadow = 0.0f;
-	float2 vSample = float2(vPositionCS.x - fTexelFactor, vPositionCS.y - fTexelFactor);
-	for (uint uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
+	for (uiSample = 0; uiSample < POISSON_DISK_HIGHEST_SIZE; ++uiSample)
 	{
-		fShadow += tDirectionalShadowMap.SampleCmpLevelZero(sShadowSampler, vPositionCS.xy + GET_POISSON_DISK_HIGHEST(uiSample) * fTexelFactor, fGeometryDepth).r;
+		fShadow += tDirectionalShadowMap.SampleCmpLevelZero(sShadowSampler, vPositionCS.xy + GET_POISSON_DISK_HIGHEST(uiSample) * fPenumbra, fGeometryDepth).r;
 	}
 
 	return fShadow / POISSON_DISK_HIGHEST_SIZE;
-}
-
-/******************************************************************************
-**	ComputeLight_Direct (Reflectance)
-******************************************************************************/
-float3 ComputeLight_Direct(in Fragment _kFragment, in Material _kMaterial, in float3 _vLight, in float3 _vColor)
-{	
-	_kFragment.NdotL = dot(_kMaterial.Normal, _vLight);
-	if(_kFragment.NdotL <= 0.0f)
-	{
-		return 0.0f;
-	}	
-
-	// Compute fragment vectors
-	float3 vHalf = normalize(_kFragment.View + _vLight);
-	_kFragment.NdotH = dot(_kMaterial.Normal, vHalf);
-	_kFragment.VdotH = dot(_kFragment.View, vHalf);
-	
-	// Compute diffuse and Specular
-	float3 vDiffuse = BRDF_Diffuse(_kFragment, _kMaterial); 
-	float3 vSpecular = BRDF_Specular(_kFragment, _kMaterial); 
-
-	// Apply to reflectance
-	return (vDiffuse + vSpecular) * _vColor * _kFragment.NdotL;
-}
-
-/******************************************************************************
-**	Direct Directional Light
-******************************************************************************/
-float3 ComputeLight_Direct_Directional(in Fragment _kFragment, in Material _kMaterial)
-{	
-	float3 vReflectance = (float3)0;
-	
-	uint uiSize, uiElementByte;
-	aDirectionalLight.GetDimensions(uiSize, uiElementByte);
-	[loop]
-	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
-	{
-		DirectionalLight kLight = aDirectionalLight[uiLight]; 
-		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, -kLight.Direction, kLight.Color);
-
-		// Add shadow for this light
-		float fShadow = PCSS_Directional(_kFragment.Position, kLight.ViewProjection);
-		vReflectance *= fShadow;
-	}
-	
-	return vReflectance;
-}
-
-/******************************************************************************
-**	Percentage Closer Soft Shadow - Approximate Depth Blocker for Point light
-******************************************************************************/
-float PCSS_BlockerDepth_Point(in float3 _vDirection, in float _fGeometryDepth)
-{	
-	static uint uiSamleCount = 2;
-	
-	float fWidth = 1.0f;
-	float fTexelFactor = 1.0f/256.0f;
-	float fOffset =  2.0f * fTexelFactor / uiSamleCount;
-	float4 vSample = float4(_vDirection.x - fTexelFactor, _vDirection.y - fTexelFactor, _vDirection.z, 0.0f);
-
-	float fBlockerDepth = 0.0f; uint uiBlockerCount = 0;
-	for (uint uiRow = 0; uiRow < uiSamleCount; ++uiRow)
-	{
-		for (uint uiColumn = 0; uiColumn < uiSamleCount; ++uiColumn)
-		{
-			vSample.xy += fOffset; 
-			float fDepth = tPointShadowMap.SampleLevel(sPointSampler, vSample, 0).r;
-			if(fDepth < _fGeometryDepth)
-			{
-				fBlockerDepth += fDepth;
-				++uiBlockerCount;
-			}
-		}
-	}
-
-	if(uiBlockerCount == 0) return 1.0f;
-	return fBlockerDepth / uiBlockerCount;
 }
 
 /******************************************************************************
@@ -433,10 +350,12 @@ float PCSS_Point(in float3 _vDirection, in float _fDistance)
 			++uiBlockerCount; 
 		}
 	}
+	if(uiBlockerCount == 0) return 1.0f;
 	fBlockerDepth /= uiBlockerCount;
+	
 	float fPenumbra = (fGeometryDepth - fBlockerDepth) / fBlockerDepth;
-
-	float fTexelFactor2 = 64.0f/256.0f;
+	 
+	float fTexelFactor2 = 64.0f/256.0f * fPenumbra;
 
 	// Perform filtering
 	float fShadow = 0.0f;
@@ -450,12 +369,71 @@ float PCSS_Point(in float3 _vDirection, in float _fDistance)
 }
 
 /******************************************************************************
+**	ComputeLightParameter
+******************************************************************************/
+LightParameter ComputeLightParameter(in Fragment _kFragment, in float3 _vLight)
+{
+	LightParameter kLightParameter = (LightParameter)0.0f;
+	kLightParameter.NdotL = dot(_kFragment.Normal, _vLight);
+	
+	float3 vHalf = normalize(_kFragment.View + _vLight);
+	kLightParameter.NdotH = dot(_kFragment.Normal, vHalf);
+	kLightParameter.VdotH = dot(_kFragment.View, vHalf);
+	
+	return kLightParameter;
+}
+
+/******************************************************************************
+**	ComputeLight_Direct (Reflectance)
+******************************************************************************/
+float3 ComputeLight_Direct(in Fragment _kFragment, in float3 _vLight, in float3 _vColor, in float _fPower)
+{	
+	LightParameter kLightParameter = ComputeLightParameter(_kFragment, _vLight);
+	if(kLightParameter.NdotL <= 0.0f)
+	{
+		return 0.0f;
+	}	
+	
+	// Compute diffuse and Specular
+	float3 vDiffuse = BRDF_Diffuse(_kFragment, kLightParameter); 
+	float3 vSpecular = BRDF_Specular(_kFragment, kLightParameter); 
+	
+	//float3 kd = ((float3)1.0f - _kFragment.Fresnel) * (1 - _kFragment.Metallic);
+	
+	return (vDiffuse * _vColor * kLightParameter.NdotL * _fPower * LIGHT_POWER_RATIO);
+	
+	// Apply to reflectance
+	return (vDiffuse + vSpecular) * _vColor * kLightParameter.NdotL * _fPower * LIGHT_POWER_RATIO; 
+}
+
+/******************************************************************************
+**	Direct Directional Light
+******************************************************************************/
+float3 ComputeLight_Direct_Directional(in Fragment _kFragment)
+{	
+	float3 vReflectance = (float3)0;
+	
+	uint uiSize, uiElementByte;
+	aDirectionalLight.GetDimensions(uiSize, uiElementByte);
+	[loop]
+	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
+	{
+		DirectionalLight kLight = aDirectionalLight[uiLight]; 
+		vReflectance += ComputeLight_Direct(_kFragment, -kLight.Direction, kLight.Color, kLight.Power);
+
+		// Add shadow for this light
+		float fShadow = PCSS_Directional(_kFragment.Position, kLight.ViewProjection);
+		vReflectance *= fShadow;
+	}
+	
+	return vReflectance;
+}
+
+/******************************************************************************
 **	Direct Point Light
 ******************************************************************************/
-float3 ComputeLight_Direct_Point(in Fragment _kFragment, in Material _kMaterial)
+float3 ComputeLight_Direct_Point(in Fragment _kFragment)
 {	
-	static float fLumenFactor = 0.0001f;
-
 	float3 vReflectance = (float3)0;
 	
 	uint uiSize, uiElementByte;
@@ -470,14 +448,17 @@ float3 ComputeLight_Direct_Point(in Fragment _kFragment, in Material _kMaterial)
 		float3 vLightToFragment = kLight.Position - _kFragment.Position;
 		float3 vLight = normalize(vLightToFragment);
 		float fDistance = length(vLightToFragment);
-		float fAttenuation = pow(max(fDistance, 0.01), 2.0f);
-		float fIlluminance = kLight.Lumen * fLumenFactor / fAttenuation; 
+		float fAttenuation = 1.0f / pow(max(fDistance, 0.01), 2.0f);
 
+		// Compute lux for this point light
+		float fArea = ComputeSphereArea(kLight.Radius);
+		float fPower = ConvertLumenToLux(kLight.Power, fArea);
+		
 		// Compute reflectance
-		vReflectance += ComputeLight_Direct(_kFragment, _kMaterial, vLight, kLight.Color) * fIlluminance;
+		vReflectance += ComputeLight_Direct(_kFragment, vLight, kLight.Color, fPower) * fAttenuation;
 		
 		float fShadow = PCSS_Point(-vLight, fDistance);
-		vReflectance *= fShadow;
+		//vReflectance *= fShadow;
 	}
 	
 	return vReflectance;
@@ -502,36 +483,42 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	Fragment kFragment = (Fragment)0;
 	
 	// Compute fragment position, view & depth
+	kFragment.Depth = tDepth.Sample(sPointSampler, _input.Texcoord).r;
 	kFragment.Position = ComputeWorldPosition(_input.Texcoord, kFragment.Depth);
 	kFragment.View = normalize(kFragment.Position - POSITION);
-	kFragment.Depth = tDepth.Sample(sPointSampler, _input.Texcoord).r;
 	if(kFragment.Depth >= 1.0f)
 	{
 		output.DirectLighting = tEnvironment.Sample(sLinearSampler, kFragment.View).xyz;
 		return output; 
 	}
 	
-	// Upack material
-	Material kMaterial = UnpackMaterial(_input.Texcoord);	
-	kFragment.NdotV = abs(dot(kMaterial.Normal, kFragment.View));
+	// Unpack fragment
+	float4 vAlbedo = tAlbedo.Sample(sPointSampler, _input.Texcoord);
+	float4 vNormal = tNormal.Sample(sPointSampler, _input.Texcoord);
+	kFragment.Albedo = vAlbedo.xyz;
+	kFragment.Normal = vNormal.xyz;
+	kFragment.Metallic = vAlbedo.w;
+	kFragment.Roughness = max(0.025f, vNormal.w);
 	
-	// Compute Fresnel
-	kFragment.Fresnel = ComputeFresnel(kFragment, kMaterial); 
+	// Compute fresnel
+	float3 vF0 = lerp(MATERIAL_WATER, kFragment.Albedo, kFragment.Metallic);
+	kFragment.NdotV = abs(dot(kFragment.Normal, kFragment.View));
+	kFragment.Fresnel = ComputeFresnel(vF0, kFragment.Roughness, kFragment.NdotV); 
 	
 	// Compute Direct Light (Reflectance)
 	float3 vReflectance = (float3)0.0f;
-	vReflectance += ComputeLight_Direct_Directional(kFragment, kMaterial);
-	vReflectance += ComputeLight_Direct_Point(kFragment, kMaterial); 
+	vReflectance += ComputeLight_Direct_Directional(kFragment);
+	vReflectance += ComputeLight_Direct_Point(kFragment); 
 	
 	// Compute reflection
-	float3 vViewOut = reflect(kFragment.View, kMaterial.Normal);
-	float3 vReflection = tEnvironment.Sample(sLinearSampler, vViewOut).xyz * kMaterial.Metallic; 
+	float3 vViewOut = reflect(-kFragment.View, kFragment.Normal);
+	float3 vReflection = tEnvironment.Sample(sLinearSampler, vViewOut).xyz * kFragment.Metallic; 
 	
 	// Compute final color
 	float ao = 0.0f;
     // float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
 	//float3 vAmbient = kMaterial.Albedo * ((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
-	output.DirectLighting = vReflection * vReflectance;  
+	output.DirectLighting = vReflectance;;
 
 	// Add noise only on non black color
 	if(length(output.DirectLighting) > 0.0f)
