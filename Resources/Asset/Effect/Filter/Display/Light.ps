@@ -164,9 +164,9 @@ float ComputeGeometricAttenuation(in Fragment _kFragment, in LightParameter _kLi
 **	ComputeNormalDistribution
 **	http://graphicrants.blogspot.fr/2013/08/specular-brdf-reference.html
 ******************************************************************************/
-//#define NORMAL_DISTRIBUTION_BECKMAN
-//#define NORMAL_DISTRIBUTION_GGX
-#define NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ
+// #define NORMAL_DISTRIBUTION_BECKMAN
+#define NORMAL_DISTRIBUTION_GGX
+// #define NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ
 float ComputeNormalDistribution(in Fragment _kFragment, in LightParameter _kLightParameter)
 {	
 	float fRoughnessFactor = pow(_kFragment.Roughness, 4);
@@ -179,19 +179,19 @@ float ComputeNormalDistribution(in Fragment _kFragment, in LightParameter _kLigh
     return fFactor1 * exp(fFactor2);
 	
 #elif defined(NORMAL_DISTRIBUTION_GGX)
-    float NdotH  = max(_kLightParameter.NdotH, 0.0f);
+	float NdotH  = max(_kLightParameter.NdotH, 0.0f);
     float NdotH2 = NdotH*NdotH;
-    float nom   = fRoughnessFactor;
-    float denom = (NdotH2 * (fRoughnessFactor - 1.0) + 1.0);
-    denom = K_PI * denom * denom;
-    return nom / denom;
+    float fNomimator   = fRoughnessFactor;
+    float fDenominator = (NdotH2 * (fRoughnessFactor - 1.0f) + 1.0f);
+    fDenominator = fDenominator * fDenominator;
+    return fNomimator / fDenominator;
 	
 #elif defined(NORMAL_DISTRIBUTION_GGX_TROWBRIDGE_REITZ)
 	float fFactor = (_kLightParameter.NdotH * _kLightParameter.NdotH) * (fRoughnessFactor - 1.0f) + 1.0f;
-	return fRoughnessFactor / (fFactor * fFactor * K_PI);
+	return fRoughnessFactor / K_PI * (fFactor * fFactor);
 	
 #else // BLING-PHONG
-	float fFactor1 = 1.0f / (K_PI * fRoughnessFactor);
+	float fFactor1 = 1.0f / (fRoughnessFactor);
 	float fFactor2 = pow(_kLightParameter.NdotH, (2.0f / fRoughnessFactor) - 2.0f);
 	return fFactor1 * fFactor2;
 #endif	
@@ -206,8 +206,8 @@ float3 BRDF_Specular(in Fragment _kFragment, in LightParameter _kLightParameter)
 {		
 	float3 F = _kFragment.Fresnel;
 	float G = ComputeGeometricAttenuation(_kFragment, _kLightParameter);
-	float D = ComputeNormalDistribution(_kFragment, _kLightParameter);
-	
+	float D = ComputeNormalDistribution(_kFragment, _kLightParameter);		
+
 	return (F * G * D) / (4.0f * _kLightParameter.NdotL * _kFragment.NdotV); 
 }
 
@@ -220,18 +220,18 @@ float test(in float _fF90, in float costheta)
 /******************************************************************************
 **	Diffuse BRDF
 ******************************************************************************/
-//#define DIFFUSE_DISNEY
+#define DIFFUSE_DISNEY
 float3 BRDF_Diffuse(in Fragment _kFragment, in LightParameter _kLightParameter)
 {
 #if defined(DIFFUSE_DISNEY) 
-	float3 vDiffuse = _kFragment.Albedo / K_PI;
+	float3 vDiffuse = _kFragment.Albedo;
 	float fF90 = 0.5f + 2.0 * _kLightParameter.VdotH * _kLightParameter.VdotH * _kFragment.Roughness;
 	float lightScatter = test(fF90, _kLightParameter.NdotL);
 	float viewScatter = test(fF90, _kFragment.NdotV);
 	return vDiffuse * lightScatter * viewScatter;
 	
 #else	// LAMBERT
-	return _kFragment.Albedo / K_PI;
+	return _kFragment.Albedo;
 #endif
 }
 
@@ -376,7 +376,7 @@ LightParameter ComputeLightParameter(in Fragment _kFragment, in float3 _vLight)
 	LightParameter kLightParameter = (LightParameter)0.0f;
 	kLightParameter.NdotL = dot(_kFragment.Normal, _vLight);
 	
-	float3 vHalf = normalize(_kFragment.View + _vLight);
+	float3 vHalf = normalize(-_kFragment.View + _vLight);
 	kLightParameter.NdotH = dot(_kFragment.Normal, vHalf);
 	kLightParameter.VdotH = dot(_kFragment.View, vHalf);
 	
@@ -386,7 +386,7 @@ LightParameter ComputeLightParameter(in Fragment _kFragment, in float3 _vLight)
 /******************************************************************************
 **	ComputeLight_Direct (Reflectance)
 ******************************************************************************/
-float3 ComputeLight_Direct(in Fragment _kFragment, in float3 _vLight, in float3 _vColor, in float _fPower)
+float3 ComputeLight_Direct(in Fragment _kFragment, in float3 _vLight, in float3 _vRadiance)
 {	
 	LightParameter kLightParameter = ComputeLightParameter(_kFragment, _vLight);
 	if(kLightParameter.NdotL <= 0.0f)
@@ -394,16 +394,12 @@ float3 ComputeLight_Direct(in Fragment _kFragment, in float3 _vLight, in float3 
 		return 0.0f;
 	}	
 	
-	// Compute diffuse and Specular
+	// Compute BRDF Diffuse and Specular (Cook-Torrence)
 	float3 vDiffuse = BRDF_Diffuse(_kFragment, kLightParameter); 
-	float3 vSpecular = BRDF_Specular(_kFragment, kLightParameter); 
+	float3 vSpecular = BRDF_Specular(_kFragment, kLightParameter);  
+	float3 vDiffuseFactor = ((float3)1.0f - _kFragment.Fresnel) * (1.0f - _kFragment.Metallic);		
 	
-	//float3 kd = ((float3)1.0f - _kFragment.Fresnel) * (1 - _kFragment.Metallic);
-	
-	return (vDiffuse * _vColor * kLightParameter.NdotL * _fPower * LIGHT_POWER_RATIO);
-	
-	// Apply to reflectance
-	return (vDiffuse + vSpecular) * _vColor * kLightParameter.NdotL * _fPower * LIGHT_POWER_RATIO; 
+	return (vDiffuseFactor * vDiffuse / K_PI + vSpecular) * _vRadiance * kLightParameter.NdotL;
 }
 
 /******************************************************************************
@@ -419,7 +415,8 @@ float3 ComputeLight_Direct_Directional(in Fragment _kFragment)
 	for(uint uiLight = 0; uiLight < uiSize; ++uiLight)
 	{
 		DirectionalLight kLight = aDirectionalLight[uiLight]; 
-		vReflectance += ComputeLight_Direct(_kFragment, -kLight.Direction, kLight.Color, kLight.Power);
+		float3 vRadiance = kLight.Color * kLight.Power * LIGHT_POWER_RATIO;
+		vReflectance += ComputeLight_Direct(_kFragment, -kLight.Direction, vRadiance);
 
 		// Add shadow for this light
 		float fShadow = PCSS_Directional(_kFragment.Position, kLight.ViewProjection);
@@ -455,10 +452,11 @@ float3 ComputeLight_Direct_Point(in Fragment _kFragment)
 		float fPower = ConvertLumenToLux(kLight.Power, fArea);
 		
 		// Compute reflectance
-		vReflectance += ComputeLight_Direct(_kFragment, vLight, kLight.Color, fPower) * fAttenuation;
+		float3 vRadiance = kLight.Color * kLight.Power * LIGHT_POWER_RATIO * fAttenuation;
+		vReflectance += ComputeLight_Direct(_kFragment, vLight, vRadiance);
 		
 		float fShadow = PCSS_Point(-vLight, fDistance);
-		//vReflectance *= fShadow;
+		vReflectance *= fShadow;
 	}
 	
 	return vReflectance;
@@ -497,12 +495,12 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	float4 vNormal = tNormal.Sample(sPointSampler, _input.Texcoord);
 	kFragment.Albedo = vAlbedo.xyz;
 	kFragment.Normal = vNormal.xyz;
-	kFragment.Metallic = vAlbedo.w;
-	kFragment.Roughness = max(0.025f, vNormal.w);
+	kFragment.Metallic = min(0.7f, vAlbedo.w);
+	kFragment.Roughness = max(0.07f, vNormal.w);
 	
 	// Compute fresnel
-	float3 vF0 = lerp(MATERIAL_WATER, kFragment.Albedo, kFragment.Metallic);
-	kFragment.NdotV = abs(dot(kFragment.Normal, kFragment.View));
+	float3 vF0 = lerp(MATERIAL_PLASTIC, kFragment.Albedo, kFragment.Metallic);
+	kFragment.NdotV = dot(kFragment.Normal, -kFragment.View);
 	kFragment.Fresnel = ComputeFresnel(vF0, kFragment.Roughness, kFragment.NdotV); 
 	
 	// Compute Direct Light (Reflectance)
@@ -511,14 +509,14 @@ PS_OUTPUT PixelDefault(VS_OUTPUT _input)
 	vReflectance += ComputeLight_Direct_Point(kFragment); 
 	
 	// Compute reflection
-	float3 vViewOut = reflect(-kFragment.View, kFragment.Normal);
-	float3 vReflection = tEnvironment.Sample(sLinearSampler, vViewOut).xyz * kFragment.Metallic; 
+	float3 vViewOut = reflect(kFragment.View, kFragment.Normal);
+	float3 vReflection = tEnvironment.Sample(sLinearSampler, vViewOut).xyz; 
 	
 	// Compute final color
 	float ao = 0.0f;
     // float3 vAmbient = vTest * kMaterial.Albedo;//((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
 	//float3 vAmbient = kMaterial.Albedo * ((kMaterial.Metallic + (1.0f - kMaterial.Roughness)) * 0.5f);
-	output.DirectLighting = vReflectance;;
+	output.DirectLighting = vReflectance;
 
 	// Add noise only on non black color
 	if(length(output.DirectLighting) > 0.0f)
