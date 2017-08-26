@@ -130,11 +130,71 @@ namespace Gorilla
 		}
 	}
 
+	//!	@brief		ReadNormal
+	//!	@date		2015-11-22
+	FbxVector4 ReadNormal(FbxMesh* _pMesh, uint32 _uiVertexIndex, uint32 _uiControlPoint)
+	{
+		uint32 uiIndex = (uint32)-1;
+
+		FbxGeometryElementNormal* pFbxGeometryNormal = _pMesh->GetElementNormal(0);
+		switch(pFbxGeometryNormal->GetMappingMode())
+		{
+			case FbxGeometryElement::eByControlPoint:
+			{
+				switch(pFbxGeometryNormal->GetReferenceMode())
+				{
+					case FbxGeometryElement::eDirect: uiIndex = _uiControlPoint; break;
+					case FbxGeometryElement::eIndexToDirect: uiIndex = pFbxGeometryNormal->GetIndexArray().GetAt(_uiControlPoint); break;
+				}
+				break;
+			}
+
+			case FbxGeometryElement::eByPolygonVertex:
+			{
+				switch(pFbxGeometryNormal->GetReferenceMode())
+				{
+					case FbxGeometryElement::eDirect: uiIndex = _uiVertexIndex; break;
+					case FbxGeometryElement::eIndexToDirect: uiIndex = pFbxGeometryNormal->GetIndexArray().GetAt(_uiVertexIndex); break;
+				}
+				break;
+			}
+		}
+		
+		return FbxVector4(pFbxGeometryNormal->GetDirectArray().GetAt(uiIndex).mData);
+	}
+
+	//!	@brief		ReadTexcoord
+	//!	@date		2015-11-22
+	FbxNode* pLast = nullptr;
+	FbxVector2 ReadTexcoord(FbxMesh* _pMesh, uint32 _uiPolygon, uint32 _uiVertex, uint32 _uiControlPoint)
+	{
+		uint32 uiUVIndex = (uint32)-1;
+
+		FbxLayerElementUV* pFbxLayerUV = _pMesh->GetLayer(0)->GetUVs();
+		if (pFbxLayerUV) 
+		{
+			switch (pFbxLayerUV->GetMappingMode()) 
+			{
+				case FbxLayerElement::eByControlPoint: uiUVIndex = _uiControlPoint; break;
+				case FbxLayerElement::eByPolygonVertex: uiUVIndex = _pMesh->GetTextureUVIndex(_uiPolygon, _uiVertex, FbxLayerElement::eTextureDiffuse); break;
+			}
+		}
+
+		if(uiUVIndex != (uint32)-1) return pFbxLayerUV->GetDirectArray().GetAt(uiUVIndex);
+		
+		return FbxVector2(0.0f, 0.0f);
+	}
+
 	//!	@brief		GenerateVertices
 	//!	@date		2015-11-22
 	void FbxCooker::GenerateVertices(FbxNode* _pNode, FbxMesh* _pMesh, Geometry* _pGeometry)
 	{
-		FbxAMatrix mGlobalMatrix = _pNode->EvaluateGlobalTransform();
+		FbxAMatrix mFbxGlobalMatrixEvaluated = _pNode->EvaluateGlobalTransform();
+		FbxVector4 vFbxTranslation = mFbxGlobalMatrixEvaluated.GetT(); 
+		FbxVector4 vFbxRotation = mFbxGlobalMatrixEvaluated.GetR();
+		FbxVector4 vFbxScale = mFbxGlobalMatrixEvaluated.GetS();
+		FbxAMatrix mGlobalMatrix(vFbxTranslation, vFbxRotation, vFbxScale);
+		FbxAMatrix mGlobalRotation; mGlobalRotation.SetR(vFbxRotation);		
 
 		// Allocate Array 
 		uint32 uiVertexIndex = _pGeometry->Vertices.GetSize();
@@ -144,6 +204,7 @@ namespace Gorilla
 		_pGeometry->Groups.Add(uiVertexIndex + uiMeshVertexCount);
 
 		// Each Polygons (Triangulated)
+		uint32 uiIndex = 0;
 		const uint32 uiPolygonCount = (uint32)_pMesh->GetPolygonCount();
 		const FbxVector4* pControlPoints = _pMesh->GetControlPoints();
 		for (uint32 uiPolygon = 0; uiPolygon < uiPolygonCount; ++uiPolygon)
@@ -154,46 +215,25 @@ namespace Gorilla
 			{
 				// Get The control point to find the proper vertex
 				uint32 uiControlPoint = _pMesh->GetPolygonVertex(uiPolygon, uiVertex);
-				FbxVector4 vFbxPosition = mGlobalMatrix.MultT(pControlPoints[uiControlPoint]);
-			
+				FbxVector4 vFbxPosition = mGlobalMatrix.MultT( pControlPoints[uiControlPoint]);
+
 				// Position
 				Engine::RenderBuffer::Vertex::PositionNormalTexcoord& kVertex = _pGeometry->Vertices[uiVertexIndex];
 				kVertex.Position.Set((float32)vFbxPosition[0], (float32)vFbxPosition[1], (float32)vFbxPosition[2]);
 
 				// Normal
-				FbxVector4 kFbxNormal;
-				_pMesh->GetPolygonVertexNormal(uiPolygon, uiVertex, kFbxNormal);
-				kFbxNormal = mGlobalMatrix.MultT(kFbxNormal);
-				kFbxNormal.Normalize();
-				kVertex.Normal.Set((float32)kFbxNormal[0],  (float32)kFbxNormal[1], (float32)kFbxNormal[2]);
+				FbxVector4 vFbxNormal = mGlobalRotation.MultT(ReadNormal(_pMesh, uiIndex, uiControlPoint));
+				vFbxNormal.Normalize();
+				kVertex.Normal.Set(static_cast<float32>(vFbxNormal[0]), static_cast<float32>(vFbxNormal[1]), static_cast<float32>(vFbxNormal[2]));
 
 				// Texcoord
-				FbxVector2 kFbxUV = FbxVector2(0.0, 0.0);
-				FbxLayerElementUV* pFbxLayerUV = _pMesh->GetLayer(0)->GetUVs();
-				if (pFbxLayerUV) 
-				{
-					uint32 uiUVIndex = 0;
-					switch (pFbxLayerUV->GetMappingMode()) 
-					{
-						case FbxLayerElement::eByControlPoint:
-						{
-							uiUVIndex = uiControlPoint;
-							break;
-						}
-
-						case FbxLayerElement::eByPolygonVertex:
-						{
-							uiUVIndex = _pMesh->GetTextureUVIndex(uiPolygon, uiVertex, FbxLayerElement::eTextureDiffuse);
-							break;
-						}
-					}
-					kFbxUV = pFbxLayerUV->GetDirectArray().GetAt(uiUVIndex);
-				}
-				kVertex.Texcoord.Set((float32)kFbxUV[0], (float32)kFbxUV[1]);
+				FbxVector2 vFbxTexcoord = ReadTexcoord(_pMesh, uiPolygon, uiVertex, uiControlPoint);
+				kVertex.Texcoord.Set(static_cast<float32>(vFbxTexcoord[0]), 1.0f - static_cast<float32>(vFbxTexcoord[1]));
 
 				// Increment index for each vertex processed
 				_pGeometry->Indices[uiVertexIndex] = uiVertexIndex;
-				++uiVertexIndex;	
+				++uiVertexIndex;
+				++uiIndex;
 			}			
 		}
 	}
