@@ -18,8 +18,9 @@ bool ConvertToDDS(const char* _szInput, const char* _szOutput, bool _bCubeMap = 
 {
 	// Build parameters for nvtxt
 	String sArgument;
-	if(_bCubeMap) sArgument.Append("-cubeMap ");
-	sArgument.Append("-file ").Append(_szInput).Append(" -output ").Append(_szOutput).Append(" -overwrite");
+	if(_bCubeMap) sArgument.Append("-cubeMap -list ");
+	else sArgument.Append("-file ");
+	sArgument.Append(_szInput).Append(" -output ").Append(_szOutput).Append(" -quick -overwrite");
 
 	// Launch process
 	String sError;
@@ -56,9 +57,10 @@ int main(int argc, const char** argv)
 	Path sInput = kParser.Get<String>(ARGUMENT_INPUT);
 	String sOutput = kParser.Get<String>(ARGUMENT_OUTPUT);
 
+	bool bCubeMap = false;
 	String sInputConverted;
 	if(sInput.GetExtension() == "dds") sInputConverted = sInput.GetFull();
-	else if(sInput.GetExtension() == "cmb")
+	else if(sInput.GetExtension() == "cmb") 
 	{
 		String sContent;
 		FileReader kReader(sInput.GetFull().GetBuffer());
@@ -84,36 +86,24 @@ int main(int argc, const char** argv)
 		}
 
 		// Convert all faces
-		static const char* aFaceName[6] = {"xn.dds", "xp.dds", "yn.dds","yp.dds","zn.dds","zp.dds"};
-		String sFaceInput, sFaceOutput;
+		String sFace;
 		for(int iTexture = 0; iTexture < 6; ++iTexture)
 		{
-			sFaceInput.Set(sInput.GetDirectory()).Append(vTexture[iTexture]);
-			sFaceOutput.Set(sTemporaryPath).Append(aFaceName[iTexture]);
-			if(!ConvertToDDS(sFaceInput.GetBuffer(), sFaceOutput.GetBuffer()))
-			{
-				printf("Failed to convert dds file %s", sFaceOutput.GetBuffer());
-				FileManager::DeleteADirectory(sTemporaryPath.GetBuffer());
-				return -1;
-			}
-			kWriter.Write(aFaceName[iTexture], 6);
-			kWriter.Write(",\n'", 2);
+			sFace.Set(sInput.GetDirectory()).Append(vTexture[iTexture]);
+			kWriter.Write(sFace.GetBuffer(), sFace.GetLength());
+			kWriter.Write('\n');
 		}
 		kWriter.Close();
 
-		// Write dds cubemap
-		sInputConverted.Append(sTemporaryPath).Append(sInput.GetFileName()).Append(".dds");
-		if(!ConvertToDDS(sList.GetBuffer(), sInputConverted.GetBuffer(), true))
-		{
-			printf("Failed to convert dds file %s", sInputConverted.GetBuffer());
-			FileManager::DeleteADirectory(sTemporaryPath.GetBuffer());
-			return -1;
-		}
+		sInput = sList;
+		bCubeMap = true;
 	}
-	else
+
+	// Convert texture to dds
+	if(sInputConverted.IsEmpty())
 	{
 		sInputConverted.Append(sTemporaryPath).Append(sInput.GetFileName()).Append(".dds");
-		if(!ConvertToDDS(sInput.GetFull().GetBuffer(), sInputConverted.GetBuffer()))
+		if(!ConvertToDDS(sInput.GetFull().GetBuffer(), sInputConverted.GetBuffer(), bCubeMap))
 		{
 			printf("Failed to convert dds file %s", sInputConverted.GetBuffer());
 			FileManager::DeleteADirectory(sTemporaryPath.GetBuffer());
