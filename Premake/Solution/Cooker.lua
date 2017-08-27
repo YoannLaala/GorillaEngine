@@ -8,6 +8,7 @@ project_list =
 {
 	Helper = "StaticLib",
 
+	Animation = "ConsoleApp",
 	AssetCooker = "ConsoleApp",
 	Effect = "ConsoleApp",
 	Json2Binary = "ConsoleApp",
@@ -24,6 +25,24 @@ declare_solution("Cooker", project_list)
 project "Helper"
 	declare_dependency( "Engine", { "Core" })
 
+-- Animation
+project "Animation"
+	declare_dependency( "Engine", { "Core" })
+	declare_link({ "Helper", "Shlwapi.lib" })
+	
+	includedirs { get_third_party_libraries_path() .. "fbx/include/" }
+	
+	filter { "configurations:Master or Release"}
+		links
+		{
+			get_third_party_libraries_path() .. "fbx/lib/vs2013/%{cfg.platform}/Release/libfbxsdk-md.lib",
+		}
+	filter {"configurations:Debug"}
+		links 
+		{ 
+			get_third_party_libraries_path() .. "fbx/lib/vs2013/%{cfg.platform}/%{cfg.buildcfg}/libfbxsdk-md.lib",
+		}
+	
 -- AssetCooker
 project "AssetCooker"
 	declare_dependency( "Engine", { "Core", "Engine", "Renderer" })
