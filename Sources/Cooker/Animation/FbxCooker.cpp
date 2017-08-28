@@ -10,25 +10,54 @@
 ******************************************************************************/
 namespace Gorilla
 {
+	struct Skeleton
+	{
+		Vector<String> Channels;
+	};
+	
 	struct Animation
 	{
 		uint32 FrameCount;
 		String Name;
-		Vector<String> Channels;
 		Vector<Math::Matrix44> Frames;
 	};
 
-	Vector<Animation> Animations;
+	Skeleton		  _Skeleton;
+	Vector<Animation> _Animations;
 
-	//!	@brief		GenerateStructure
+	//!	@brief		GenerateSkeleton
 	//!	@date		2015-11-22
-	void GenerateStructure(FbxNode* pNode, Animation* _pAnimationOut)
+	void GenerateSkeleton(FbxNode* _pNode, Skeleton* _pSkeletonOut)
 	{
-		_pAnimationOut->Channels.Add(pNode->GetName());
-		const int32 iChildCount = pNode->GetChildCount();
+		FbxMesh* pFbxMesh = _pNode->GetMesh();
+		if(pFbxMesh)
+		{
+			FbxSkin *pFbxSkin = reinterpret_cast<FbxSkin*>(pFbxMesh->GetDeformer(0));
+			int32 iClusterCount = pFbxSkin->GetClusterCount();		
+			for (int32 iCluster = 0 ; iCluster < iClusterCount; ++iCluster)
+			{
+				FbxCluster* pFbxCluster = pFbxSkin->GetCluster(iCluster);
+			
+				int32 iIndexCount = pFbxCluster->GetControlPointIndicesCount();
+				int32* pIndices = pFbxCluster->GetControlPointIndices();
+				double* pWeights = pFbxCluster->GetControlPointWeights();
+
+				for (int32 iIndex = 0; iIndex < iIndexCount; ++iIndex)
+				{
+					int vertex = pIndices[iIndex];
+					float weight = (float)pWeights[iIndex];
+
+					++vertex;
+					++weight;
+				}
+			}	
+		}
+
+		_pSkeletonOut->Channels.Add(_pNode->GetName());
+		const int32 iChildCount = _pNode->GetChildCount();
 		for(int32 iChild = 0; iChild < iChildCount; ++iChild)
 		{
-			GenerateStructure(pNode->GetChild(iChild), _pAnimationOut);
+			GenerateSkeleton(_pNode->GetChild(iChild), _pSkeletonOut);
 		}
 	}
 
@@ -90,6 +119,11 @@ namespace Gorilla
 		FbxNode* pFbxUserRootNode = _pFbxScene->GetRootNode()->GetChild(0);
 
 		const int32 iAnimStackCount = _pFbxScene->GetSrcObjectCount<FbxAnimStack>();
+		if(iAnimStackCount == 0) return;
+		
+		// Skeleton	
+		GenerateSkeleton(pFbxUserRootNode, &_Skeleton);
+
 		for (int32 iAnimStack = 0; iAnimStack < iAnimStackCount; ++iAnimStack)
 		{
 			FbxAnimStack* pFbxAnimStack = _pFbxScene->GetSrcObject<FbxAnimStack>(iAnimStack);
@@ -107,25 +141,16 @@ namespace Gorilla
 			float64 fFrameRate = FbxTime::GetFrameRate(eFbxTimeMode);
 			uint32 uiFrameCount = (uint32)((fEndTime - fStartTime) * fFrameRate) + 1;
 
-			// Iterate all animations
-			const int32 iAnimLayerCount = pFbxAnimStack->GetMemberCount<FbxAnimLayer>();
-			for (int32 iAnimLayer = 0; iAnimLayer < iAnimLayerCount; ++iAnimLayer)
+			// Create Animation
+			Animation& kAnimation = _Animations.Add();
+			kAnimation.Name = pFbxAnimStack->GetName();
+			kAnimation.FrameCount = uiFrameCount;
+
+			// Take first layer
+			FbxAnimLayer* pFbxAnimLayer = pFbxAnimStack->GetMember<FbxAnimLayer>(0);
+			for (uint32 uiFrame = 0; uiFrame < uiFrameCount; ++uiFrame)
 			{
-				FbxAnimLayer* pFbxAnimLayer = pFbxAnimStack->GetMember<FbxAnimLayer>(iAnimLayer);
-
-				// Create Animation
-				Animation& kAnimation = Animations.Add();
-				kAnimation.Name = pFbxAnimLayer->GetName();
-				kAnimation.FrameCount = uiFrameCount;
-
-				// Structure	
-				GenerateStructure(pFbxUserRootNode, &kAnimation);
-
-				// Data
-				for (uint32 uiFrame = 0; uiFrame < uiFrameCount; ++uiFrame)
-				{
-					GenerateFrame(pFbxAnimLayer, pFbxUserRootNode, uiFrame, &kAnimation);
-				}
+				GenerateFrame(pFbxAnimLayer, pFbxUserRootNode, uiFrame, &kAnimation);
 			}
 		}
 	}
@@ -182,24 +207,31 @@ namespace Gorilla
 		printf("Cleaning...\n");
 	    pFbxImporter->Destroy();
 		
+		const uint32 uiAnimationCount = _Animations.GetSize();
+		if(uiAnimationCount == 0)
+		{
+			printf("File hasn't any animations\n");
+			return false;
+		}
 
 		// Write it to a memory stream
 		MemoryWriter kMemoryStream;
-		const uint32 uiAnimationCount = Animations.GetSize();
+
+		// Skeleton
+		const uint32 uiChannelCount = _Skeleton.Channels.GetSize(); 
+		kMemoryStream.Write(uiChannelCount);
+		for (uint32 uiChannel = 0; uiChannel < uiChannelCount; ++uiChannel)
+		{
+			kMemoryStream.Write(_Skeleton.Channels[uiChannel]);
+		}
+
+		// Animations
 		kMemoryStream.Write(uiAnimationCount);
 		for (uint32 uiAnimation = 0; uiAnimation < uiAnimationCount; ++uiAnimation)
 		{
-			Animation& kAnimation = Animations[uiAnimation];
+			Animation& kAnimation = _Animations[uiAnimation];
 			kMemoryStream.Write(kAnimation.Name);
 
-			// Channels
-			const uint32 uiChannelCount = kAnimation.Channels.GetSize(); 
-			kMemoryStream.Write(uiChannelCount);
-			for (uint32 uiChannel = 0; uiChannel < uiChannelCount; ++uiChannel)
-			{
-				kMemoryStream.Write(kAnimation.Channels[uiChannel]);
-			}
-			
 			// Frames
 			kMemoryStream.Write(kAnimation.FrameCount);
 			kMemoryStream.Write(&kAnimation.Frames[0], uiChannelCount * sizeof(Math::Matrix44) * kAnimation.FrameCount);
