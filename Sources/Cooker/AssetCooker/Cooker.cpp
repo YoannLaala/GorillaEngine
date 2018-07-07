@@ -11,9 +11,9 @@
 #include <string>
 
 #define VERSION						"1.0.0"
-#define ARGUMENT_TYPE				"-type"
-#define ARGUMENT_INPUT				"-input"
-#define ARGUMENT_CONFIGURATION		"-configuration"
+#define ARGUMENT_TYPE				"--type"
+#define ARGUMENT_INPUT				"--input"
+#define ARGUMENT_CONFIGURATION		"--configuration"
 
 using namespace Gorilla;
 

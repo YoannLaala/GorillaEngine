@@ -62,7 +62,7 @@ namespace Gorilla { namespace Engine
 		RenderBuffer::Constant::Scene* pSceneBuffer = _pBuffer->Push<RenderBuffer::Constant::Scene>();
 		pSceneBuffer->ViewProjection = _pCamera->GetView() * _pCamera->GetProjection();
 		pSceneBuffer->ViewProjectionInverse = pSceneBuffer->ViewProjection.Inverse();
-		pSceneBuffer->Position = _pCamera->GetPosition();
+		pSceneBuffer->CameraPosition = _pCamera->GetPosition();
 
 		Renderer::Frustum kFrustum;
 		kFrustum.Set(_pCamera->GetProjection());

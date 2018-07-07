@@ -24,7 +24,7 @@ namespace Gorilla { namespace Component
 	CameraOrbital::CameraOrbital()
 		: Target(nullptr)
 		, MinimumDistance(0.1f)
-		, MaximumDistance(5.0f)
+		, MaximumDistance(10.0f)
 		, Speed(5.0f)
 	{
 		// Nothing to do
@@ -48,12 +48,12 @@ namespace Gorilla { namespace Component
 			Node* pCpnNodeTarget = Target->GetComponent<Node>();
 			if(pCpnNodeTarget) vTarget = pCpnNodeTarget->GetPosition();
 
-			Mesh* pCpnMeshTarget = Target->GetComponent<Mesh>();
+			/*Mesh* pCpnMeshTarget = Target->GetComponent<Mesh>();
 			if(pCpnMeshTarget && pCpnMeshTarget->Asset.IsLoaded())
 			{
 				const Renderer::BoundingBox& kBoudingBox = pCpnMeshTarget->Asset->GetBoundingBox();
 				vTarget += (kBoudingBox.Min + kBoudingBox.Max) * 0.5f;
-			}
+			}*/
 		}
 
 		// Target To Camera Vector

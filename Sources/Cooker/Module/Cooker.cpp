@@ -10,9 +10,9 @@
 #include <string>
 
 #define VERSION				"1.0.0"
-#define ARGUMENT_INPUT		"-input"
-#define ARGUMENT_OUTPUT		"-output"
-#define ARGUMENT_IDE		"-ide"
+#define ARGUMENT_INPUT		"--input"
+#define ARGUMENT_OUTPUT		"--output"
+#define ARGUMENT_IDE		"--ide"
 
 #if defined(DEBUG)
 	#define BUILD_CONFIGURATION "Debug"

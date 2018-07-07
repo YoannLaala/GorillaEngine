@@ -23,7 +23,7 @@ cbuffer ConstantBufferScene : register(cb0)
 {
 	float4x4	VIEW_PROJECTION;		
 	float4x4	VIEW_PROJECTION_INVERSE;
-	float3 		POSITION;
+	float3 		CAMERA_POSITION;
 };
 
 cbuffer ConstantBufferPointLight : register(cb1)

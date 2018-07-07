@@ -7,10 +7,10 @@
 #include "HLSLCooker.hpp"
 
 #define VERSION				"1.0.0"
-#define ARGUMENT_INPUT		"-input"
-#define ARGUMENT_OUTPUT		"-output"
-#define ARGUMENT_TYPE		"-type"
-#define ARGUMENT_TECHNIQUE	"-technique"
+#define ARGUMENT_INPUT		"--input"
+#define ARGUMENT_OUTPUT		"--output"
+#define ARGUMENT_TYPE		"--type"
+#define ARGUMENT_TECHNIQUE	"--technique"
 
 //!	@brief		Entry
 //!	@date		2015-11-22

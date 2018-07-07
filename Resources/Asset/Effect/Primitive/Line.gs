@@ -22,8 +22,7 @@ VS_OUTPUT_INSTANCE AddVertex(in float3 _vPosition, in float3 _vColor, inout Line
 {	
 	VS_OUTPUT_INSTANCE output = (VS_OUTPUT_INSTANCE)0;
 	output.Color = float4(_vColor, 1.0f);
-	output.Position = mul(float4(_vPosition, 1.0f), VIEW);
-	output.Position = mul(output.Position, PROJECTION);
+	output.Position = mul(float4(_vPosition, 1.0f), VIEW_PROJECTION);
 	_kStream.Append(output);
 	
 	return output;

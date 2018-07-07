@@ -62,23 +62,23 @@ namespace Gorilla { namespace Engine
 
 			// Using geometry shader for lines
 			pPrimitive[Renderer::Primitive::Line].Geometry = GeometryHelper::GetOrCreate(pRenderer, Renderer::EPrimitive::Point);
-			pPrimitive[Renderer::Primitive::Line].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Line.vs", "-technique Instancing"));
-			pPrimitive[Renderer::Primitive::Line].GeometryShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Line.gs", "-technique Instancing"));
+			pPrimitive[Renderer::Primitive::Line].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Line.vs", "--technique Instancing"));
+			pPrimitive[Renderer::Primitive::Line].GeometryShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Line.gs", "--technique Instancing"));
 
 			pPrimitive[Renderer::Primitive::Quad].Geometry = GeometryHelper::GetOrCreate(pRenderer, Renderer::EPrimitive::Quad);
-			pPrimitive[Renderer::Primitive::Quad].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Quad.vs", "-technique Instancing"));
+			pPrimitive[Renderer::Primitive::Quad].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Quad.vs", "--technique Instancing"));
 
 			pPrimitive[Renderer::Primitive::Cube].Geometry = GeometryHelper::GetOrCreate(pRenderer, Renderer::EPrimitive::Point);
-			pPrimitive[Renderer::Primitive::Cube].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Cube.vs", "-technique Instancing"));
-			pPrimitive[Renderer::Primitive::Cube].GeometryShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Cube.gs", "-technique Instancing"));
+			pPrimitive[Renderer::Primitive::Cube].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Cube.vs", "--technique Instancing"));
+			pPrimitive[Renderer::Primitive::Cube].GeometryShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Cube.gs", "--technique Instancing"));
 
 			// Using geometry shader for frustum
 			pPrimitive[Renderer::Primitive::Frustum].Geometry = GeometryHelper::GetOrCreate(pRenderer, Renderer::EPrimitive::Point);
-			pPrimitive[Renderer::Primitive::Frustum].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Frustum.vs", "-technique Instancing"));
-			pPrimitive[Renderer::Primitive::Frustum].GeometryShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Frustum.gs", "-technique Instancing"));
+			pPrimitive[Renderer::Primitive::Frustum].VertexShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Frustum.vs", "--technique Instancing"));
+			pPrimitive[Renderer::Primitive::Frustum].GeometryShader = new AssetHandle<Shader>(GetAssetManager()->Get<Shader>("@Effect/Primitive/Frustum.gs", "--technique Instancing"));
 		}
 
-		m_hPixelShader =  GetAssetManager()->Get<Shader>("@Effect/Primitive/Primitive.ps", "-technique Instancing");
+		m_hPixelShader =  GetAssetManager()->Get<Shader>("@Effect/Primitive/Primitive.ps", "--technique Instancing");
 	}
 
 	//!	@brief		Release 

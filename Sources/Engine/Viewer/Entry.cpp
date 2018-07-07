@@ -182,8 +182,8 @@ public:
 	
 	}
 
-	inline void enqueue(Type value) { if(!is_full()){ values[end++] = value; }; }
-	inline Type	dequeue() { return is_empty() ? -1 : values[start++]; }
+	inline void enqueue(Type value) { if(!is_full()){ values[end++ % Size] = value; }; }
+	inline Type	dequeue() { return is_empty() ? -1 : values[start++ % Size]; }
 	inline bool is_empty() { return end == start; }
 	inline bool is_full() { return end-start == Size; }
 
@@ -252,6 +252,8 @@ public:
 ******************************************************************************/
 int WINAPI wWinMain(HINSTANCE /*_hInstance*/, HINSTANCE /*_hPrevInst*/, LPWSTR /*_lpCmdLine*/, int /*_nCmdShow*/)
 {	
+	//Gorilla::Math::Vector3 heho = 2.0f * Gorilla::Math::Vector3::One;
+
 	List list;
 	list.push_back(1);
 	list.insert_at(10, 2);
@@ -266,7 +268,8 @@ int WINAPI wWinMain(HINSTANCE /*_hInstance*/, HINSTANCE /*_hPrevInst*/, LPWSTR /
 	stack.pop();
 	stack.reverse();
 
-	Queue<int, 20> queue;
+	int value = -1;
+	Queue<int, 3> queue;
 	bool test = queue.is_empty();
 	queue.enqueue(1);
 	queue.enqueue(2);
@@ -274,10 +277,22 @@ int WINAPI wWinMain(HINSTANCE /*_hInstance*/, HINSTANCE /*_hPrevInst*/, LPWSTR /
 	queue.enqueue(4);
 	queue.enqueue(5);
 	test = queue.is_full();
-	queue.dequeue();
-	queue.dequeue();
-	queue.dequeue();
-	queue.dequeue();
+	value = queue.dequeue();
+	value = queue.dequeue();
+	value = queue.dequeue();
+	value = queue.dequeue();
+	test = queue.is_full();
+	test = queue.is_empty();
+	queue.enqueue(18);
+	queue.enqueue(19);
+	queue.enqueue(20);
+	queue.enqueue(21);
+	queue.enqueue(22);
+	test = queue.is_full();
+	value = queue.dequeue();
+	value = queue.dequeue();
+	value = queue.dequeue();
+	value = queue.dequeue();
 	
 	// Launch application
 	Gorilla::Viewer::Application kApplication;

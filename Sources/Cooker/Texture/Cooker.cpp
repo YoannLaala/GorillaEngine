@@ -6,9 +6,10 @@
 
 #include "DDSCooker.hpp"
 
-#define VERSION				"1.0.0"
-#define ARGUMENT_INPUT		"-input"
-#define ARGUMENT_OUTPUT		"-output"
+#define VERSION					"1.0.0"
+#define ARGUMENT_INPUT			"--input"
+#define ARGUMENT_OUTPUT			"--output"
+#define ARGUMENT_IRRADIANCE		"--irradiance"
 
 using namespace Gorilla;
 
@@ -42,6 +43,7 @@ int main(int argc, const char** argv)
 	ArgumentParser kParser("Texture2Asset", "Serialize a texture file", VERSION);
 	kParser.Add(ARGUMENT_INPUT, "Define which texture will be serialized", true);
 	kParser.Add(ARGUMENT_OUTPUT, "Define where the asset file will be serialized", true);
+	kParser.Add(ARGUMENT_IRRADIANCE, "Define if an irradiance map will also be generated the asset file will be serialized", false);
 
 	String sUsage;
 	if(!kParser.Parse(argc, argv, &sUsage))
@@ -109,6 +111,12 @@ int main(int argc, const char** argv)
 			FileManager::DeleteADirectory(sTemporaryPath.GetBuffer());
 			return -1;
 		}
+
+		// Generate irradiance map
+		/*if(kParser.Has(ARGUMENT_IRRADIANCE))
+		{
+			
+		}*/
 	}
 
 	// Create final dds file

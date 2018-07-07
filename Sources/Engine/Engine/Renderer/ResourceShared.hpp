@@ -54,7 +54,7 @@ namespace Gorilla { namespace Engine { namespace RenderBuffer
 
 			Math::Matrix44 ViewProjection;
 			Math::Matrix44 ViewProjectionInverse;
-			Math::Vector3  Position;
+			Math::Vector3  CameraPosition;
 		};
 	};
 

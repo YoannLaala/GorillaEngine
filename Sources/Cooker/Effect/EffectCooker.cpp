@@ -81,7 +81,7 @@ namespace Gorilla
 					if(sShaderContent.Find(sShaderEntry.GetBuffer()) != (uint32)-1)
 					{	
 						sShaderParam.Set("");
-						if(eTechnique != Renderer::ETechnique::Default) sShaderParam.Set("-technique ").Append(Renderer::ETechnique::Name[eTechnique]);
+						if(eTechnique != Renderer::ETechnique::Default) sShaderParam.Set("--technique ").Append(Renderer::ETechnique::Name[eTechnique]);
 						++uiShaderCount;
 
 						_kOutputStream.Write(eTechnique);

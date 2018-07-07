@@ -272,7 +272,7 @@ namespace Gorilla { namespace Engine
 		sDescriptor.Set(GetAssetManager()->GetPath()).Append("..\\Cooked\\Temp\\ComponentDescriptor.json");
 
 		String sArgument;
-		sArgument.Set("-input \"").Append(GetAssetManager()->GetPath()).Append("\" -output \"").Append(sDescriptor).Append("\"");
+		sArgument.Set("--input \"").Append(GetAssetManager()->GetPath()).Append("\" --output \"").Append(sDescriptor).Append("\"");
 		sArgument.Replace("\\", "/");
 		Process kProcess("Cooker/Reflection/Reflection.exe");
 		kProcess.SetArgument(sArgument.GetBuffer());

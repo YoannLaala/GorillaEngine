@@ -45,14 +45,16 @@ namespace Gorilla
 		virtual void Start() override
 		{
 			Gorilla::Component::Node* pCpnNode = GetOrCreate<Gorilla::Component::Node>();
-			pCpnNode->SetPosition(Math::Cos(0.0f) * 0.7f, Math::Sin(0.0f) * 0.7f, Math::Sin(0.0f) * 0.7f);
+			//pCpnNode->SetPosition(Math::Cos(0.0f) * 0.7f, Math::Sin(0.0f) * 0.7f, Math::Sin(0.0f) * 0.7f);
+
+			pCpnNode->SetPosition(0.5f, 1.0f, 0.0f);
 		}
 
 		virtual void Update() override
 		{
 			Gorilla::Component::Node* pCpnNode = GetOrCreate<Gorilla::Component::Node>();
-			float32 fTime = GetTime()->GetToltalTime();
-			pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);
+			/*float32 fTime = GetTime()->GetToltalTime();
+			pCpnNode->SetPosition(Math::Cos(fTime) * 0.7f, Math::Sin(fTime) * 0.7f, Math::Sin(fTime) * 0.7f);*/
 			//pCpnNode->RotateY(GetTime()->GetDeltaTime());
 
 			GetRenderer()->GetGizmo()->SetIdentity();
@@ -124,11 +126,12 @@ namespace Gorilla { namespace Viewer
 		pCpnCamera->SetLayer(LAYER_CAMERA1);
 		//pGameObject->AddComponent<Component::CameraFree>();
 		Component::CameraOrbital* pCpnOrbitalCamera = pGameObject->AddComponent<Component::CameraOrbital>();
+		pCpnOrbitalCamera;
 		pGameObject->AddComponent<Component::Node>()->SetPosition(0.0f, 0.0f, -3.0f);
 		//pGameObject->AddComponent<GlobalIlluminationScene>();
 
 		pGameObject = pWorld->AddGameObject("EnvironmentMap");
-		pGameObject->AddComponent<Component::EnvironmentMap>()->Asset = GetAssetManager()->Get<Engine::CubeMap>("skyboxes/outdoor.dds");
+		pGameObject->AddComponent<Component::EnvironmentMap>()->Asset = GetAssetManager()->Get<Engine::CubeMap>("environment/lycksele/lycksele.cmb");
 
 		// Top Camera
 		/*pGameObject = pWorld->AddGameObject("Camera2");
@@ -142,14 +145,6 @@ namespace Gorilla { namespace Viewer
 		/*pGameObject = pWorld->AddGameObject("Sprite");
 		pGameObject->AddComponent<Component::Node>()->SetLayer(LAYER_CAMERA1);
 		pGameObject->AddComponent<Component::Sprite>()->Texture = pCameraTop->Viewport->GetRenderTarget()->GetTexture(0);*/
-
-		// Dragon
-		/*pGameObject = pWorld->AddGameObject("test2");
-		pCpnNode = pGameObject->AddComponent<Component::Node>();
-		pCpnNode->SetPosition(0.0f,0.0f, 1.0f);
-		Component::Mesh* pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("Mesh/Dragon.fbx");*/
-		//pGameObject->AddComponent<Test>();
 
 		// Scene
 		pScene = pWorld->AddGameObject("Scene");
@@ -185,67 +180,45 @@ namespace Gorilla { namespace Viewer
 		hMaterialGreen->SetNumber(3, 0.0f);	// Metallic
 		hMaterialGreen->SetNumber(4, 1.0f);	// Roughness
 
-		// Car
-		/*pGameObject = pWorld->AddGameObject("Car", pScene);
-		pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("meshes/characters/altair/altair.obj");
-		//pCpnMesh->Materials.Add(hMaterialWhite);
-		pGameObject->AddComponent<Component::Node>();*/
+		Engine::AssetHandle<Engine::Mesh> hSphere = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Sphere.fbx");
+		Engine::AssetHandle<Engine::Shader> hShader = GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps");
 
-		Engine::AssetHandle<Engine::Material> hMaterialPlate = GetAssetManager()->Create<Engine::Material>();
-		hMaterialPlate->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
-		hMaterialPlate->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/plate_d.png"));
-		hMaterialPlate->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/plate_n.png"));
-		hMaterialPlate->SetNumber(3, 0.0f);	// Metallic
-		hMaterialPlate->SetNumber(4, 1.0f);	// Roughness
+		// Sphere table
+		for(uint32 uiRow = 0; uiRow <= 10; ++uiRow)
+		{
+			for(uint32 uiColumn = 0; uiColumn <= 10; ++uiColumn)
+			{
+				Engine::AssetHandle<Engine::Material> hMaterial = GetAssetManager()->Create<Engine::Material>();
+				hMaterial->SetShader(hShader);
+				hMaterial->SetNumber(0, Math::Vector3(1.0f, 0.0f, 0.0f));
+				hMaterial->SetNumber(3, uiRow / 10.0f);				// Metallic
+				hMaterial->SetNumber(4, 1.0f - uiColumn / 10.0f);	// Roughness
 
-		Engine::AssetHandle<Engine::Material> hMaterialCrosGuard = GetAssetManager()->Create<Engine::Material>();
-		hMaterialCrosGuard->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
-		hMaterialCrosGuard->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/cross_guard_d.png"));
-		hMaterialCrosGuard->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/cross_guard_n.png"));
-		hMaterialCrosGuard->SetNumber(3, 0.0f);	// Metallic
-		hMaterialCrosGuard->SetNumber(4, 1.0f);	// Roughness
+				pGameObject = pWorld->AddGameObject();
+				pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
+				pCpnMesh->Asset = hSphere;
+				pCpnMesh->Materials.Add(hMaterial);
 
-		Engine::AssetHandle<Engine::Material> hMaterialBlade = GetAssetManager()->Create<Engine::Material>();
-		hMaterialBlade->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
-		hMaterialBlade->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/blade_d.png"));
-		hMaterialBlade->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/blade_n.png"));
-		//hMaterialBlade->SetNumber(0, Math::Vector3(0.0f, 1.0f, 0.0f));
-		hMaterialBlade->SetNumber(3, 1.0f);	// Metallic
-		hMaterialBlade->SetNumber(4, 0.3f);	// Roughness
+				pCpnNode = pGameObject->AddComponent<Component::Node>();
+				pCpnNode->SetPosition(uiRow - 5.0f, -0.5f, uiColumn - 5.0f);
+				pCpnNode->SetScale(0.5f);
+			}
+		}
 
-		Engine::AssetHandle<Engine::Material> hMaterialPommel = GetAssetManager()->Create<Engine::Material>();
-		hMaterialPommel->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
-		hMaterialPommel->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_d.png"));
-		hMaterialPommel->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_n.png"));
-		hMaterialPommel->SetNumber(3, 0.0f);	// Metallic
-		hMaterialPommel->SetNumber(4, 1.0f);	// Roughness
+		// Single Red Sphere
+		//Engine::AssetHandle<Engine::Material> hMaterial = GetAssetManager()->Create<Engine::Material>();
+		//hMaterial->SetShader(hShader);
+		//hMaterial->SetNumber(0, Math::Vector3(1.0f, 0.0f, 0.0f));
+		//hMaterial->SetNumber(3, 0.0f);	// Metallic
+		//hMaterial->SetNumber(4, 0.0f);	// Roughness
+		//pGameObject = pWorld->AddGameObject();
+		//pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = hSphere;
+		//pCpnMesh->Materials.Add(hMaterial);
+		//pCpnNode = pGameObject->AddComponent<Component::Node>();
+		//pCpnNode->SetPosition(0.0f, -0.5f, 0.0f);
 
-		Engine::AssetHandle<Engine::Material> hMaterialGripLeather = GetAssetManager()->Create<Engine::Material>();
-		hMaterialGripLeather->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps"));
-		/*hMaterialGrip->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_d.png"));
-		hMaterialGrip->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_n.png"));*/
-		hMaterialGripLeather->SetNumber(0, Math::Vector3(0.0f, 1.0f, 0.0f));
-		hMaterialGripLeather->SetNumber(3, 0.0f);	// Metallic
-		hMaterialGripLeather->SetNumber(4, 1.0f);	// Roughness
-
-		pGameObject = pWorld->AddGameObject("Sword", pScene);
-		pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
-		pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("meshes/weapons/zelda/sword.fbx");
-		pCpnMesh->Materials.Add(hMaterialPlate);
-		pCpnMesh->Materials.Add(hMaterialPlate);
-		pCpnMesh->Materials.Add(hMaterialCrosGuard);
-		pCpnMesh->Materials.Add(hMaterialBlade);
-		pCpnMesh->Materials.Add(hMaterialPommel);
-		pCpnMesh->Materials.Add(hMaterialPlate);
-		pCpnMesh->Materials.Add(hMaterialGripLeather);
-		pGameObject->AddComponent<Component::Node>();
-
-		
-
-		pCpnOrbitalCamera->Target = pGameObject;
-
-		// Walls
+		// Box
 		//pGameObject = pWorld->AddGameObject("Walls", pScene);
 		//pGameObjectChild = pWorld->AddGameObject("Far", pGameObject);
 		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
@@ -271,17 +244,16 @@ namespace Gorilla { namespace Viewer
 		//pCpnNode->SetScale(2.0f);
 		//pCpnNode->RotateForward(-90.0f);
 		//pCpnNode->SetPosition(1.0f, 0.0f, 0.0f);
-		///*pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
+		//pGameObjectChild = pWorld->AddGameObject("Top", pGameObject);
 		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
-		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("Mesh/Quad.fbx");
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
 		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
 		//pCpnNode->SetScale(2.0f);
 		//pCpnNode->SetPosition(0.0f, 1.0f, 0.0f);
-		//pCpnNode->RotateRight(180.0f);*/
+		//pCpnNode->RotateRight(180.0f);
 		//pGameObjectChild = pWorld->AddGameObject("Bottom", pGameObject);
 		//pCpnMesh = pGameObjectChild->AddComponent<Component::Mesh>();
 		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("@Mesh/Quad.fbx");
-		////pCpnMesh->Materials.Add(hMaterialWhite);
 		//pCpnNode = pGameObjectChild->AddComponent<Component::Node>();
 		//pCpnNode->SetScale(2.0f);
 		//pCpnNode->SetPosition(0.0f, -1.0f, 0.0f);
@@ -308,12 +280,60 @@ namespace Gorilla { namespace Viewer
 		//pCpnNode->SetScale(0.5f);
 		//pCpnNode->SetPosition(-0.0f, -0.5f, 0.0f);
 
+		// Sword
+		//Engine::AssetHandle<Engine::Material> hMaterialPlate = GetAssetManager()->Create<Engine::Material>();
+		//hMaterialPlate->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		//hMaterialPlate->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/plate_d.png"));
+		//hMaterialPlate->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/plate_n.png"));
+		//hMaterialPlate->SetNumber(3, 0.0f);	// Metallic
+		//hMaterialPlate->SetNumber(4, 1.0f);	// Roughness
+
+		//Engine::AssetHandle<Engine::Material> hMaterialCrosGuard = GetAssetManager()->Create<Engine::Material>();
+		//hMaterialCrosGuard->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		//hMaterialCrosGuard->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/cross_guard_d.png"));
+		//hMaterialCrosGuard->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/cross_guard_n.png"));
+		//hMaterialCrosGuard->SetNumber(3, 0.0f);	// Metallic
+		//hMaterialCrosGuard->SetNumber(4, 1.0f);	// Roughness
+
+		//Engine::AssetHandle<Engine::Material> hMaterialBlade = GetAssetManager()->Create<Engine::Material>();
+		//hMaterialBlade->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		//hMaterialBlade->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/blade_d.png"));
+		//hMaterialBlade->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/blade_n.png"));
+		//hMaterialBlade->SetNumber(3, 1.0f);	// Metallic
+		//hMaterialBlade->SetNumber(4, 1.0f);	// Roughness
+
+		//Engine::AssetHandle<Engine::Material> hMaterialPommel = GetAssetManager()->Create<Engine::Material>();
+		//hMaterialPommel->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/TextureMetallicRoughness.ps"));
+		//hMaterialPommel->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_d.png"));
+		//hMaterialPommel->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_n.png"));
+		//hMaterialPommel->SetNumber(3, 0.0f);	// Metallic
+		//hMaterialPommel->SetNumber(4, 1.0f);	// Roughness
+
+		//Engine::AssetHandle<Engine::Material> hMaterialGripLeather = GetAssetManager()->Create<Engine::Material>();
+		//hMaterialGripLeather->SetShader(GetAssetManager()->Get<Engine::Shader>("@Effect/Generated/ColorMetallicRoughness.ps"));
+		///*hMaterialGrip->SetTexture(0, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_d.png"));
+		//hMaterialGrip->SetTexture(1, GetAssetManager()->Get<Engine::Texture>("meshes/weapons/zelda/textures/pommel_n.png"));*/
+		//hMaterialGripLeather->SetNumber(0, Math::Vector3(0.0f, 1.0f, 0.0f));
+		//hMaterialGripLeather->SetNumber(3, 0.0f);	// Metallic
+		//hMaterialGripLeather->SetNumber(4, 1.0f);	// Roughness
+
+		//pGameObject = pWorld->AddGameObject("Sword", pScene);
+		//pCpnMesh = pGameObject->AddComponent<Component::Mesh>();
+		//pCpnMesh->Asset = GetAssetManager()->Get<Engine::Mesh>("meshes/weapons/zelda/sword.fbx");
+		//pCpnMesh->Materials.Add(hMaterialPlate);
+		//pCpnMesh->Materials.Add(hMaterialPlate);
+		//pCpnMesh->Materials.Add(hMaterialCrosGuard);
+		//pCpnMesh->Materials.Add(hMaterialBlade);
+		//pCpnMesh->Materials.Add(hMaterialPommel);
+		//pCpnMesh->Materials.Add(hMaterialPlate);
+		//pCpnMesh->Materials.Add(hMaterialGripLeather);
+		//pGameObject->AddComponent<Component::Node>();
+
+		//
+
 		//pCpnOrbitalCamera->Target = pGameObject;
 
-		//Engine::Material* pMaterial = new Engine::Material();
-		//pMaterial->SetShader(GetAssetManager()->Get<Engine::Shader>("Effect/FakeGenerated.ps"));
-	
-		//pCpnMesh->Materials.Add(pMaterial);
+		
 		pView->Show();
 		Engine::Application::Run();
 	}

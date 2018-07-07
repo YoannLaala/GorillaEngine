@@ -15,6 +15,7 @@ project_list =
 	Mesh = "ConsoleApp",
 	Module = "ConsoleApp",
 	Reflection = "ConsoleApp",
+	RipperDll = "SharedLib",
 	Shader = "ConsoleApp",
 	Texture = "ConsoleApp",
 	Web = "ConsoleApp",
@@ -86,6 +87,11 @@ project "Module"
 	links({ "Shlwapi.lib"})
 	copy_file("ThirdParty/Binaries/premake/*", "Cooker/Module/")
 	copy_file("Resources/Template/Application.lua", "Cooker/Module/")
+	
+-- RipperDll
+project "RipperDll"
+	declare_dependency( "Engine", { "Core" })
+	links({ "Shlwapi.lib"})
 	
 -- Reflection
 project "Reflection"	

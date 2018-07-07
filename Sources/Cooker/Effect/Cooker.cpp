@@ -6,9 +6,9 @@
 #include "EffectCooker.hpp"
 
 #define VERSION					"1.0.0"
-#define ARGUMENT_INPUT			"-input"
-#define ARGUMENT_OUTPUT			"-output"
-#define ARGUMENT_PROJECT_PATH	"-project_path"
+#define ARGUMENT_INPUT			"--input"
+#define ARGUMENT_OUTPUT			"--output"
+#define ARGUMENT_PROJECT_PATH	"--project_path"
 
 //!	@brief		Entry
 //!	@date		2015-11-22

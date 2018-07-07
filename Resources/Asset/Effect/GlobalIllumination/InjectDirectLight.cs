@@ -39,8 +39,7 @@ void ComputeDefault(in uint3 _vDispatchThreadId : SV_DispatchThreadID)
 		/*vPosition.x /= PROJECTION._m00;
 		vPosition.y /= PROJECTION._m11;
 		vPosition.xyz *= fDepthLinear;*/
-		vPosition = mul(vPosition, PROJECTION);
-		vPosition = mul(vPosition, VIEW);
+		vPosition = mul(vPosition, VIEW_PROJECTION);
 		vPosition.xyz /= vPosition.w;
 		
 		//vPosition.z = (-2.0f * vPosition.z) + 1.0;

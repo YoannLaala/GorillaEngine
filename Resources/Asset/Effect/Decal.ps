@@ -17,7 +17,7 @@ Texture2D tDepth										: register(t2);
 float4 PixelInstancing(VS_OUTPUT_INSTANCE _input) : SV_Target
 {	
 	float fDepth = tDepth.Sample(sPointSampler, _input.Position.xy).r;	
-	float4 vPosition = float4(GetCameraPosition() + ComputeViewPosition(fDepth, _input.Position.xy), 1.0f);
+	float4 vPosition = float4(CAMERA_POSITION, 1.0f);
 	
 	float3 vPositionClip = mul(vPosition, aInstance[_input.InstanceId].WorldInverse).xyz;
 	//clip(0.5 + abs(vPositionClip));

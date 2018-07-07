@@ -24,8 +24,7 @@ VS_OUTPUT_INSTANCE VertexInstancing(VS_INPUT _input)
 	Quad kQuad = aQuad[_input.InstanceId];
 	
 	output.Position = mul(float4(_input.Position.x, _input.Position.y, _input.Position.z, 1.0f), kQuad.World);
-	output.Position = mul(output.Position, VIEW);
-	output.Position = mul(output.Position, PROJECTION);
+	output.Position = mul(output.Position, VIEW_PROJECTION);
 	output.Color = float4(kQuad.Color, 1.0f);
 	
 	return output;

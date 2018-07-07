@@ -10,8 +10,8 @@
 #include <string>
 
 #define VERSION				"1.0.0"
-#define ARGUMENT_INPUT		"-input"
-#define ARGUMENT_OUTPUT		"-output"
+#define ARGUMENT_INPUT		"--input"
+#define ARGUMENT_OUTPUT		"--output"
 
 int main(int argc, const char** argv)
 {

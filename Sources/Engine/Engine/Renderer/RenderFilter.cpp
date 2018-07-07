@@ -210,6 +210,8 @@ namespace Gorilla { namespace Engine
 		// Set Vertex & Pixel shaders
 		Renderer::Shader* pVertexShader = pEffect->GetShader(Renderer::EShader::Vertex);
 		pRenderer->SetVertexShader(_pContext, pVertexShader);
+
+		while(m_hPixelShader->GetData() == nullptr) Thread::Sleep(1);
 		pRenderer->SetPixelShader(_pContext, m_hPixelShader->GetData());
 
 		// ConstantBuffer

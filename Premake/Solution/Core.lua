@@ -121,13 +121,13 @@ end
 
 -- cook an asset
 function cook_asset(asset_type, asset_path)
-	prebuildcommands {"call \"" .. get_asset_cooker() .. "\" -type \"" .. asset_type .. "\" -input \"" .. asset_path .."\" -configuration \"%{cfg.buildcfg}\""}
+	prebuildcommands {"call \"" .. get_asset_cooker() .. "\" --type \"" .. asset_type .. "\" --input \"" .. asset_path .."\" --configuration \"%{cfg.buildcfg}\""}
 end
 
 -- cook a module
 function cook_reflection(input_path, output_path)
 	local absolute_path  = path.getabsolute(".")
-	prebuildcommands {"call \"" .. get_cooker_path() .. "Reflection/Reflection.exe\" -input \"" .. absolute_path .. "/" .. input_path .."\" -output \"" .. absolute_path .. "/" .. output_path .. "\""}
+	prebuildcommands {"call \"" .. get_cooker_path() .. "Reflection/Reflection.exe\" --input \"" .. absolute_path .. "/" .. input_path .."\" --output \"" .. absolute_path .. "/" .. output_path .. "\""}
 end
 
 -- Declare a project

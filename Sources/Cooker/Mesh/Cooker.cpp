@@ -7,8 +7,8 @@
 #include "ObjCooker.hpp"
 
 #define VERSION				"1.0.0"
-#define ARGUMENT_INPUT		"-input"
-#define ARGUMENT_OUTPUT		"-output"
+#define ARGUMENT_INPUT		"--input"
+#define ARGUMENT_OUTPUT		"--output"
 
 using namespace Gorilla;
 
